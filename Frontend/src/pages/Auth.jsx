@@ -4,6 +4,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -33,8 +34,9 @@ function BracketMark() {
   );
 }
 
-const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+const Auth = ({ initialIsLogin = true }) => {
+  const [isLogin, setIsLogin] = useState(initialIsLogin);
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ const Auth = () => {
       setLoading(true);
       await signInWithPopup(auth, googleProvider);
       toast.success("Logged in successfully!");
-      navigate("/app");
+      navigate("/dashboard");
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -61,10 +63,12 @@ const Auth = () => {
         await signInWithEmailAndPassword(auth, email, password);
         toast.success("Welcome back!");
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: fullName.trim() });
+        await userCredential.user.getIdToken(true);
         toast.success("Account created! Welcome!");
       }
-      navigate("/app");
+      navigate("/dashboard");
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -224,6 +228,26 @@ const Auth = () => {
             </div>
 
             <form onSubmit={handleEmailAuth} className="space-y-4">
+              {!isLogin && (
+                <label className="block">
+                  <span className="mb-2 block text-sm text-[var(--color-muted)]">
+                    Full name
+                  </span>
+                  <div className="relative">
+                    <Shield className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
+                    <input
+                      type="text"
+                      placeholder="Ada Lovelace"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="oi-input w-full pl-11"
+                      required={!isLogin}
+                      autoComplete="name"
+                    />
+                  </div>
+                </label>
+              )}
+
               <label className="block">
                 <span className="mb-2 block text-sm text-[var(--color-muted)]">
                   Email

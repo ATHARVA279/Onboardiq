@@ -1,291 +1,500 @@
-import React, { useEffect, useState } from "react";
-import { getLibrary, deleteDocument } from "../api/library";
-import api from "../api/backend";
-import CourseCard from "../components/CourseCard";
+import { useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
+  Database,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileCode,
+  Github,
+  Globe,
+  Loader2,
   Plus,
-  Search,
-  LayoutGrid,
-  List,
-  BookOpen,
-  Target,
-  MessageCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import PageLayout from "../components/layout/PageLayout";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
-import Card from "../components/ui/Card";
-import UsageStats from "../components/UsageStats";
-import { auth } from "../api/firebaseConfig";
+import AppShell from "../components/layout/AppShell";
+import Modal from "../components/common/Modal";
+import EmptyState from "../components/common/EmptyState";
+import SourceCard from "../components/sources/SourceCard";
+import {
+  connectGithubRepo,
+  connectUrl,
+  getJobStatus,
+  getStalenessAlerts,
+  getWorkspace,
+} from "../api/backend";
+import { useWorkspace } from "../context/WorkspaceContext";
+import { formatRelativeTime, scoreColor } from "../utils/formatters";
 
-const Dashboard = () => {
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
-  const [activeTab, setActiveTab] = useState("all");
-  const [userStats, setUserStats] = useState(null);
-  const navigate = useNavigate();
+function HealthScoreCard({ score }) {
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.max(0, Math.min(100, score));
+  const offset = circumference - (progress / 100) * circumference;
+  const color = scoreColor(progress);
+
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-muted)]">Documentation Health</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{progress}%</p>
+        </div>
+        <svg className="h-28 w-28 -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r={radius} stroke="var(--color-border)" strokeWidth="8" fill="none" />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            stroke={color}
+            strokeWidth="8"
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+          />
+          <text
+            x="50"
+            y="55"
+            textAnchor="middle"
+            transform="rotate(90 50 50)"
+            className="fill-[var(--color-text)] text-[18px] font-semibold"
+          >
+            {progress}
+          </text>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon: Icon, valueColor = "#F1F5F9" }) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-muted)]">{title}</p>
+          <p className="mt-3 text-4xl font-semibold" style={{ color: valueColor }}>
+            {value}
+          </p>
+        </div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)]">
+          <Icon
+            className="h-6 w-6"
+            style={{ color: valueColor === "#F1F5F9" ? "var(--color-primary)" : valueColor }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
+  const [tab, setTab] = useState("github");
+  const [repoUrl, setRepoUrl] = useState("");
+  const [token, setToken] = useState("");
+  const [docsUrl, setDocsUrl] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [showToken, setShowToken] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchLibrary();
-    fetchUserStats();
-  }, []);
-
-  const fetchUserStats = async () => {
-    try {
-      const response = await api.get("/auth/me");
-      setUserStats(response.data);
-    } catch (error) {
-      console.error("Failed to fetch user stats", error);
+    if (!open) {
+      setError("");
+      setLoading(false);
     }
-  };
+  }, [open]);
 
-  const fetchLibrary = async () => {
+  const handleGithubSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
     try {
-      const data = await getLibrary();
-      setCourses(data);
-    } catch (error) {
-      toast.error("Failed to load library");
+      const job = await connectGithubRepo(workspaceId, repoUrl.trim(), token.trim());
+      await onConnected({ type: "github", job });
+      onClose();
+      setRepoUrl("");
+      setToken("");
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this course?")) {
-      try {
-        await deleteDocument(id);
-        setCourses(courses.filter((c) => c.id !== id));
-        toast.success("Course deleted");
-      } catch (error) {
-        toast.error("Failed to delete course");
-      }
-    }
-  };
-
-  const handleToggleStatus = async (id, type) => {
-    const updatedCourses = courses.map((c) => {
-      if (c.id === id) {
-        return {
-          ...c,
-          [type === "favorite" ? "is_favorite" : "is_archived"]:
-            !c[type === "favorite" ? "is_favorite" : "is_archived"],
-        };
-      }
-      return c;
-    });
-    setCourses(updatedCourses);
-
+  const handleDocsSubmit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
     try {
-      const course = courses.find((c) => c.id === id);
-      const newValue =
-        !course[type === "favorite" ? "is_favorite" : "is_archived"];
-
-      await api.patch(`/library/${id}/status`, {
-        [type === "favorite" ? "is_favorite" : "is_archived"]: newValue,
-      });
-    } catch (error) {
-      toast.error("Failed to update status");
-      setCourses(courses);
+      await connectUrl(workspaceId, docsUrl.trim(), displayName.trim());
+      await onConnected({ type: "url" });
+      onClose();
+      setDocsUrl("");
+      setDisplayName("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const filteredCourses = courses.filter((course) => {
-    const matchesSearch =
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.url.toLowerCase().includes(searchTerm.toLowerCase());
-
-    if (!matchesSearch) return false;
-
-    if (activeTab === "favorites") return course.is_favorite;
-    if (activeTab === "archived") return course.is_archived;
-
-    return !course.is_archived;
-  });
-
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const userName = auth.currentUser?.displayName?.split(" ")[0] || "Scholar";
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-zinc-400">
-        Loading dashboard...
-      </div>
-    );
-  }
 
   return (
-    <PageLayout>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Main Content Area */}
-        <div className="lg:col-span-3 space-y-8">
-          {/* Header Section */}
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold text-zinc-100 tracking-tight">
-              {greeting},{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-500">
-                {userName}
-              </span>
-            </h1>
-            <p className="text-zinc-400">
-              Here is what's happening with your learning today.
+    <Modal open={open} onClose={onClose}>
+      <div className="p-6 sm:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-2xl font-semibold text-[var(--color-text)]">Connect New Source</h3>
+            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+              Add a repository or documentation source to your workspace.
             </p>
           </div>
+        </div>
 
-          {/* Stats Overview Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="p-5 border-zinc-800 bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 hover:border-zinc-700 transition-all duration-300 group">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
-                  <BookOpen className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-3xl font-bold text-zinc-100 mb-1">
-                    {courses.filter((c) => !c.is_archived).length}
-                  </p>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                    Active Courses
-                  </p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-5 border-zinc-800 bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 hover:border-zinc-700 transition-all duration-300 group">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
-                  <Target className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-3xl font-bold text-zinc-100 mb-1">
-                    {userStats?.usage?.extract || 0}
-                  </p>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                    Documents Extracted
-                  </p>
-                </div>
-              </div>
-            </Card>
-            <Card className="p-5 border-zinc-800 bg-gradient-to-br from-zinc-900/50 to-zinc-900/30 hover:border-zinc-700 transition-all duration-300 group">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 group-hover:bg-amber-500/20 transition-colors">
-                  <MessageCircle className="w-5 h-5 text-amber-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-3xl font-bold text-zinc-100 mb-1">
-                    {userStats?.usage?.chat || 0}
-                  </p>
-                  <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider">
-                    Chat Uses
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Controls & Filters */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-zinc-800 pb-6">
-            <div className="flex items-center gap-1 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800">
-              {["all", "favorites", "archived"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === tab
-                    ? "bg-zinc-800 text-zinc-100 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-300"
-                    } capitalize`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-10 bg-zinc-900 border-zinc-800 focus:border-emerald-500 text-sm"
-                />
-              </div>
-              <div className="flex items-center gap-1 border-l border-zinc-800 pl-3">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "text-emerald-400 bg-emerald-500/10" : "text-zinc-500 hover:text-zinc-300"}`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === "list" ? "text-emerald-400 bg-emerald-500/10" : "text-zinc-500 hover:text-zinc-300"}`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-              <Button
-                variant="gradient"
-                size="sm"
-                onClick={() => navigate("/new")}
-                className="h-10 px-4"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New
-              </Button>
-            </div>
-          </div>
-
-          {/* Content Grid */}
-          {filteredCourses.length === 0 ? (
-            <Card className="text-center py-24 border-dashed border-zinc-800 bg-zinc-900/20">
-              <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800 shadow-inner">
-                <Plus className="w-8 h-8 text-zinc-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-zinc-100 mb-2">
-                No courses found
-              </h3>
-              <p className="text-zinc-400 mb-8 max-w-sm mx-auto">
-                {searchTerm
-                  ? "Try adjusting your search terms."
-                  : "Get started by extracting content from a URL to create your first course."}
-              </p>
-              <Button variant="secondary" onClick={() => navigate("/new")}>
-                Create Course &rarr;
-              </Button>
-            </Card>
-          ) : (
-            <div
-              className={
-                viewMode === "grid"
-                  ? "grid grid-cols-1 md:grid-cols-2 gap-6"
-                  : "space-y-4"
-              }
+        <div className="mt-6 flex rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)] p-1">
+          {[
+            { id: "github", label: "GitHub Repository" },
+            { id: "url", label: "Documentation URL" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setTab(item.id)}
+              className={`flex-1 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                tab === item.id
+                  ? "bg-[var(--color-surface)] text-[var(--color-text)]"
+                  : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
+              }`}
             >
-              {filteredCourses.map((course) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  onDelete={handleDelete}
-                  onToggleStatus={handleToggleStatus}
-                  viewMode={viewMode}
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "github" ? (
+          <form onSubmit={handleGithubSubmit} className="mt-6 space-y-5">
+            <label className="block">
+              <span className="text-sm font-medium text-[var(--color-text)]">Repository URL</span>
+              <input
+                type="url"
+                value={repoUrl}
+                onChange={(event) => setRepoUrl(event.target.value)}
+                className="oi-input mt-2 w-full"
+                placeholder="https://github.com/owner/repo"
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-[var(--color-text)]">
+                Personal Access Token
+              </span>
+              <div className="relative mt-2">
+                <input
+                  type={showToken ? "text" : "password"}
+                  value={token}
+                  onChange={(event) => setToken(event.target.value)}
+                  className="oi-input w-full pr-12"
+                  placeholder="ghp_xxxxxxxxxxxx"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowToken((value) => !value)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+                >
+                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-[var(--color-muted)]">
+                Optional for public repos. Required for private repos. Needs
+                `repo:read` scope.
+              </p>
+            </label>
+
+            <div className="rounded-lg border border-[rgba(59,130,246,0.3)] bg-[rgba(59,130,246,0.12)] px-4 py-3 text-sm leading-7 text-[var(--color-primary)]">
+              Without a token, GitHub rate limits drop to 60 requests per hour, which
+              can cause larger repositories to fail before indexing completes.
+            </div>
+
+            {error ? (
+              <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={loading || !repoUrl.trim()}
+              className="oi-button oi-button-primary w-full disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Connecting Repository
+                </>
+              ) : (
+                <>
+                  <Github className="h-4 w-4" />
+                  Connect Repository
+                </>
+              )}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleDocsSubmit} className="mt-6 space-y-5">
+            <label className="block">
+              <span className="text-sm font-medium text-[var(--color-text)]">Documentation URL</span>
+              <input
+                type="url"
+                value={docsUrl}
+                onChange={(event) => setDocsUrl(event.target.value)}
+                className="oi-input mt-2 w-full"
+                placeholder="https://docs.company.com/auth"
+                required
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-[var(--color-text)]">Display Name</span>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
+                className="oi-input mt-2 w-full"
+                placeholder="Authentication Docs"
+              />
+            </label>
+
+            {error ? (
+              <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+                {error}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={loading || !docsUrl.trim()}
+              className="oi-button oi-button-primary w-full disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Connecting URL
+                </>
+              ) : (
+                <>
+                  <Globe className="h-4 w-4" />
+                  Connect URL
+                </>
+              )}
+            </button>
+          </form>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const { workspace, refreshWorkspace } = useWorkspace();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [jobMap, setJobMap] = useState({});
+  const [stalenessAlerts, setStalenessAlerts] = useState([]);
+  const [error, setError] = useState("");
+  const [recentQuestions] = useState([]);
+
+  useEffect(() => {
+    if (!workspace?.id) return undefined;
+
+    const indexingEntries = Object.entries(jobMap).filter(([, job]) =>
+      ["queued", "running", "indexing"].includes(job.status),
+    );
+
+    if (!indexingEntries.length) return undefined;
+
+    const interval = window.setInterval(async () => {
+      for (const [sourceId, job] of indexingEntries) {
+        try {
+          const nextJob = await getJobStatus(workspace.id, job.id);
+          setJobMap((current) => ({ ...current, [sourceId]: nextJob }));
+
+          if (["completed", "failed"].includes(nextJob.status)) {
+            await refreshWorkspace();
+          }
+        } catch (err) {
+          setError(err.message);
+        }
+      }
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [jobMap, refreshWorkspace, workspace?.id]);
+
+  useEffect(() => {
+    if (!workspace?.id) return;
+
+    let mounted = true;
+    getStalenessAlerts(workspace.id)
+      .then((data) => {
+        if (!mounted) return;
+        setStalenessAlerts(Array.isArray(data) ? data : data?.items || []);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setError(err.message);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [workspace?.id]);
+
+  const stats = useMemo(() => {
+    const sources = workspace?.sources || [];
+    const files = sources.reduce((sum, source) => sum + (source.file_count || 0), 0);
+    return {
+      sourcesConnected: sources.length,
+      filesIndexed: files,
+      alerts: stalenessAlerts.length,
+      healthScore: Math.round(workspace?.health_score || 0),
+    };
+  }, [stalenessAlerts.length, workspace]);
+
+  const handleConnectSuccess = async ({ type, job }) => {
+    await refreshWorkspace();
+    if (type === "github" && job?.source_id) {
+      setJobMap((current) => ({
+        ...current,
+        [job.source_id]: { ...job, id: job.id || job._id },
+      }));
+    }
+  };
+
+  const handleReindex = async (source) => {
+    setError(`Re-index endpoint is not wired yet for ${source.display_name || source.url}.`);
+  };
+
+  return (
+    <AppShell>
+      <div className="space-y-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-text)]">
+              Workspace Dashboard
+            </h1>
+            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+              Track source indexing, workspace health, and onboarding coverage in one place.
+            </p>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+            {error}
+          </div>
+        ) : null}
+
+        <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr_320px]">
+          <StatCard title="Sources Connected" value={stats.sourcesConnected} icon={Database} />
+          <StatCard title="Files Indexed" value={stats.filesIndexed} icon={FileCode} />
+          <StatCard
+            title="Staleness Alerts"
+            value={stats.alerts}
+            icon={AlertTriangle}
+            valueColor={stats.alerts > 0 ? "#EF4444" : "#F1F5F9"}
+          />
+          <HealthScoreCard score={stats.healthScore} />
+        </section>
+
+        <section className="space-y-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-[var(--color-text)]">Connected Sources</h2>
+              <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                Monitor indexing status and keep your knowledge graph up to date.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="oi-button oi-button-primary"
+            >
+              <Plus className="h-4 w-4" />
+              Connect New Source
+            </button>
+          </div>
+
+          {workspace?.sources?.length ? (
+            <div className="space-y-4">
+              {workspace.sources.map((source) => (
+                <SourceCard
+                  key={source.source_id}
+                  source={source}
+                  job={jobMap[source.source_id]}
+                  onReindex={handleReindex}
                 />
               ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Database}
+              title="No sources connected yet"
+              description="Connect your first GitHub repository or documentation source to start building onboarding answers with citations."
+              actionLabel="Connect First Source"
+              onAction={() => setModalOpen(true)}
+            />
+          )}
+        </section>
+
+        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-[var(--color-text)]">Recent Questions</h2>
+              <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+                The latest developer questions asked against this workspace.
+              </p>
+            </div>
+          </div>
+
+          {recentQuestions.length ? (
+            <div className="mt-5 divide-y divide-[var(--color-border)]">
+              {recentQuestions.slice(0, 5).map((question) => (
+                <div
+                  key={question.id}
+                  className="flex items-center justify-between gap-4 py-4"
+                >
+                  <div>
+                    <p className="font-medium text-[var(--color-text)]">{question.question_text}</p>
+                    <p className="mt-1 text-sm text-[var(--color-muted)]">{question.asked_by_name}</p>
+                  </div>
+                  <p className="shrink-0 text-sm text-[var(--color-muted)]">
+                    {formatRelativeTime(question.created_at)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5">
+              <EmptyState
+                icon={ExternalLink}
+                title="No questions yet"
+                description="Once your team starts asking questions, the most recent ones will appear here for quick review."
+                actionLabel="Ask a Question"
+                onAction={() => navigate("/ask")}
+              />
             </div>
           )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          <UsageStats stats={userStats} />
-        </div>
+        </section>
       </div>
-    </PageLayout>
-  );
-};
 
-export default Dashboard;
+      <ConnectSourceModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        workspaceId={workspace?.id}
+        onConnected={handleConnectSuccess}
+      />
+    </AppShell>
+  );
+}

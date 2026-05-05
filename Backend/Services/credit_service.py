@@ -7,10 +7,10 @@ class CreditService:
     DEFAULT_CREDITS = 100
     
     COSTS = {
-        "extract": 5,  
-        "quiz": 1,     
+        "extract": 5,
+        "github_ingest": 5,
         "chat": 1,
-        "notes": 2     
+        "workspace_create": 1,
     }
 
     @staticmethod
@@ -186,9 +186,9 @@ class CreditService:
                     "created_at": datetime.utcnow(),
                     "total_usage": {
                         "extract": 0,
-                        "quiz": 0,
+                        "github_ingest": 0,
                         "chat": 0,
-                        "notes": 0
+                        "workspace_create": 0,
                     }
                 }
             },

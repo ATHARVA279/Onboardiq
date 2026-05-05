@@ -1,29 +1,38 @@
-import os
-from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-load_dotenv()
+from config import Config
 
-MONGODB_URL = os.getenv("MONGODB_URL")
+if not Config.MONGODB_URI:
+    print("Warning: MONGODB_URI not found in environment variables")
 
-if not MONGODB_URL:
-    print("Warning: MONGODB_URL not found in environment variables")
+client = None
+db = None
 
-client = AsyncIOMotorClient(MONGODB_URL)
-db = client.luma_db
-
-workspaces_collection = db.workspaces
-chunks_collection = db.chunks
-questions_collection = db.questions
-jobs_collection = db.jobs
-sessions_collection = db.sessions
-users_collection = db.users
+workspaces_collection = None
+chunks_collection = None
+questions_collection = None
+jobs_collection = None
+sessions_collection = None
+users_collection = None
 
 _indexes_created = False
 _vector_index_checked = False
 
 
 async def get_db():
+    global client, db
+    global workspaces_collection, chunks_collection, questions_collection
+    global jobs_collection, sessions_collection, users_collection
+    if client is None:
+        client = AsyncIOMotorClient(Config.MONGODB_URI)
+        db = client[Config.DB_NAME]
+        workspaces_collection = db.workspaces
+        chunks_collection = db.chunks
+        questions_collection = db.questions
+        jobs_collection = db.jobs
+        sessions_collection = db.sessions
+        users_collection = db.users
+
     global _indexes_created, _vector_index_checked
     if not _indexes_created:
         await create_indexes()

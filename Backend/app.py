@@ -2,10 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from Middleware.error_handlers import (
-    DocumentNotFoundError, LLMAPIError,
-    document_not_found_handler, llm_api_error_handler, general_exception_handler
+    DocumentNotFoundError,
+    LLMAPIError,
+    document_not_found_handler,
+    general_exception_handler,
+    llm_api_error_handler,
 )
-
+from Routes import auth, ingest, warmup
 from config import Config
 
 app = FastAPI(title=Config.APP_TITLE)
@@ -22,17 +25,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from Routes import extract, chat, warmup, library, auth
-
-from Middleware.auth import get_current_user
-from fastapi import Depends
-
 app.include_router(warmup.router, tags=["system"])
-app.include_router(extract.router, tags=["extract"], dependencies=[Depends(get_current_user)])
-app.include_router(library.router, tags=["library"], dependencies=[Depends(get_current_user)])
-app.include_router(chat.router, tags=["chat"], dependencies=[Depends(get_current_user)])
 app.include_router(auth.router, tags=["auth"], prefix="/auth")
+app.include_router(ingest.router, tags=["ingest"], prefix="/api")
+
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "Onboardiq backend running with onboarding intelligence support"}
+    return {
+        "status": "ok",
+        "message": "Onboardiq backend running with developer onboarding intelligence support",
+    }

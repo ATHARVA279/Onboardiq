@@ -205,13 +205,13 @@ export default function Landing() {
 
       hasTyped.current = true;
       let index = 0;
-      const interval = window.setInterval(() => {
+              const interval = window.setInterval(() => {
         index += 1;
         setTypedAnswer(heroAnswer.slice(0, index));
         if (index >= heroAnswer.length) {
           window.clearInterval(interval);
         }
-      }, 30);
+      }, 20);
     }, 800);
 
     return () => window.clearTimeout(typeDelay);
@@ -269,7 +269,7 @@ export default function Landing() {
             badges.forEach((badge, index) => {
               window.setTimeout(() => {
                 badge.classList.add("is-visible", "oi-badge-pulse");
-              }, index * 180);
+              }, index * 80);
             });
           }
 
@@ -330,14 +330,14 @@ export default function Landing() {
             <a href="#waitlist" className="oi-button oi-button-secondary hidden sm:inline-flex">
               Request Access
             </a>
-            <a href="/auth" className="text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]">
+            <a href="/login" className="text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]">
               Sign In
             </a>
           </div>
         </div>
       </header>
 
-      <main id="top">
+      <main id="top" className="oi-page-enter">
         <section className="oi-grid-bg flex min-h-screen items-center pt-24">
           <div className="oi-container grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="max-w-2xl">
@@ -353,7 +353,7 @@ export default function Landing() {
                 Developer Onboarding Intelligence
               </div>
 
-              <h1 className="font-display mt-8 text-[52px] font-bold leading-[1.05] tracking-[-0.04em] text-[var(--color-text)] md:text-[72px]">
+              <h1 className="font-display mt-8 text-[48px] font-bold leading-[1.15] tracking-[-0.03em] text-[var(--color-text)]">
                 {heroWords.map((word, index) => (
                   <span
                     key={word}
@@ -366,7 +366,7 @@ export default function Landing() {
               </h1>
 
               <p
-                className="mt-8 max-w-[560px] text-lg leading-8 text-[var(--color-muted)]"
+                className="mt-8 max-w-[560px] text-base leading-[1.7] text-[var(--color-text)]"
                 style={{
                   opacity: 0,
                   transform: "translateY(24px)",
@@ -396,7 +396,7 @@ export default function Landing() {
                 </a>
               </div>
 
-              <div className="mt-6 flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-muted)]">
+              <div className="mt-8 flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-muted)]">
                 <span>Indexes in under 5 minutes</span>
                 <span className="text-[var(--color-primary)]">·</span>
                 <span>Answers in under 3 seconds</span>
@@ -438,12 +438,12 @@ export default function Landing() {
 
                 <div className="rounded-md border border-[rgba(59,130,246,0.3)] bg-[rgba(13,17,23,0.96)] p-5">
                   <div className="flex items-center gap-3 text-[12px] text-[var(--color-primary)]">
-                    <Database className="h-4 w-4" />
+                    <Database className="h-[18px] w-[18px]" />
                     <span className="font-mono">Cross-source answer</span>
                   </div>
                   <p className="mt-4 min-h-[144px] text-[15px] leading-7 text-[var(--color-text)]">
                     {typedAnswer}
-                    <span className="ml-0.5 inline-block h-5 w-[1px] animate-pulse bg-[var(--color-primary)] align-middle" />
+                    <span className="ml-0.5 inline-block h-5 w-[1px] bg-[var(--color-primary)] align-middle opacity-70" />
                   </p>
                   <div className="mt-5 flex flex-wrap gap-3" data-observe="badge-sequence">
                     {[
@@ -472,16 +472,16 @@ export default function Landing() {
         <section className="oi-section">
           <div className="oi-container">
             <div className="max-w-3xl">
-              <h2 className="font-display text-4xl font-semibold text-[var(--color-text)] md:text-[40px]">
+              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 The Onboarding Tax
               </h2>
-              <p className="mt-4 text-lg leading-8 text-[var(--color-muted)]">
+              <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
                 Knowledge lives in 5 different tools. New developers interrupt senior
                 engineers 30-50 times a day.
               </p>
             </div>
 
-            <div className="mt-14 grid gap-6 lg:grid-cols-3">
+            <div className="mt-16 grid gap-6 lg:grid-cols-3">
               {painPoints.map((item, index) => {
                 const Icon = item.icon;
                 return (
@@ -489,13 +489,13 @@ export default function Landing() {
                     key={item.title}
                     className="oi-panel oi-scroll-reveal p-7"
                     data-observe="pain"
-                    style={{ "--reveal-delay": `${index * 150}ms` }}
+                    style={{ "--reveal-delay": `${index * 80}ms` }}
                   >
                     <Icon className="h-6 w-6 text-[var(--color-primary)]" />
-                    <h3 className="font-display mt-5 text-2xl font-semibold text-[var(--color-text)]">
+                    <h3 className="font-display mt-6 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
                       {item.title}
                     </h3>
-                    <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">
+                    <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
                       {item.description}
                     </p>
                   </article>
@@ -508,7 +508,7 @@ export default function Landing() {
         <section id="how-it-works" className="oi-section oi-surface-blend">
           <div className="oi-container relative z-10">
             <div className="max-w-3xl">
-              <h2 className="font-display text-4xl font-semibold text-[var(--color-text)] md:text-[40px]">
+              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 From Question to Cited Answer in Seconds
               </h2>
             </div>
@@ -543,16 +543,16 @@ export default function Landing() {
                       key={step.title}
                       className="oi-panel oi-scroll-reveal relative overflow-hidden p-7"
                       data-observe="step"
-                      style={{ "--reveal-delay": `${index * 150}ms` }}
+                      style={{ "--reveal-delay": `${index * 80}ms` }}
                     >
                       <span className="font-mono absolute right-6 top-5 text-4xl text-[rgba(59,130,246,0.28)]">
                         {step.number}
                       </span>
                       <Icon className="h-6 w-6 text-[var(--color-primary)]" />
-                      <h3 className="font-display mt-8 text-2xl font-semibold text-[var(--color-text)]">
+                      <h3 className="font-display mt-8 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
                         {step.title}
                       </h3>
-                      <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">
+                      <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
                         {step.description}
                       </p>
                     </article>
@@ -566,7 +566,7 @@ export default function Landing() {
         <section className="oi-section">
           <div className="oi-container">
             <div className="max-w-3xl">
-              <h2 className="font-display text-4xl font-semibold text-[var(--color-text)] md:text-[40px]">
+              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 Three Things No Other Tool Does Together
               </h2>
             </div>
@@ -584,7 +584,7 @@ export default function Landing() {
                         Query fan-out
                       </p>
                       <div className="mt-4 flex items-center gap-3 rounded-md border border-[rgba(59,130,246,0.25)] bg-[rgba(17,24,39,0.92)] px-4 py-3">
-                        <Search className="h-4 w-4 text-[var(--color-primary)]" />
+                          <Search className="h-[18px] w-[18px] text-[var(--color-primary)]" />
                         <span className="text-sm text-[var(--color-text)]">
                           Show me the auth decision trail
                         </span>
@@ -599,7 +599,7 @@ export default function Landing() {
                             key={source}
                             className="oi-scroll-reveal flex items-center justify-between rounded-md border border-[var(--color-border)] bg-[rgba(17,24,39,0.82)] px-4 py-3"
                             data-observe="feature"
-                            style={{ "--reveal-delay": `${index * 180}ms` }}
+                            style={{ "--reveal-delay": `${index * 80}ms` }}
                           >
                             <div>
                               <p className="font-mono text-[12px] uppercase text-[var(--color-primary)]">
@@ -630,9 +630,8 @@ export default function Landing() {
                     <svg viewBox="0 0 520 320" className="w-full">
                       <defs>
                         <linearGradient id="embedLine" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.2" />
-                          <stop offset="50%" stopColor="#3B82F6" stopOpacity="1" />
-                          <stop offset="100%" stopColor="#10B981" stopOpacity="0.7" />
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#3B82F6" stopOpacity="1" />
                         </linearGradient>
                       </defs>
                       <rect x="20" y="50" width="150" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
@@ -682,7 +681,7 @@ export default function Landing() {
                     <div className="rounded-md border border-[rgba(245,158,11,0.35)] bg-[rgba(13,17,23,0.96)] p-5">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <AlertTriangle className="h-5 w-5 text-[var(--color-amber)]" />
+                          <AlertTriangle className="h-[18px] w-[18px] text-[var(--color-amber)]" />
                           <p className="font-display text-xl font-semibold text-[var(--color-text)]">
                             Staleness Alert
                           </p>
@@ -699,11 +698,11 @@ export default function Landing() {
                           Documentation may be outdated - last code change: 3 days ago
                         </p>
                         <div className="mt-4 flex items-center gap-2 text-[13px] text-[var(--color-muted)]">
-                          <CheckCircle className="h-4 w-4 text-[var(--color-green)]" />
+                          <CheckCircle className="h-[18px] w-[18px] text-[var(--color-green)]" />
                           <span>Code now references OAuth refresh handlers</span>
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-[13px] text-[var(--color-muted)]">
-                          <AlertTriangle className="h-4 w-4 text-[var(--color-amber)]" />
+                          <AlertTriangle className="h-[18px] w-[18px] text-[var(--color-amber)]" />
                           <span>Docs still describe JWT-only token rotation</span>
                         </div>
                       </div>
@@ -718,7 +717,7 @@ export default function Landing() {
         <section id="integrations" className="oi-section">
           <div className="oi-container">
             <div className="max-w-3xl">
-              <h2 className="font-display text-4xl font-semibold text-[var(--color-text)] md:text-[40px]">
+              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 Indexes Everything Your Team Already Uses
               </h2>
             </div>
@@ -733,7 +732,7 @@ export default function Landing() {
                     data-observe="integration"
                     style={{ "--reveal-delay": `${index * 80}ms` }}
                   >
-                    <Icon className="h-8 w-8 text-[var(--color-text)]" />
+                    <Icon className="h-6 w-6 text-[var(--color-text)]" />
                     <p className="text-[13px] text-[var(--color-muted)]">{item.name}</p>
                   </div>
                 );
@@ -776,10 +775,10 @@ export default function Landing() {
         <section id="waitlist" className="oi-section oi-grid-bg">
           <div className="oi-container">
             <div className="mx-auto max-w-4xl text-center">
-              <h2 className="font-display text-4xl font-semibold text-[var(--color-text)] md:text-[48px]">
+              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 Your team&apos;s knowledge. Finally searchable.
               </h2>
-              <p className="mt-5 text-lg leading-8 text-[var(--color-muted)]">
+              <p className="mt-8 text-base leading-[1.7] text-[var(--color-text)]">
                 Join the waitlist. First 50 teams get free indexing for 3 months.
               </p>
 
@@ -834,10 +833,10 @@ export default function Landing() {
 
           <div>
             <p className="font-display text-lg font-semibold text-[var(--color-text)]">Product</p>
-            <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
+            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted)]">
               {["Features", "Integrations", "Changelog", "Roadmap"].map((item) => (
                 <a key={item} href="#product" className="flex items-center gap-2 transition-colors hover:text-[var(--color-text)]">
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-[18px] w-[18px]" />
                   {item}
                 </a>
               ))}
@@ -846,10 +845,10 @@ export default function Landing() {
 
           <div className="flex flex-col md:items-start">
             <p className="font-display text-lg font-semibold text-[var(--color-text)]">Company</p>
-            <div className="mt-4 space-y-3 text-sm text-[var(--color-muted)]">
+            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted)]">
               {["About", "Blog", "Contact", "Privacy"].map((item) => (
                 <a key={item} href="#waitlist" className="flex items-center gap-2 transition-colors hover:text-[var(--color-text)]">
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="h-[18px] w-[18px]" />
                   {item}
                 </a>
               ))}
