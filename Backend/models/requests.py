@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
@@ -58,6 +58,7 @@ class ChatRequest(RequestModel):
     workspace_id: str = Field(..., description="Workspace ObjectId")
     session_id: Optional[str] = Field(default=None, min_length=1, max_length=200)
     question: str = Field(..., min_length=3, max_length=1000)
+    source_ids: List[str] = Field(default_factory=list)
 
     @field_validator("workspace_id")
     @classmethod

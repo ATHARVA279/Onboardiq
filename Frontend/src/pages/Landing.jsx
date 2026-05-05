@@ -93,7 +93,7 @@ function BracketMark() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="1.5"
     >
       <path d="M8 5H4v14h4" />
       <path d="M16 5h4v14h-4" />
@@ -120,13 +120,13 @@ function FeatureBlock({
             data-reveal={textReveal}
             data-observe="feature"
           >
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--color-primary)]">
+            <p className="oi-tag">
               {tag}
             </p>
-            <h3 className="font-display mt-4 text-3xl font-semibold text-[var(--color-text)] md:text-[40px]">
+            <h3 className="font-display mt-4 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
               {title}
             </h3>
-            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--color-muted)]">
+            <p className="mt-5 max-w-xl text-base leading-[1.7] text-[var(--color-text)]">
               {body}
             </p>
           </div>
@@ -152,13 +152,13 @@ function FeatureBlock({
             data-reveal={textReveal}
             data-observe="feature"
           >
-            <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--color-primary)]">
+            <p className="oi-tag">
               {tag}
             </p>
-            <h3 className="font-display mt-4 text-3xl font-semibold text-[var(--color-text)] md:text-[40px]">
+            <h3 className="font-display mt-4 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
               {title}
             </h3>
-            <p className="mt-5 max-w-xl text-base leading-8 text-[var(--color-muted)]">
+            <p className="mt-5 max-w-xl text-base leading-[1.7] text-[var(--color-text)]">
               {body}
             </p>
           </div>
@@ -300,11 +300,13 @@ export default function Landing() {
         }`}
         style={{
           height: "64px",
-          animation: "heroWord 500ms ease forwards",
+          animation: "pageEnter 500ms ease forwards",
           opacity: 0,
           transform: "translateY(-10px)",
         }}
       >
+        <span className="oi-drift left-[5%] top-[10px] h-24 w-72 rotate-[8deg]" />
+        <span className="oi-drift right-[10%] top-[18px] h-20 w-60 -rotate-[4deg]" style={{ animationDelay: "4s" }} />
         <div className="oi-container flex h-full items-center justify-between">
           <a href="#top" className="flex items-center gap-3">
             <BracketMark />
@@ -342,7 +344,7 @@ export default function Landing() {
           <div className="oi-container grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="max-w-2xl">
               <div
-                className="inline-flex min-h-[36px] items-center rounded-md border border-[rgba(59,130,246,0.4)] bg-[rgba(17,24,39,0.94)] px-4 py-2 font-mono text-[12px] text-[var(--color-primary)]"
+                className="inline-flex min-h-[36px] items-center rounded-md border border-[rgba(0,255,156,0.2)] bg-[rgba(13,17,23,0.94)] px-4 py-2 font-mono text-[12px] text-[var(--color-primary)]"
                 style={{
                   opacity: 0,
                   transform: "translateY(-20px)",
@@ -353,12 +355,12 @@ export default function Landing() {
                 Developer Onboarding Intelligence
               </div>
 
-              <h1 className="font-display mt-8 text-[48px] font-bold leading-[1.15] tracking-[-0.03em] text-[var(--color-text)]">
+              <h1 className="font-display mt-8 text-[56px] font-bold leading-[1.1] tracking-[-0.04em] text-[var(--color-text)]">
                 {heroWords.map((word, index) => (
                   <span
                     key={word}
                     className={`oi-word mr-[0.3em] ${word === "Twice." ? "text-[var(--color-primary)]" : ""}`}
-                    style={{ "--word-delay": `${200 + index * 80}ms` }}
+                    style={{ "--word-delay": `${250 + index * 70}ms` }}
                   >
                     {word}
                   </span>
@@ -385,7 +387,7 @@ export default function Landing() {
                   opacity: 0,
                   transform: "translateY(24px)",
                   animation: "heroWord 680ms ease forwards",
-                  animationDelay: "500ms",
+                  animationDelay: "600ms",
                 }}
               >
                 <a href="#waitlist" className="oi-button oi-button-primary">
@@ -422,7 +424,7 @@ export default function Landing() {
                     <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-amber)]" />
                     <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-green)]" />
                   </div>
-                  <span className="font-mono text-xs text-[var(--color-muted)]">
+                  <span className="font-mono text-xs text-[var(--color-muted-bright)]">
                     answer-session://onboardiq
                   </span>
                 </div>
@@ -430,13 +432,13 @@ export default function Landing() {
 
               <div className="space-y-6 px-6 py-6">
                 <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-code-bg)] p-4">
-                  <p className="font-mono text-[13px] text-[var(--color-muted)]">Question</p>
+                  <p className="font-mono text-[13px] text-[var(--color-muted-bright)]">Question</p>
                   <p className="mt-2 text-base text-[var(--color-text)]">
                     How does our authentication flow work?
                   </p>
                 </div>
 
-                <div className="rounded-md border border-[rgba(59,130,246,0.3)] bg-[rgba(13,17,23,0.96)] p-5">
+                <div className="rounded-md border border-[rgba(0,255,156,0.18)] bg-[rgba(13,17,23,0.96)] p-5">
                   <div className="flex items-center gap-3 text-[12px] text-[var(--color-primary)]">
                     <Database className="h-[18px] w-[18px]" />
                     <span className="font-mono">Cross-source answer</span>
@@ -447,19 +449,17 @@ export default function Landing() {
                   </p>
                   <div className="mt-5 flex flex-wrap gap-3" data-observe="badge-sequence">
                     {[
-                      ["github", "src/auth/jwt.py", "text-[var(--color-green)]"],
-                      ["confluence", "Auth Architecture", "text-[var(--color-primary)]"],
-                      ["slack", "#backend-decisions Dec 2023", "text-[var(--color-amber)]"],
+                      ["github", "src/auth/jwt.py", "oi-source-github"],
+                      ["confluence", "Auth Architecture", "oi-source-confluence"],
+                      ["slack", "#backend-decisions Dec 2023", "oi-source-slack"],
                     ].map(([source, label, color]) => (
                       <div
                         key={source}
                         data-seq-badge="true"
-                        className="rounded-[4px] border border-[var(--color-border)] bg-[rgba(17,24,39,0.92)] px-3 py-2 opacity-0 transition-all duration-500"
+                        className={`oi-source-badge opacity-0 transition-all duration-500 ${color}`}
                       >
-                        <span className={`font-mono text-[12px] uppercase ${color}`}>{source}</span>
-                        <span className="ml-2 font-mono text-[12px] text-[var(--color-text)]">
-                          {label}
-                        </span>
+                        {source}
+                        <span className="ml-2 text-[var(--color-muted-bright)]">{label}</span>
                       </div>
                     ))}
                   </div>
@@ -472,7 +472,7 @@ export default function Landing() {
         <section className="oi-section">
           <div className="oi-container">
             <div className="max-w-3xl">
-              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
+              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 The Onboarding Tax
               </h2>
               <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
@@ -508,7 +508,7 @@ export default function Landing() {
         <section id="how-it-works" className="oi-section oi-surface-blend">
           <div className="oi-container relative z-10">
             <div className="max-w-3xl">
-              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
+              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 From Question to Cited Answer in Seconds
               </h2>
             </div>
@@ -522,7 +522,7 @@ export default function Landing() {
               >
                 <path
                   d="M120 20H1080"
-                  stroke="rgba(59,130,246,0.55)"
+                  stroke="rgba(0,255,156,0.5)"
                   strokeWidth="2"
                   strokeDasharray="8 10"
                   pathLength="1"
@@ -545,7 +545,7 @@ export default function Landing() {
                       data-observe="step"
                       style={{ "--reveal-delay": `${index * 80}ms` }}
                     >
-                      <span className="font-mono absolute right-6 top-5 text-4xl text-[rgba(59,130,246,0.28)]">
+                      <span className="font-mono absolute right-6 top-5 text-4xl text-[rgba(0,255,156,0.22)]">
                         {step.number}
                       </span>
                       <Icon className="h-6 w-6 text-[var(--color-primary)]" />
@@ -566,7 +566,7 @@ export default function Landing() {
         <section className="oi-section">
           <div className="oi-container">
             <div className="max-w-3xl">
-              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
+              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 Three Things No Other Tool Does Together
               </h2>
             </div>
@@ -580,10 +580,10 @@ export default function Landing() {
                 visual={
                   <div className="oi-panel overflow-hidden p-6">
                     <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-code-bg)] p-5">
-                      <p className="font-mono text-xs text-[var(--color-muted)]">
+                      <p className="font-mono text-xs text-[var(--color-muted-bright)]">
                         Query fan-out
                       </p>
-                      <div className="mt-4 flex items-center gap-3 rounded-md border border-[rgba(59,130,246,0.25)] bg-[rgba(17,24,39,0.92)] px-4 py-3">
+                      <div className="mt-4 flex items-center gap-3 rounded-md border border-[rgba(0,255,156,0.15)] bg-[rgba(17,24,39,0.92)] px-4 py-3">
                           <Search className="h-[18px] w-[18px] text-[var(--color-primary)]" />
                         <span className="text-sm text-[var(--color-text)]">
                           Show me the auth decision trail
@@ -602,14 +602,14 @@ export default function Landing() {
                             style={{ "--reveal-delay": `${index * 80}ms` }}
                           >
                             <div>
-                              <p className="font-mono text-[12px] uppercase text-[var(--color-primary)]">
+                              <p className={`font-mono text-[12px] uppercase ${source === "github" ? "text-[var(--color-muted-bright)]" : source === "confluence" ? "text-[#4A9EF5]" : source === "slack" ? "text-[#E01E5A]" : "text-[var(--color-muted-bright)]"}`}>
                                 {source}
                               </p>
                               <p className="mt-1 font-mono text-[13px] text-[var(--color-text)]">
                                 {path}
                               </p>
                             </div>
-                            <span className="font-mono text-[12px] text-[var(--color-muted)]">
+                            <span className="font-mono text-[12px] text-[var(--color-muted-bright)]">
                               {latency}
                             </span>
                           </div>
@@ -630,36 +630,36 @@ export default function Landing() {
                     <svg viewBox="0 0 520 320" className="w-full">
                       <defs>
                         <linearGradient id="embedLine" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#3B82F6" stopOpacity="1" />
+                          <stop offset="0%" stopColor="#00FF9C" stopOpacity="0.12" />
+                          <stop offset="100%" stopColor="#00FF9C" stopOpacity="1" />
                         </linearGradient>
                       </defs>
                       <rect x="20" y="50" width="150" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="40" y="82" fill="#64748B" fontSize="12" fontFamily="JetBrains Mono">
+                      <text x="40" y="82" fill="#8B949E" fontSize="12" fontFamily="JetBrains Mono">
                         question.txt
                       </text>
-                      <text x="40" y="104" fill="#F1F5F9" fontSize="14" fontFamily="IBM Plex Sans">
+                      <text x="40" y="104" fill="#E6EDF3" fontSize="14" fontFamily="IBM Plex Sans">
                         how does auth work
                       </text>
 
                       <circle cx="260" cy="160" r="56" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="226" y="166" fill="#3B82F6" fontSize="12" fontFamily="JetBrains Mono">
+                      <text x="226" y="166" fill="#00FF9C" fontSize="12" fontFamily="JetBrains Mono">
                         vector
                       </text>
 
                       <rect x="350" y="34" width="140" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="370" y="66" fill="#10B981" fontSize="12" fontFamily="JetBrains Mono">
+                      <text x="370" y="66" fill="#00FF9C" fontSize="12" fontFamily="JetBrains Mono">
                         code
                       </text>
-                      <text x="370" y="88" fill="#F1F5F9" fontSize="13" fontFamily="JetBrains Mono">
+                      <text x="370" y="88" fill="#E6EDF3" fontSize="13" fontFamily="JetBrains Mono">
                         src/auth/jwt.py
                       </text>
 
                       <rect x="350" y="214" width="140" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="370" y="246" fill="#64748B" fontSize="12" fontFamily="JetBrains Mono">
+                      <text x="370" y="246" fill="#8B949E" fontSize="12" fontFamily="JetBrains Mono">
                         docs
                       </text>
-                      <text x="370" y="268" fill="#F1F5F9" fontSize="13" fontFamily="IBM Plex Sans">
+                      <text x="370" y="268" fill="#E6EDF3" fontSize="13" fontFamily="IBM Plex Sans">
                         Auth Overview
                       </text>
 
@@ -691,17 +691,17 @@ export default function Landing() {
                         </span>
                       </div>
                       <div className="mt-5 rounded-md border border-[var(--color-border)] bg-[rgba(17,24,39,0.88)] p-4">
-                        <p className="font-mono text-[12px] text-[var(--color-muted)]">
+                        <p className="font-mono text-[12px] text-[var(--color-muted-bright)]">
                           docs/auth-overview.md
                         </p>
                         <p className="mt-3 font-mono text-[13px] text-[var(--color-text)]">
                           Documentation may be outdated - last code change: 3 days ago
                         </p>
-                        <div className="mt-4 flex items-center gap-2 text-[13px] text-[var(--color-muted)]">
+                        <div className="mt-4 flex items-center gap-2 text-[13px] text-[var(--color-muted-bright)]">
                           <CheckCircle className="h-[18px] w-[18px] text-[var(--color-green)]" />
                           <span>Code now references OAuth refresh handlers</span>
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-[13px] text-[var(--color-muted)]">
+                        <div className="mt-2 flex items-center gap-2 text-[13px] text-[var(--color-muted-bright)]">
                           <AlertTriangle className="h-[18px] w-[18px] text-[var(--color-amber)]" />
                           <span>Docs still describe JWT-only token rotation</span>
                         </div>
@@ -717,7 +717,7 @@ export default function Landing() {
         <section id="integrations" className="oi-section">
           <div className="oi-container">
             <div className="max-w-3xl">
-              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
+              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 Indexes Everything Your Team Already Uses
               </h2>
             </div>
@@ -733,13 +733,13 @@ export default function Landing() {
                     style={{ "--reveal-delay": `${index * 80}ms` }}
                   >
                     <Icon className="h-6 w-6 text-[var(--color-text)]" />
-                    <p className="text-[13px] text-[var(--color-muted)]">{item.name}</p>
+                    <p className="text-[13px] text-[var(--color-muted-bright)]">{item.name}</p>
                   </div>
                 );
               })}
             </div>
 
-            <p className="mt-8 text-center text-sm text-[var(--color-muted)]">
+            <p className="mt-8 text-center text-sm text-[var(--color-muted-bright)]">
               More integrations shipping in Phase 3
             </p>
           </div>
@@ -760,11 +760,11 @@ export default function Landing() {
                   ref={(node) => {
                     countRefs.current[index] = node;
                   }}
-                  className="font-display min-w-[112px] text-4xl font-semibold leading-none text-[var(--color-text)] md:text-5xl"
+                  className="font-mono min-w-[112px] text-4xl font-normal leading-none text-[var(--color-text)] md:text-5xl"
                 >
                   {`${stat.prefix}0${stat.suffix}`}
                 </div>
-                <p className="max-w-[190px] pt-2 text-sm leading-6 text-[var(--color-muted)]">
+                <p className="max-w-[190px] pt-2 text-sm leading-6 text-[var(--color-muted-bright)]">
                   {stat.label}
                 </p>
               </div>
@@ -775,7 +775,7 @@ export default function Landing() {
         <section id="waitlist" className="oi-section oi-grid-bg">
           <div className="oi-container">
             <div className="mx-auto max-w-4xl text-center">
-              <h2 className="font-display text-[36px] font-semibold leading-[1.2] text-[var(--color-text)]">
+              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
                 Your team&apos;s knowledge. Finally searchable.
               </h2>
               <p className="mt-8 text-base leading-[1.7] text-[var(--color-text)]">
@@ -799,14 +799,13 @@ export default function Landing() {
                 </button>
               </form>
 
-              <p className="mt-4 font-mono text-[13px] text-[var(--color-muted)]">
+              <p className="mt-4 font-mono text-[13px] text-[var(--color-muted-bright)]">
                 No credit card. No sales call. Just early access.
               </p>
             </div>
           </div>
         </section>
       </main>
-
       <footer className="border-t border-[var(--color-border)] py-16">
         <div className="oi-container grid gap-10 md:grid-cols-3">
           <div>
@@ -814,11 +813,11 @@ export default function Landing() {
               <BracketMark />
               <span className="font-display text-xl font-bold">OnboardIQ</span>
             </div>
-            <p className="mt-4 max-w-sm text-sm leading-7 text-[var(--color-muted)]">
+            <p className="mt-4 max-w-sm text-sm leading-7 text-[var(--color-muted-bright)]">
               Developer onboarding intelligence for engineering teams that need
               answers with proof, not another search box.
             </p>
-            <div className="mt-6 flex items-center gap-4 text-[var(--color-muted)]">
+            <div className="mt-6 flex items-center gap-4 text-[var(--color-muted-bright)]">
               <a href="https://github.com" aria-label="GitHub" className="transition-colors hover:text-[var(--color-text)]">
                 <Github className="h-5 w-5" />
               </a>
@@ -832,8 +831,8 @@ export default function Landing() {
           </div>
 
           <div>
-            <p className="font-display text-lg font-semibold text-[var(--color-text)]">Product</p>
-            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted)]">
+            <p className="font-display text-[24px] font-semibold text-[var(--color-text)]">Product</p>
+            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted-bright)]">
               {["Features", "Integrations", "Changelog", "Roadmap"].map((item) => (
                 <a key={item} href="#product" className="flex items-center gap-2 transition-colors hover:text-[var(--color-text)]">
                   <ChevronRight className="h-[18px] w-[18px]" />
@@ -844,8 +843,8 @@ export default function Landing() {
           </div>
 
           <div className="flex flex-col md:items-start">
-            <p className="font-display text-lg font-semibold text-[var(--color-text)]">Company</p>
-            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted)]">
+            <p className="font-display text-[24px] font-semibold text-[var(--color-text)]">Company</p>
+            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted-bright)]">
               {["About", "Blog", "Contact", "Privacy"].map((item) => (
                 <a key={item} href="#waitlist" className="flex items-center gap-2 transition-colors hover:text-[var(--color-text)]">
                   <ExternalLink className="h-[18px] w-[18px]" />
@@ -853,7 +852,7 @@ export default function Landing() {
                 </a>
               ))}
             </div>
-            <p className="mt-8 font-mono text-[13px] text-[var(--color-muted)]">
+            <p className="mt-8 font-mono text-[13px] text-[var(--color-muted-bright)]">
               Built by Atharva Kharade
             </p>
           </div>

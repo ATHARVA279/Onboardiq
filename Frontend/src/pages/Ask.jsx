@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ChevronDown, Code2, Database } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import AppShell from "../components/layout/AppShell";
 import EmptyState from "../components/common/EmptyState";
 import { useWorkspace } from "../context/WorkspaceContext";
@@ -17,7 +19,7 @@ function CitationList({ citations }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50">
+    <div className="mt-3 rounded-2xl border border-[#1e2d1e] bg-[#161b22]">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -29,32 +31,32 @@ function CitationList({ citations }) {
         />
       </button>
       {open ? (
-        <div className="space-y-3 border-t border-slate-200 px-4 py-4">
+        <div className="space-y-3 border-t border-[#1e2d1e] px-4 py-4">
           {citations.map((source, index) => (
             <div
               key={`${source.chunk_id || source.file_path}-${index}`}
-              className="rounded-2xl border border-slate-200 bg-white p-3"
+              className="rounded-2xl border border-[#1e2d1e] bg-[#0d1117] p-3"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                     source.source_type?.includes("github") || source.source_type === "code"
-                      ? "bg-blue-50 text-[#2E75B6]"
-                      : "bg-green-50 text-green-700"
+                      ? "bg-blue-900/30 text-[#00ff9c]"
+                      : "bg-green-900/30 text-green-400"
                   }`}
                 >
                   {source.source_type || "source"}
                 </span>
-                <span className="font-mono text-xs text-[#1E293B]">
+                <span className="font-mono text-xs text-white">
                   {source.file_path || "Unknown path"}
                 </span>
                 {source.start_line ? (
-                  <span className="text-xs text-[#64748B]">
+                  <span className="text-xs text-slate-400">
                     L{source.start_line}
                     {source.end_line ? `-${source.end_line}` : ""}
                   </span>
                 ) : null}
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-[#64748B]">
+                <span className="rounded-full bg-slate-800 px-2 py-1 text-xs text-slate-400">
                   {Math.round((source.similarity_score || 0) * 100)}%
                 </span>
               </div>
@@ -128,8 +130,8 @@ export default function Ask() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: response.answer_text,
-          sources: response.sources || [],
+          content: response.answer,
+          sources: response.sources_cited || [],
           confidence_score: response.confidence_score || 0,
           created_at: new Date().toISOString(),
         },
@@ -152,31 +154,31 @@ export default function Ask() {
             onAction={() => navigate("/sources")}
           />
       ) : (
-        <div className="flex h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:flex-row">
-          <section className="w-full border-b border-slate-200 p-6 lg:w-[35%] lg:border-b-0 lg:border-r">
-            <h1 className="text-2xl font-semibold text-[#1E293B]">Search Sources</h1>
-            <p className="mt-2 text-sm leading-7 text-[#64748B]">
+        <div className="flex h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-3xl border border-[#1e2d1e] bg-[#0d1117] shadow-sm lg:flex-row">
+          <section className="w-full border-b border-[#1e2d1e] p-6 lg:w-[35%] lg:border-b-0 lg:border-r">
+            <h1 className="text-2xl font-semibold text-white">Search Sources</h1>
+            <p className="mt-2 text-sm leading-7 text-slate-400">
               Choose which indexed sources the assistant should search.
             </p>
             <div className="mt-6 space-y-3">
               {completedSources.map((source) => (
                 <label
                   key={source.source_id}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3"
+                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#1e2d1e] px-4 py-3"
                 >
                   <input
                     type="checkbox"
                     checked={selectedSourceIds.includes(source.source_id)}
                     onChange={() => toggleSource(source.source_id)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#2E75B6] focus:ring-[#2E75B6]"
+                    className="h-4 w-4 rounded border-slate-600 text-[#00ff9c] focus:ring-[#2E75B6]"
                   />
-                  <span className="text-sm font-medium text-[#1E293B]">
+                  <span className="text-sm font-medium text-white">
                     {source.display_name}
                   </span>
                 </label>
               ))}
             </div>
-            <p className="mt-4 text-sm text-[#64748B]">
+            <p className="mt-4 text-sm text-slate-400">
               {selectedSourceIds.length} source
               {selectedSourceIds.length === 1 ? "" : "s"} selected
             </p>
@@ -186,18 +188,18 @@ export default function Ask() {
             <div className="flex-1 overflow-y-auto px-6 py-6">
               <div className="space-y-5">
                 {messages.length === 0 ? (
-                  <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-                    <Code2 className="mx-auto h-10 w-10 text-[#2E75B6]" />
-                    <h2 className="mt-4 text-xl font-semibold text-[#1E293B]">
+                  <div className="rounded-3xl border border-dashed border-[#1e2d1e] bg-[#161b22] px-6 py-12 text-center">
+                    <Code2 className="mx-auto h-10 w-10 text-[#00ff9c]" />
+                    <h2 className="mt-4 text-xl font-semibold text-white">
                       Ask your first onboarding question
                     </h2>
-                    <p className="mx-auto mt-2 max-w-lg text-sm leading-7 text-[#64748B]">
+                    <p className="mx-auto mt-2 max-w-lg text-sm leading-7 text-slate-400">
                       Ask about auth flows, deployment steps, conventions, or architecture decisions across your selected sources.
                     </p>
                     <button
                       type="button"
                       onClick={() => setQuestion("How does our authentication flow work?")}
-                      className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#2E75B6] px-5 text-sm font-medium text-white transition hover:bg-[#255f93]"
+                      className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[#00ff9c] px-5 text-sm font-medium text-[#080c10] transition hover:bg-[#00cc7a]"
                     >
                       Try a sample question
                     </button>
@@ -217,13 +219,85 @@ export default function Ask() {
                         <div
                           className={`rounded-3xl px-5 py-4 text-sm leading-7 shadow-sm ${
                             message.role === "user"
-                              ? "bg-[#1A3A5C] text-white"
-                              : "border border-slate-200 bg-white text-[#1E293B]"
+                              ? "bg-[#00ff9c] text-[#080c10]"
+                              : "border border-[#1e2d1e] bg-[#0d1117] text-white"
                           }`}
                         >
-                          {message.content}
+                          {message.role === "user" ? (
+                            message.content
+                          ) : (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({ children }) => (
+                                  <p className="mb-3 last:mb-0 leading-7">{children}</p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="mb-3 list-disc space-y-1 pl-5">{children}</ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="mb-3 list-decimal space-y-1 pl-5">{children}</ol>
+                                ),
+                                li: ({ children }) => (
+                                  <li className="leading-7">{children}</li>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold text-[#00ff9c]">{children}</strong>
+                                ),
+                                em: ({ children }) => (
+                                  <em className="italic text-slate-300">{children}</em>
+                                ),
+                                code: ({ inline, children }) =>
+                                  inline ? (
+                                    <code className="rounded bg-[#161b22] px-1.5 py-0.5 font-mono text-xs text-[#00ff9c]">
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <code className="block w-full overflow-x-auto rounded-xl bg-[#161b22] p-4 font-mono text-xs text-slate-300">
+                                      {children}
+                                    </code>
+                                  ),
+                                pre: ({ children }) => (
+                                  <pre className="mb-3 overflow-x-auto rounded-xl bg-[#161b22] p-4">
+                                    {children}
+                                  </pre>
+                                ),
+                                h1: ({ children }) => (
+                                  <h1 className="mb-2 mt-4 text-base font-bold text-white">{children}</h1>
+                                ),
+                                h2: ({ children }) => (
+                                  <h2 className="mb-2 mt-4 text-base font-semibold text-white">{children}</h2>
+                                ),
+                                h3: ({ children }) => (
+                                  <h3 className="mb-1 mt-3 text-sm font-semibold text-white">{children}</h3>
+                                ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="mb-3 border-l-2 border-[#00ff9c] pl-4 text-slate-400">
+                                    {children}
+                                  </blockquote>
+                                ),
+                                a: ({ href, children }) => (
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#00ff9c] underline underline-offset-2 hover:text-[#00cc7a]"
+                                  >
+                                    {children}
+                                  </a>
+                                ),
+                                // Render footnote references [^1] as superscript badges
+                                sup: ({ children }) => (
+                                  <sup className="ml-0.5 text-[10px] text-[#00ff9c]">{children}</sup>
+                                ),
+                              }}
+                            >
+                              {/* Strip footnote definitions at the bottom since we show sources separately */}
+                              {(message.content || "").replace(/\[\^[^\]]+\]:[^\n]*/g, "").trim()}
+                            </ReactMarkdown>
+                          )}
                         </div>
-                        <div className="mt-2 flex items-center gap-3 text-xs text-[#64748B]">
+                        <div className="mt-2 flex items-center gap-3 text-xs text-slate-400">
                           <span>{formatRelativeTime(message.created_at)}</span>
                           {message.role === "assistant" ? (
                             <span className="inline-flex items-center gap-2">
@@ -242,11 +316,11 @@ export default function Ask() {
 
                 {loading ? (
                   <div className="flex justify-start">
-                    <div className="rounded-3xl border border-slate-200 bg-white px-5 py-4 text-sm text-[#64748B] shadow-sm">
+                    <div className="rounded-3xl border border-[#1e2d1e] bg-[#0d1117] px-5 py-4 text-sm text-slate-400 shadow-sm">
                       <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#2E75B6]" />
-                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#2E75B6] [animation-delay:150ms]" />
-                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#2E75B6] [animation-delay:300ms]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#00ff9c]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#00ff9c] [animation-delay:150ms]" />
+                        <span className="h-2 w-2 animate-bounce rounded-full bg-[#00ff9c] [animation-delay:300ms]" />
                       </div>
                     </div>
                   </div>
@@ -254,9 +328,9 @@ export default function Ask() {
               </div>
             </div>
 
-            <div className="border-t border-slate-200 px-6 py-5">
+            <div className="border-t border-[#1e2d1e] px-6 py-5">
               {error ? (
-                <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="mb-4 rounded-2xl border border-red-900 bg-red-900/30 px-4 py-3 text-sm text-red-400">
                   {error}
                 </div>
               ) : null}
@@ -271,14 +345,14 @@ export default function Ask() {
                       handleAsk();
                     }
                   }}
-                  className="h-12 flex-1 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#2E75B6] focus:ring-4 focus:ring-[#2E75B6]/10"
+                  className="h-12 flex-1 bg-transparent text-white rounded-2xl border border-[#1e2d1e] px-4 outline-none transition focus:border-[#00ff9c] focus:ring-4 focus:ring-[#00ff9c]/10"
                   placeholder="Ask anything about your codebase..."
                 />
                 <button
                   type="button"
                   onClick={handleAsk}
                   disabled={loading || !question.trim()}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-[#2E75B6] px-5 text-sm font-medium text-white transition hover:bg-[#255f93] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl bg-[#00ff9c] px-5 text-sm font-medium text-[#080c10] transition hover:bg-[#00cc7a] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   <ArrowRight className="h-4 w-4" />
                   Send

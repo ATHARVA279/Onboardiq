@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Request
+import logging
 
 from config import Config
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -62,4 +64,61 @@ async def warmup_system():
             "status": "error",
             "message": f"System initialization failed: {str(exc)}",
             "details": "Check database connection and environment variables",
+        }
+
+
+@router.get("/health/embedding-service")
+async def check_embedding_service():
+    """Diagnose embedding service connectivity (Google Generative AI)."""
+    try:
+        import asyncio
+        from Services.embedding_service import get_embedding
+
+        # Test with a simple string
+        test_text = "test"
+        logger.info("[health] Testing embedding service connectivity...")
+        
+        result = await asyncio.wait_for(
+            get_embedding(test_text, mode="query"),
+            timeout=30.0
+        )
+        
+        if result and len(result) > 0:
+            return {
+                "status": "healthy",
+                "service": "embedding",
+                "message": "Successfully connected to Google Generative AI Embedding API",
+                "embedding_dim": len(result),
+            }
+        else:
+            return {
+                "status": "error",
+                "service": "embedding",
+                "message": "Embedding service returned empty result",
+            }
+            
+    except asyncio.TimeoutError:
+        logger.error("[health] Embedding service timeout (network/DNS issue?)")
+        return {
+            "status": "timeout",
+            "service": "embedding",
+            "message": "Timeout contacting embedding service. Check DNS, network, and firewall settings.",
+            "recommendation": "Check: 1) DNS resolution 2) Network connectivity to generativelanguage.googleapis.com 3) Firewall rules 4) Google API key validity",
+        }
+    except Exception as e:
+        error_str = str(e).lower()
+        is_dns = any(kw in error_str for kw in ["dns", "address lookup", "resolve", "hostname"])
+        
+        logger.error(f"[health] Embedding service error: {e}", exc_info=True)
+        return {
+            "status": "unhealthy",
+            "service": "embedding",
+            "error_type": type(e).__name__,
+            "error_message": str(e)[:300],
+            "likely_cause": "DNS resolution failure" if is_dns else "Network or API error",
+            "recommendation": (
+                "For DNS errors: Check your system's DNS configuration and network connectivity. "
+                "Verify you can reach generativelanguage.googleapis.com. "
+                "For API errors: Verify GOOGLE_API_KEY is valid."
+            ) if is_dns else "Check network connectivity and API key configuration",
         }

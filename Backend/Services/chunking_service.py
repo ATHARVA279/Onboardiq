@@ -7,7 +7,12 @@ from typing import Dict, List, Optional
 JS_TS_BOUNDARY = re.compile(
     r"^(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+(\w+)|"
     r"^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(|"
-    r"^(?:export\s+)?(?:default\s+)?class\s+(\w+)",
+    r"^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*:\s*\w[\w<>\[\], |&]*\s*=\s*(?:async\s+)?\(|"
+    r"^(?:export\s+)?(?:default\s+)?class\s+(\w+)|"
+    r"^(?:export\s+)?interface\s+(\w+)|"
+    r"^(?:export\s+)?type\s+(\w+)\s*=|"
+    r"^(?:public|private|protected|static|abstract|override|async)(?:\s+(?:public|private|protected|static|abstract|override|async))*\s+\w[\w<>\[\]]*\s+\w+\s*\([^)]*\)\s*[:{]|"
+    r"^\s*(?:public|private|protected|async)\s+\w+\s*\([^)]*\)\s*[:{]",
     re.MULTILINE,
 )
 
@@ -125,7 +130,7 @@ def _chunk_js_ts(content: str, language: str) -> List[Dict]:
 
     lines = content.splitlines()
     line_offsets = _compute_line_offsets(lines)
-    chunks = []
+    raw_chunks = []
 
     for index, match in enumerate(matches):
         start = match.start()
@@ -133,14 +138,47 @@ def _chunk_js_ts(content: str, language: str) -> List[Dict]:
         snippet = content[start:end].strip()
         chunk_name = next((group for group in match.groups() if group), None)
         header = match.group(0)
-        chunk_type = "class" if "class " in header else "function"
+        chunk_type = (
+            "class" if "class " in header
+            else "interface" if "interface " in header
+            else "type" if re.match(r"^(?:export\s+)?type\s+", header)
+            else "function"
+        )
         start_line = _offset_to_line_number(start, line_offsets)
         end_line = _offset_to_line_number(end, line_offsets)
-        chunks.append(
+        raw_chunks.append(
             _single_chunk(snippet, chunk_type, chunk_name, start_line, end_line, language)
         )
 
-    return chunks
+    # Merge chunks shorter than 100 characters into the next chunk
+    MIN_CHUNK_CHARS = 100
+    merged: List[Dict] = []
+    pending: Optional[Dict] = None
+
+    for chunk in raw_chunks:
+        if pending is not None:
+            # Merge pending into current chunk
+            combined_content = pending["content"] + "\n" + chunk["content"]
+            chunk = _single_chunk(
+                combined_content,
+                chunk["chunk_type"],
+                chunk["chunk_name"] or pending["chunk_name"],
+                pending["start_line"],
+                chunk["end_line"],
+                language,
+            )
+            pending = None
+
+        if len(chunk["content"]) < MIN_CHUNK_CHARS:
+            pending = chunk
+        else:
+            merged.append(chunk)
+
+    # If the last chunk is still pending (too small), append it anyway
+    if pending is not None:
+        merged.append(pending)
+
+    return merged or _chunk_plaintext(content, language)
 
 
 def _chunk_java(content: str, language: str) -> List[Dict]:

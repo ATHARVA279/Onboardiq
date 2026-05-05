@@ -15,8 +15,9 @@ class Config:
     FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "luma-362fc")
 
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/gemini-embedding-001")
 
+    VECTOR_INDEX_NAME = os.getenv("VECTOR_INDEX_NAME", "vector_index")
     DEFAULT_CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "400"))
     DEFAULT_CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
 

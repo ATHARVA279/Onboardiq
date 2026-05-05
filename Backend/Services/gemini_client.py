@@ -55,3 +55,50 @@ Answer:
         return f"Unable to answer due to an error. Please try again. Error: {str(e)}"
     
     return raw.strip()
+
+async def chat_completion(system_prompt: str, messages: List[dict], context: str) -> str:
+    """Calls Gemini using system_instruction and proper conversational history."""
+    
+    import asyncio
+    
+    # In order to properly structure history for the Gemini API:
+    # 1. We instantiate the model with the system_instruction.
+    # 2. We construct a ChatSession with the history.
+    # 3. We send the latest message (with context) as the new message.
+    
+    model = genai.GenerativeModel(
+        MODEL,
+        system_instruction=system_prompt,
+        generation_config=genai.GenerationConfig(
+            temperature=0.2,
+            max_output_tokens=2048,
+        )
+    )
+    
+    # Separate the latest message from history
+    if not messages:
+        return ""
+        
+    latest_message = messages[-1]["content"]
+    history_msgs = []
+    
+    # Gemini ChatSession format requires parts. Let's build it safely.
+    for msg in messages[:-1]:
+        role = "user" if msg.get("role") == "user" else "model"
+        history_msgs.append({
+            "role": role,
+            "parts": [msg.get("content", "")]
+        })
+        
+    # Start chat with history
+    chat = model.start_chat(history=history_msgs)
+    
+    # The final prompt should include the context
+    final_prompt = f"{context}\n\nQuestion: {latest_message}"
+    
+    try:
+        response = await asyncio.to_thread(chat.send_message, final_prompt)
+        return response.text if hasattr(response, "text") else str(response)
+    except Exception as e:
+        print(f"⚠️ chat_completion error: {str(e)}")
+        raise e

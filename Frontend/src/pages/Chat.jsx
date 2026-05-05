@@ -4,22 +4,65 @@ import { toast } from 'react-toastify';
 import { PulseLoader } from 'react-spinners';
 import api from "../api/backend";
 import NoContentMessage from "../components/NoContentMessage";
-import { hasExtractedContent, getExtractedDocumentId } from "../utils/contentCheck";
 import PageLayout from "../components/layout/PageLayout";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
+import { useWorkspace } from "../context/WorkspaceContext";
 
 export default function Chat() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
   const messagesEndRef = useRef(null);
+  const { workspace } = useWorkspace();
 
-  const documentId = getExtractedDocumentId();
+  const workspaceId = workspace?._id;
 
-  if (!hasExtractedContent() || !documentId) {
+  // Generate or retrieve session ID from localStorage
+  useEffect(() => {
+    if (!workspaceId) return;
+    
+    const storageKey = `chat_session_${workspaceId}`;
+    let storedSessionId = localStorage.getItem(storageKey);
+    
+    if (!storedSessionId) {
+      storedSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem(storageKey, storedSessionId);
+    }
+    
+    setSessionId(storedSessionId);
+  }, [workspaceId]);
+
+  // Load chat history when session is ready
+  useEffect(() => {
+    if (!workspaceId || !sessionId) return;
+    
+    const loadHistory = async () => {
+      try {
+        const res = await api.get(`/workspace/${workspaceId}/sessions/${sessionId}`);
+        if (res.data.messages && res.data.messages.length > 0) {
+          const formattedMessages = res.data.messages.map(msg => ({
+            role: msg.role === "model" ? "ai" : msg.role,
+            text: msg.content,
+            sources: msg.sources?.length || 0
+          }));
+          setMessages(formattedMessages);
+        }
+      } catch (err) {
+        console.log("No existing chat history for this session");
+      }
+    };
+    loadHistory();
+  }, [workspaceId, sessionId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  if (!workspace || !workspaceId) {
     return (
       <PageLayout>
         <NoContentMessage feature="the Chat feature" />
@@ -27,30 +70,8 @@ export default function Chat() {
     );
   }
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const res = await api.get(`/chat/history/${documentId}`);
-        if (res.data.history && res.data.history.length > 0) {
-          const formattedMessages = res.data.history.map(msg => ({
-            role: msg.role === "assistant" ? "ai" : msg.role,
-            text: msg.content
-          }));
-          setMessages(formattedMessages);
-        }
-      } catch (err) {
-        console.log("No existing chat history for this document");
-      }
-    };
-    loadHistory();
-  }, [documentId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !sessionId) return;
 
     const userMessage = { role: "user", text: input };
     setMessages(prev => [...prev, userMessage]);
@@ -58,17 +79,18 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      const res = await api.post("/chat", {
+      const res = await api.post(`/workspace/${workspaceId}/ask`, {
+        workspace_id: workspaceId,
         question: input,
-        top_k: 4,
-        document_id: documentId
+        session_id: sessionId,
+        source_ids: null
       });
 
       const aiMessage = {
         role: "ai",
         text: res.data.answer,
-        sources: res.data.sources_used,
-        enhanced: res.data.query_enhanced
+        sources: res.data.sources_cited?.length || 0,
+        confidence: res.data.confidence_score
       };
       setMessages(prev => [...prev, aiMessage]);
     } catch (err) {
@@ -86,9 +108,18 @@ export default function Chat() {
   };
 
   const clearChat = async () => {
+    if (!sessionId) return;
+    
     try {
-      await api.delete(`/chat/session/${documentId}`);
+      await api.delete(`/workspace/${workspaceId}/sessions/${sessionId}`);
       setMessages([]);
+      
+      // Generate new session ID
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const storageKey = `chat_session_${workspaceId}`;
+      localStorage.setItem(storageKey, newSessionId);
+      setSessionId(newSessionId);
+      
       toast.success("Chat cleared!");
     } catch (err) {
       console.error(err);
@@ -106,7 +137,7 @@ export default function Chat() {
               <MessageCircle className="w-6 h-6 text-emerald-500" />
               Chat Assistant
             </h1>
-            <p className="text-sm text-zinc-400">Ask questions about your document</p>
+            <p className="text-sm text-zinc-400">Ask questions about your workspace</p>
           </div>
 
           <Button variant="ghost" size="sm" onClick={clearChat} className="text-zinc-500 hover:text-red-400">
@@ -125,7 +156,7 @@ export default function Chat() {
                 </div>
                 <h3 className="text-lg font-medium text-zinc-300 mb-2">How can I help you?</h3>
                 <p className="text-sm max-w-xs mx-auto">
-                  Ask me to summarize the document, explain complex concepts, or find specific details.
+                  Ask me to summarize the codebase, explain complex concepts, or find specific details.
                 </p>
               </div>
             )}
@@ -152,11 +183,13 @@ export default function Chat() {
 
                   {msg.role === "ai" && (
                     <div className="flex gap-2 pl-1">
-                      {msg.enhanced && (
-                        <Badge variant="green" className="text-[10px] px-1.5 py-0">Context-Aware</Badge>
-                      )}
                       {msg.sources > 0 && (
                         <Badge variant="default" className="text-[10px] px-1.5 py-0">{msg.sources} Sources</Badge>
+                      )}
+                      {msg.confidence !== undefined && (
+                        <Badge variant="green" className="text-[10px] px-1.5 py-0">
+                          {Math.round(msg.confidence * 100)}% Confidence
+                        </Badge>
                       )}
                     </div>
                   )}

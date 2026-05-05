@@ -70,9 +70,21 @@ class WorkspaceResponse(ResponseModel):
     health_score: float = 100.0
 
 
+class SourceCitationResponse(ResponseModel):
+    chunk_id: str
+    file_path: Optional[str] = None
+    chunk_name: Optional[str] = None
+    source_type: str
+    start_line: Optional[int] = None
+    end_line: Optional[int] = None
+    similarity_score: float
+    relevance: Literal['cited', 'retrieved']
+
+
 class ChatResponse(ResponseModel):
-    answer_text: str
-    sources: List[ChunkResponse]
+    answer_text_clean: str = Field(alias="answer", default="")
+    sources_cited: List[SourceCitationResponse]
+    all_retrieved: List[SourceCitationResponse] = Field(alias="all_retrieved_chunks", default_factory=list)
     confidence_score: float = Field(..., ge=0, le=100)
     session_id: str
 

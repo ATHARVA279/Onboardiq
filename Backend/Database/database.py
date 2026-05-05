@@ -24,7 +24,13 @@ async def get_db():
     global workspaces_collection, chunks_collection, questions_collection
     global jobs_collection, sessions_collection, users_collection
     if client is None:
-        client = AsyncIOMotorClient(Config.MONGODB_URI)
+        client = AsyncIOMotorClient(
+            Config.MONGODB_URI,
+            tlsAllowInvalidCertificates=True,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=10000,
+            socketTimeoutMS=10000
+        )
         db = client[Config.DB_NAME]
         workspaces_collection = db.workspaces
         chunks_collection = db.chunks

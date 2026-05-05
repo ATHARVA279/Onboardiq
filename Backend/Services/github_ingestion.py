@@ -332,6 +332,7 @@ async def process_single_file(
                 "chunk_type": chunk.get("chunk_type"),
                 "language": chunk.get("language"),
                 "chunk_name": chunk.get("chunk_name"),
+                "mode": "passage",
             }
             for chunk in chunks
         ]

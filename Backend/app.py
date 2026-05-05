@@ -8,7 +8,7 @@ from Middleware.error_handlers import (
     general_exception_handler,
     llm_api_error_handler,
 )
-from Routes import auth, ingest, warmup
+from Routes import auth, ingest, warmup, chat
 from config import Config
 
 app = FastAPI(title=Config.APP_TITLE)
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(warmup.router, tags=["system"])
 app.include_router(auth.router, tags=["auth"], prefix="/auth")
 app.include_router(ingest.router, tags=["ingest"], prefix="/api")
+app.include_router(chat.router, tags=["chat"], prefix="/api")
 
 
 @app.get("/")
