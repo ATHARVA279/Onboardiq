@@ -9,6 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./api/firebaseConfig";
+import Landing from "./pages/Landing";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
 import Auth from "./pages/Auth";
@@ -38,9 +39,10 @@ function App() {
     <Router>
       <div className="min-h-screen bg-black">
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route
-            path="/"
+            path="/app"
             element={
               <ProtectedRoute>
                 <Dashboard />

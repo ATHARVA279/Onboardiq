@@ -33,7 +33,7 @@ export default function Navbar() {
     const isActive = (path) => location.pathname === path;
 
     const navItems = [
-        { path: "/", label: "Dashboard", Icon: LayoutDashboard },
+        { path: "/app", label: "Dashboard", Icon: LayoutDashboard },
         { path: "/new", label: "Add Course", Icon: BookOpen },
         { path: "/chat", label: "Chat", Icon: MessageCircle },
     ];
@@ -43,7 +43,7 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2 group">
+                    <Link to="/app" className="flex items-center gap-2 group">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all">
                             <Sparkles className="w-4 h-4 text-white" strokeWidth={2.5} />
                         </div>

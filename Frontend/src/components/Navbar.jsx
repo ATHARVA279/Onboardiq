@@ -30,7 +30,7 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   const navItems = [
-    { path: "/", label: "Library", Icon: Home },
+    { path: "/app", label: "Library", Icon: Home },
     { path: "/new", label: "Add Course", Icon: BookOpen },
     { path: "/chat", label: "Chat", Icon: MessageCircle },
   ];
@@ -40,7 +40,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/app" className="flex items-center gap-3 group">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
               <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-orange-600 to-red-600 flex items-center justify-center transform group-hover:scale-110 transition-transform">

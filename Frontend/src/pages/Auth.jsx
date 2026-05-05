@@ -21,7 +21,7 @@ const Auth = () => {
       setLoading(true);
       await signInWithPopup(auth, googleProvider);
       toast.success("Logged in successfully!");
-      navigate("/");
+      navigate("/app");
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -40,7 +40,7 @@ const Auth = () => {
         await createUserWithEmailAndPassword(auth, email, password);
         toast.success("Account created! Welcome!");
       }
-      navigate("/");
+      navigate("/app");
     } catch (error) {
       toast.error(error.message);
     } finally {

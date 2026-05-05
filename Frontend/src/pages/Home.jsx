@@ -61,7 +61,7 @@ export default function Home() {
           console.error("Failed to load document", e);
           toast.error("Failed to load document");
           setLoading(false);
-          navigate("/");
+          navigate("/app");
         }
       };
       loadDocument();

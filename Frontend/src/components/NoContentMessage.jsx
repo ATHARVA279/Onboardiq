@@ -21,10 +21,10 @@ export default function NoContentMessage({ feature = "this feature" }) {
             <p className="text-zinc-500 text-sm py-4">
               Extract content from any article, documentation, or educational website to unlock all AI-powered learning features.
             </p>
-            <Link to="/">
+            <Link to="/new">
               <Button variant="gradient" size="lg" className="w-full sm:w-auto">
                 <Home className="w-5 h-5 mr-2" />
-                Go to Home & Extract Content
+                Go to Extract Content
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -32,11 +32,11 @@ export default function NoContentMessage({ feature = "this feature" }) {
         </Card>
 
         <div className="mt-8 text-zinc-500 text-sm">
-          <p className="mb-2 font-medium text-zinc-400">💡 Quick Start:</p>
+              <p className="mb-2 font-medium text-zinc-400">Quick Start:</p>
           <ol className="text-left max-w-xs mx-auto space-y-2">
             <li className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-xs">1</span>
-              Go to Home page
+              Go to extract page
             </li>
             <li className="flex items-center gap-2">
               <span className="w-5 h-5 rounded-full bg-zinc-800 flex items-center justify-center text-xs">2</span>
