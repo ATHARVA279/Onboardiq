@@ -1,6 +1,6 @@
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
 
@@ -12,45 +12,94 @@ if not MONGODB_URL:
 client = AsyncIOMotorClient(MONGODB_URL)
 db = client.luma_db
 
+workspaces_collection = db.workspaces
+chunks_collection = db.chunks
+questions_collection = db.questions
+jobs_collection = db.jobs
+sessions_collection = db.sessions
+users_collection = db.users
+
 _indexes_created = False
+_vector_index_checked = False
+
 
 async def get_db():
-    global _indexes_created
+    global _indexes_created, _vector_index_checked
     if not _indexes_created:
         await create_indexes()
         _indexes_created = True
+    if not _vector_index_checked:
+        await init_vector_index()
+        _vector_index_checked = True
     return db
 
-async def create_indexes():
-    """Create indexes for all collections to optimize query performance."""
+
+async def init_vector_index():
+    """Create the Atlas vector search index for chunks.embedding if needed."""
+    index_name = "chunks_embedding_vector_index"
+
     try:
-        await db.jobs.create_index("user_id")
-        await db.jobs.create_index([("user_id", 1), ("type", 1)])
-        await db.jobs.create_index("created_at", expireAfterSeconds=86400)  
-        
-        await db.chat_sessions.create_index("user_id")
-        await db.chat_sessions.create_index([("user_id", 1), ("document_id", 1)])
-        await db.chat_sessions.create_index("last_active")
-        
-        await db.documents.create_index("user_id")
-        await db.documents.create_index([("user_id", 1), ("url", 1)], unique=True)
-        await db.documents.create_index([("user_id", 1), ("created_at", -1)])
-        
-        await db.document_chunks.create_index([("document_id", 1), ("chunk_index", 1)])
-        await db.document_chunks.create_index("user_id")
-        
-        await db.bm25_tokens.create_index([("user_id", 1), ("document_id", 1)])
-        await db.bm25_tokens.create_index([("user_id", 1), ("method", 1)])
-        
-        await db.quiz_results.create_index("user_id")
-        await db.document_quizzes.create_index([("user_id", 1), ("document_id", 1)])
-        await db.document_quizzes.create_index([("user_id", 1), ("document_id", 1), ("topic_key", 1)])
-        
-        await db.concept_notes.create_index([("user_id", 1), ("document_id", 1)])
-        await db.concept_notes.create_index([("user_id", 1), ("document_id", 1), ("concept_name", 1)])
-        
-        await db.users.create_index("email")
-        
+        try:
+            existing_indexes = await chunks_collection.list_search_indexes().to_list(length=None)
+        except Exception as exc:
+            print(f"Vector index availability warning: {exc}")
+            return
+
+        for existing in existing_indexes:
+            if existing.get("name") == index_name:
+                return
+
+        definition = {
+            "fields": [
+                {
+                    "type": "vector",
+                    "path": "embedding",
+                    "numDimensions": 768,
+                    "similarity": "cosine",
+                }
+            ]
+        }
+
+        try:
+            await chunks_collection.create_search_index(
+                {
+                    "name": index_name,
+                    "type": "vectorSearch",
+                    "definition": definition,
+                }
+            )
+        except TypeError:
+            await db.command(
+                {
+                    "createSearchIndexes": chunks_collection.name,
+                    "indexes": [
+                        {
+                            "name": index_name,
+                            "type": "vectorSearch",
+                            "definition": definition,
+                        }
+                    ],
+                }
+            )
+        print("MongoDB Atlas vector index created successfully")
+    except Exception as exc:
+        print(f"Vector index creation warning: {exc}")
+
+
+async def create_indexes():
+    """Create indexes for the OnboardIQ collections."""
+    try:
+        await chunks_collection.create_index("workspace_id")
+        await chunks_collection.create_index("source_id")
+        await chunks_collection.create_index("is_stale")
+        await chunks_collection.create_index("source_type")
+
+        await questions_collection.create_index("workspace_id")
+        await questions_collection.create_index("created_at")
+
+        await jobs_collection.create_index("workspace_id")
+        await jobs_collection.create_index("status")
+
         print("MongoDB indexes created successfully")
-    except Exception as e:
-        print(f"Index creation warning (may already exist): {e}")
+    except Exception as exc:
+        print(f"Index creation warning (may already exist): {exc}")

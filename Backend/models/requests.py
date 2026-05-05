@@ -1,58 +1,87 @@
-from pydantic import BaseModel, Field, validator, HttpUrl
-from typing import List, Optional
-import ipaddress
+from typing import Optional
 from urllib.parse import urlparse
 
-class ExtractRequest(BaseModel):
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+
+
+def _validate_object_id_string(value: str, field_name: str) -> str:
+    candidate = value.strip()
+    if len(candidate) != 24:
+        raise ValueError(f"{field_name} must be a 24-character MongoDB ObjectId string")
+    try:
+        int(candidate, 16)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a valid MongoDB ObjectId string") from exc
+    return candidate
+
+
+class RequestModel(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+
+class ConnectGithubRequest(RequestModel):
+    workspace_id: str = Field(..., description="Workspace ObjectId")
+    repo_url: str = Field(..., min_length=1, max_length=500)
+    github_token: Optional[str] = Field(default=None, min_length=1, max_length=5000)
+
+    @field_validator("workspace_id")
+    @classmethod
+    def validate_workspace_id(cls, value: str) -> str:
+        return _validate_object_id_string(value, "workspace_id")
+
+    @field_validator("repo_url")
+    @classmethod
+    def validate_github_url(cls, value: str) -> str:
+        parsed = urlparse(value)
+        if parsed.scheme != "https" or parsed.netloc.lower() != "github.com":
+            raise ValueError("repo_url must be a valid GitHub URL")
+
+        path_parts = [part for part in parsed.path.strip("/").split("/") if part]
+        if len(path_parts) < 2:
+            raise ValueError("repo_url must include both owner and repository name")
+
+        return value
+
+
+class ConnectUrlRequest(RequestModel):
+    workspace_id: str = Field(..., description="Workspace ObjectId")
     url: HttpUrl
-    use_advanced_rag: bool = False
+    display_name: Optional[str] = Field(default=None, min_length=1, max_length=200)
 
-    @validator('url')
-    def validate_url_security(cls, v):
-        url_str = str(v)
-        parsed = urlparse(url_str)
-        
-        if parsed.scheme not in ('http', 'https'):
-            raise ValueError('URL must use http or https scheme')
-            
-        hostname = parsed.hostname
-        if not hostname:
-            raise ValueError('Invalid hostname')
-            
-        if hostname in ('localhost', '127.0.0.1', '::1'):
-            raise ValueError('Localhost access is restricted')
-            
-        try:
-            ip = ipaddress.ip_address(hostname)
-            if ip.is_private:
-                raise ValueError('Private IP access is restricted')
-        except ValueError:
-            pass
-            
-        return v
+    @field_validator("workspace_id")
+    @classmethod
+    def validate_workspace_id(cls, value: str) -> str:
+        return _validate_object_id_string(value, "workspace_id")
 
-class ChatRequest(BaseModel):
-    question: str = Field(..., min_length=1, max_length=1000)
-    top_k: int = Field(default=4, ge=1, le=10)
-    document_id: str = Field(..., min_length=1)
 
-class GenerateNotesRequest(BaseModel):
-    topic: str = Field(..., min_length=1, max_length=200)
-    content: Optional[str] = None
-    use_stored_content: bool = False
-    document_id: Optional[str] = None  
+class ChatRequest(RequestModel):
+    workspace_id: str = Field(..., description="Workspace ObjectId")
+    session_id: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    question: str = Field(..., min_length=3, max_length=1000)
 
-    @validator('content')
-    def validate_content_dependency(cls, v, values):
-        if not values.get('use_stored_content') and not v:
-            raise ValueError('Content must be provided if use_stored_content is False')
-        return v
+    @field_validator("workspace_id")
+    @classmethod
+    def validate_workspace_id(cls, value: str) -> str:
+        return _validate_object_id_string(value, "workspace_id")
 
-class SummaryRequest(BaseModel):
-    content: str = Field(..., min_length=1, max_length=50000)
-    max_sentences: int = Field(default=3, ge=1, le=10)
 
-class GenerateQuizRequest(BaseModel):
-    count: int = Field(default=10, ge=5, le=20)
-    topics: List[str] = Field(..., min_items=1, max_items=5)
-    document_id: Optional[str] = None  
+class CreateWorkspaceRequest(RequestModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+class InviteMemberRequest(RequestModel):
+    workspace_id: str = Field(..., description="Workspace ObjectId")
+    email: str = Field(..., min_length=3, max_length=320)
+
+    @field_validator("workspace_id")
+    @classmethod
+    def validate_workspace_id(cls, value: str) -> str:
+        return _validate_object_id_string(value, "workspace_id")
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        candidate = value.strip()
+        if "@" not in candidate or candidate.startswith("@") or candidate.endswith("@"):
+            raise ValueError("email must be a valid email address")
+        return candidate

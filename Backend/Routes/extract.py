@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from Middleware.auth import get_current_user
-from models.requests import ExtractRequest
+from models.requests import ConnectUrlRequest
 
 router = APIRouter()
 
 @router.post("/extract")
-async def extract_url(extract_req: ExtractRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+async def extract_url(extract_req: ConnectUrlRequest, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
     return {
         "job_id": "placeholder-extract-job",
         "status": "pending",
@@ -29,4 +29,3 @@ async def list_jobs(current_user: dict = Depends(get_current_user)):
 @router.delete("/clear-store")
 async def clear_database(current_user: dict = Depends(get_current_user)):
     return {"message": "Extraction store placeholder response."}
-
