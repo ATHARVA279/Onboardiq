@@ -505,8 +505,8 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="how-it-works" className="oi-section bg-[rgba(17,24,39,0.96)]">
-          <div className="oi-container">
+        <section id="how-it-works" className="oi-section oi-surface-blend">
+          <div className="oi-container relative z-10">
             <div className="max-w-3xl">
               <h2 className="font-display text-4xl font-semibold text-[var(--color-text)] md:text-[40px]">
                 From Question to Cited Answer in Seconds
