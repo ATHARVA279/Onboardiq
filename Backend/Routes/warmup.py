@@ -24,7 +24,7 @@ async def warmup_system():
         
         return {
             "status": "ready",
-            "message": "Luma - Onboarding intelligence systems operational",
+            "message": "Onboardiq - Onboarding intelligence systems operational",
             "database": {
                 "status": "connected",
                 "documents": doc_count

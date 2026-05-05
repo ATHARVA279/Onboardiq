@@ -35,4 +35,4 @@ app.include_router(auth.router, tags=["auth"], prefix="/auth")
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "Luma backend running with RAG and ML support"}
+    return {"status": "ok", "message": "Onboardiq backend running with onboarding intelligence support"}

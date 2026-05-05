@@ -48,7 +48,7 @@ export default function Navbar() {
                             <Sparkles className="w-4 h-4 text-white" strokeWidth={2.5} />
                         </div>
                         <span className="font-bold text-lg tracking-tight text-zinc-100">
-                            Luma
+                            Onboardiq
                         </span>
                         <Badge variant="green" className="ml-1 hidden sm:inline-flex">Beta</Badge>
                     </Link>

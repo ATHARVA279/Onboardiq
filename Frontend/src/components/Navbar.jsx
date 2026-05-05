@@ -49,9 +49,9 @@ export default function Navbar() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-orange-400 bg-clip-text text-transparent">
-                Luma
+                Onboardiq
               </h1>
-              <p className="text-xs text-slate-500 -mt-1">AI Learning Platform</p>
+              <p className="text-xs text-slate-500 -mt-1">Developer Onboarding Intelligence</p>
             </div>
           </Link>
 
