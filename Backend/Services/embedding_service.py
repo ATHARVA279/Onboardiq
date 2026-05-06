@@ -9,6 +9,8 @@ import google.api_core.exceptions
 _genai = None
 logger = logging.getLogger(__name__)
 
+embedding_semaphore = asyncio.Semaphore(5)
+
 # Retry configuration for different error types
 MAX_RETRIES_DNS = 5  # More retries for transient DNS issues
 MAX_RETRIES_SERVICE = 3  # Standard retries for service errors
@@ -138,59 +140,69 @@ async def get_embeddings_batch(items: List[Dict]) -> List[List[float]]:
     max_retries = MAX_RETRIES_DNS  # Default to higher retries for DNS issues
     attempt = 0
 
-    while attempt < max_retries:
-        try:
-            logger.debug(f"[embedding] Attempt {attempt + 1}/{max_retries} for {len(prepared_texts)} texts")
-            
-            result = await asyncio.to_thread(
-                genai.embed_content,
-                model=Config.EMBEDDING_MODEL,
-                content=prepared_texts,
-                output_dimensionality=768,
-            )
+    async with embedding_semaphore:
+        while attempt < max_retries:
+            try:
+                logger.debug(f"[embedding] Attempt {attempt + 1}/{max_retries} for {len(prepared_texts)} texts")
+                
+                result = await asyncio.to_thread(
+                    genai.embed_content,
+                    model=Config.EMBEDDING_MODEL,
+                    content=prepared_texts,
+                    output_dimensionality=768,
+                )
 
-            embeddings = []
-            if isinstance(result, dict) and "embedding" in result:
-                vectors = result["embedding"]
-                if isinstance(vectors, list) and len(vectors) > 0 and isinstance(vectors[0], list):
-                    embeddings = vectors
+                embeddings = []
+                if isinstance(result, dict) and "embedding" in result:
+                    vectors = result["embedding"]
+                    if isinstance(vectors, list) and len(vectors) > 0 and isinstance(vectors[0], list):
+                        embeddings = vectors
+                    else:
+                        embeddings = [vectors]
+                
+                logger.debug(f"[embedding] Successfully embedded {len(embeddings)} vectors")
+                return embeddings
+
+            except Exception as exc:
+                last_error = exc
+                is_retryable = _is_retryable_error(exc)
+                is_dns = _is_dns_error(exc)
+                
+                # Also retry on quota/rate limits
+                error_str = str(exc).lower()
+                is_rate_limit = 'quota' in error_str or 'rate' in error_str or '429' in error_str
+                if is_rate_limit:
+                    is_retryable = True
+                
+                # Log the error with appropriate level
+                log_level = logging.WARNING if is_retryable else logging.ERROR
+                logger.log(
+                    log_level,
+                    f"[embedding] Error on attempt {attempt + 1}/{max_retries} "
+                    f"(retryable={is_retryable}, dns={is_dns}, rate_limit={is_rate_limit}): {type(exc).__name__}: {str(exc)[:200]}"
+                )
+                
+                # If not retryable, fail immediately
+                if not is_retryable:
+                    logger.error(f"[embedding] Non-retryable error, failing immediately: {exc}")
+                    raise
+                
+                attempt += 1
+                if attempt < max_retries:
+                    # Exponential backoff with jitter
+                    if is_rate_limit:
+                        backoff = min(2 ** attempt, MAX_BACKOFF)
+                    else:
+                        backoff = min(INITIAL_BACKOFF * (2 ** (attempt - 1)), MAX_BACKOFF)
+                    logger.info(f"[embedding] Retrying after {backoff:.1f}s...")
+                    await asyncio.sleep(backoff)
                 else:
-                    embeddings = [vectors]
-            
-            logger.debug(f"[embedding] Successfully embedded {len(embeddings)} vectors")
-            return embeddings
+                    logger.error(f"[embedding] Max retries ({max_retries}) exceeded after {attempt} attempts")
 
-        except Exception as exc:
-            last_error = exc
-            is_retryable = _is_retryable_error(exc)
-            is_dns = _is_dns_error(exc)
-            
-            # Log the error with appropriate level
-            log_level = logging.WARNING if is_retryable else logging.ERROR
-            logger.log(
-                log_level,
-                f"[embedding] Error on attempt {attempt + 1}/{max_retries} "
-                f"(retryable={is_retryable}, dns={is_dns}): {type(exc).__name__}: {str(exc)[:200]}"
-            )
-            
-            # If not retryable, fail immediately
-            if not is_retryable:
-                logger.error(f"[embedding] Non-retryable error, failing immediately: {exc}")
-                raise
-            
-            attempt += 1
-            if attempt < max_retries:
-                # Exponential backoff with jitter
-                backoff = min(INITIAL_BACKOFF * (2 ** (attempt - 1)), MAX_BACKOFF)
-                logger.info(f"[embedding] Retrying after {backoff:.1f}s...")
-                await asyncio.sleep(backoff)
-            else:
-                logger.error(f"[embedding] Max retries ({max_retries}) exceeded after {attempt} attempts")
-
-    # All retries exhausted
-    error_msg = (
-        f"Failed to get embeddings after {max_retries} attempts. "
-        f"Last error: {type(last_error).__name__}: {str(last_error)[:300]}"
-    )
-    logger.error(f"[embedding] {error_msg}")
-    raise RuntimeError(error_msg) from last_error
+        # All retries exhausted
+        error_msg = (
+            f"Failed to get embeddings after {max_retries} attempts. "
+            f"Last error: {type(last_error).__name__}: {str(last_error)[:300]}"
+        )
+        logger.error(f"[embedding] {error_msg}")
+        raise RuntimeError(error_msg) from last_error

@@ -5,7 +5,9 @@ from config import Config
 
 genai.configure(api_key=Config.GEMINI_API_KEY)
 
-MODEL = Config.GEMINI_MODEL
+# For chat completions fallback only — 1.5-flash is more quota-friendly
+# Embeddings (in embedding_service.py) use Config.EMBEDDING_MODEL independently
+MODEL = "gemini-1.5-flash"
 
 def _call_gemini_direct(model, prompt: str) -> str:
     response = model.generate_content(prompt)

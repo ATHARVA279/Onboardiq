@@ -74,9 +74,21 @@ async def create_workspace(
     current_user: dict = Depends(get_current_user),
 ):
     db = await get_db()
+    normalized_name = request.name.strip()
+    if not normalized_name:
+        raise HTTPException(status_code=400, detail="Workspace name cannot be empty")
+
+    # Case-insensitive duplicate check for this user
+    existing = await db.workspaces.find_one({
+        "owner_uid": current_user["uid"],
+        "name": {"$regex": f"^{normalized_name}$", "$options": "i"}
+    })
+    if existing:
+        raise HTTPException(status_code=409, detail="You already have a workspace with this name")
+
     now = datetime.now(timezone.utc)
     workspace = {
-        "name": request.name,
+        "name": normalized_name,
         "owner_uid": current_user["uid"],
         "members": [current_user["uid"]],
         "sources": [],

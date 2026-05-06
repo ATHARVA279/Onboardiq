@@ -12,7 +12,7 @@ from Middleware.auth import get_current_user
 from models.requests import ChatRequest
 from models.responses import ChatResponse
 from Services.retrieval_service import embed_query, parallel_retrieval, rerank
-from Services.answer_service import generate_answer, parse_citations, calculate_confidence
+from Services.answer_service import generate_answer, parse_citations, calculate_confidence, clean_llm_response
 from Services.github_ingestion import connect_and_ingest_repo
 
 logger = logging.getLogger(__name__)
@@ -103,13 +103,26 @@ async def ask_question(workspace_id: str, request: ChatRequest, current_user: di
         # Generate Answer
         raw_answer = await generate_answer(request.question, reranked_chunks, session_messages)
     except Exception as e:
-        raise HTTPException(
+        logger.error(f"[chat] Both AI providers failed: {e}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
             status_code=503,
-            detail="The AI service is temporarily unavailable. Please try again later."
+            content={
+                "error": "ai_unavailable",
+                "message": "Both AI providers are temporarily unavailable. This is usually due to rate limits. Please wait 30 seconds and try again.",
+                "retry_after_seconds": 30,
+            },
         )
         
+    logger.debug(f"RAW LLM RESPONSE:\n{raw_answer}")
+
+    # Clean LLM formatting issues (single-word fenced blocks, orphaned punctuation)
+    cleaned_answer = clean_llm_response(raw_answer)
+
+    logger.debug(f"AFTER CLEAN + PARSE CITATIONS:\n{cleaned_answer}")
+
     # Parse Citations
-    parsed_results = parse_citations(raw_answer, reranked_chunks)
+    parsed_results = parse_citations(cleaned_answer, reranked_chunks)
     
     # Calculate Confidence
     confidence = calculate_confidence(
@@ -451,3 +464,116 @@ async def reindex_workspace(
         "deleted_chunks": deleted_count,
         "reindex_queued_for_sources": queued,
     }
+
+# ---------------------------------------------------------------------------
+# Chat session management endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/chat/sessions/{workspace_id}")
+async def list_chat_sessions(workspace_id: str, current_user: dict = Depends(get_current_user)):
+    """Return all non-empty sessions for this workspace + user, sorted by updated_at desc."""
+    user_uid = current_user.get("uid")
+    db = await get_db()
+
+    workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    if user_uid not in workspace.get("members", []) and workspace.get("owner_uid") != user_uid:
+        raise HTTPException(status_code=403, detail="Not a member of this workspace")
+
+    cursor = db.sessions.find(
+        {"workspace_id": workspace_id, "user_uid": user_uid}
+    ).sort("updated_at", -1)
+    sessions = await cursor.to_list(length=200)
+
+    result = []
+    for s in sessions:
+        msgs = s.get("messages", [])
+        if not msgs:
+            continue
+        # Find first user message for preview
+        first_user_msg = next((m for m in msgs if m.get("role") == "user"), None)
+        preview = (first_user_msg.get("content", "") if first_user_msg else "")[:60]
+        result.append({
+            "session_id": s["session_id"],
+            "preview": preview or "New Chat",
+            "message_count": len(msgs),
+            "created_at": s.get("created_at"),
+            "updated_at": s.get("updated_at"),
+        })
+
+    return {"sessions": result}
+
+
+@router.post("/chat/session/{workspace_id}/new")
+async def create_new_session(workspace_id: str, current_user: dict = Depends(get_current_user)):
+    """Create an empty session doc and return its session_id."""
+    user_uid = current_user.get("uid")
+    db = await get_db()
+
+    workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    if user_uid not in workspace.get("members", []) and workspace.get("owner_uid") != user_uid:
+        raise HTTPException(status_code=403, detail="Not a member of this workspace")
+
+    import uuid as _uuid
+    session_id = str(_uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    await db.sessions.insert_one({
+        "session_id": session_id,
+        "workspace_id": workspace_id,
+        "user_uid": user_uid,
+        "messages": [],
+        "created_at": now,
+        "updated_at": now,
+    })
+    return {"session_id": session_id}
+
+
+# ---------------------------------------------------------------------------
+# Step 3: Provider status endpoint
+# ---------------------------------------------------------------------------
+
+from Services.groq_client import chat_completion as groq_chat
+from Services.embedding_service import get_embedding
+
+@router.get("/chat/providers")
+async def check_providers():
+    groq_status = "ok"
+    groq_error = None
+    try:
+        # Minimal API call for Groq
+        await groq_chat("Reply with one word: ok", [{"role": "user", "content": "Test"}], "", temperature=0.1, max_tokens=10)
+    except Exception as e:
+        groq_status = "error"
+        groq_error = str(e)
+        
+    gemini_status = "ok"
+    gemini_error = None
+    try:
+        # Minimal embedding call for Gemini
+        await get_embedding("test")
+    except Exception as e:
+        gemini_status = "error"
+        gemini_error = str(e)
+        
+    response = {
+        "groq": {
+            "status": groq_status,
+            "model": "llama-3.3-70b-versatile",
+            "used_for": "chat completions"
+        },
+        "gemini": {
+            "status": gemini_status,
+            "model": "text-embedding-004",
+            "used_for": "embeddings"
+        }
+    }
+    
+    if groq_error:
+        response["groq"]["error"] = groq_error
+    if gemini_error:
+        response["gemini"]["error"] = gemini_error
+        
+    return response

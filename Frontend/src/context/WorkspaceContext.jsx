@@ -1,33 +1,47 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../api/firebaseConfig";
-import { getUserWorkspace } from "../api/backend";
+import {
+  getUserWorkspaces,
+  getStoredActiveWorkspaceId,
+  setStoredActiveWorkspaceId,
+} from "../api/backend";
 
 const WorkspaceContext = createContext(null);
 
 export function WorkspaceProvider({ children }) {
-  const [workspace, setWorkspace] = useState(null);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [activeWorkspace, setActiveWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const refreshWorkspace = async () => {
+  const loadWorkspaces = async () => {
     if (!auth.currentUser) {
-      setWorkspace(null);
+      setWorkspaces([]);
+      setActiveWorkspace(null);
       setError("");
       setLoading(false);
-      return null;
+      return;
     }
 
     setLoading(true);
     setError("");
     try {
-      const nextWorkspace = await getUserWorkspace();
-      setWorkspace(nextWorkspace);
-      return nextWorkspace;
+      const all = await getUserWorkspaces();
+      setWorkspaces(all);
+
+      // Restore active workspace from localStorage, or fall back to most recent
+      const storedId = getStoredActiveWorkspaceId();
+      const found = all.find((w) => w.id === storedId || w._id === storedId);
+      const active = found || all[0] || null;
+      setActiveWorkspace(active);
+      if (active) {
+        setStoredActiveWorkspaceId(active.id || active._id);
+      }
     } catch (err) {
       setError(err.message);
-      setWorkspace(null);
-      return null;
+      setWorkspaces([]);
+      setActiveWorkspace(null);
     } finally {
       setLoading(false);
     }
@@ -36,21 +50,48 @@ export function WorkspaceProvider({ children }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        setWorkspace(null);
+        setWorkspaces([]);
+        setActiveWorkspace(null);
         setError("");
         setLoading(false);
         return;
       }
-
-      await refreshWorkspace();
+      await loadWorkspaces();
     });
-
     return () => unsubscribe();
   }, []);
+
+  const switchWorkspace = (workspaceId) => {
+    const ws = workspaces.find((w) => w.id === workspaceId || w._id === workspaceId);
+    if (ws) {
+      setActiveWorkspace(ws);
+      setStoredActiveWorkspaceId(ws.id || ws._id);
+    }
+  };
+
+  const addWorkspace = (ws) => {
+    setWorkspaces((prev) => [ws, ...prev]);
+    setActiveWorkspace(ws);
+    setStoredActiveWorkspaceId(ws.id || ws._id);
+  };
+
+  // Backwards-compat alias: old code uses `workspace` (singular)
+  const workspace = activeWorkspace;
+  const setWorkspace = setActiveWorkspace;
+
+  // Legacy single-workspace refresh (used by WorkspaceSetup page)
+  const refreshWorkspace = loadWorkspaces;
 
   return (
     <WorkspaceContext.Provider
       value={{
+        // Multi-workspace API
+        workspaces,
+        activeWorkspace,
+        switchWorkspace,
+        addWorkspace,
+        refreshWorkspaces: loadWorkspaces,
+        // Legacy single-workspace API (backward compat)
         workspace,
         setWorkspace,
         refreshWorkspace,

@@ -70,6 +70,8 @@ function normalizeJob(job) {
   };
 }
 
+// ── Workspace ────────────────────────────────────────────────────────────────
+
 export async function createWorkspace(name) {
   try {
     const { data } = await authedRequest({
@@ -83,17 +85,45 @@ export async function createWorkspace(name) {
   }
 }
 
-export async function getUserWorkspace() {
+/** Returns all workspaces the current user is a member of. */
+export async function getUserWorkspaces() {
   try {
     const { data } = await authedRequest({
       method: "get",
       url: "/api/workspaces",
     });
-    return Array.isArray(data) && data.length > 0 ? normalizeWorkspace(data[0]) : null;
+    return Array.isArray(data) ? data.map(normalizeWorkspace) : [];
   } catch (error) {
     throw new Error(extractError(error));
   }
 }
+
+/**
+ * Legacy single-workspace fetch (used by old WorkspaceGuard code paths).
+ * Returns the first workspace in the list.
+ */
+export async function getUserWorkspace() {
+  const all = await getUserWorkspaces();
+  return all.length > 0 ? all[0] : null;
+}
+
+// ── Active workspace (stored in localStorage) ────────────────────────────────
+
+const ACTIVE_KEY = "onboardiq_active_workspace";
+
+export function getStoredActiveWorkspaceId() {
+  return localStorage.getItem(ACTIVE_KEY) || null;
+}
+
+export function setStoredActiveWorkspaceId(id) {
+  if (id) {
+    localStorage.setItem(ACTIVE_KEY, id);
+  } else {
+    localStorage.removeItem(ACTIVE_KEY);
+  }
+}
+
+// ── GitHub / ingest ──────────────────────────────────────────────────────────
 
 export async function connectGithubRepo(workspaceId, repoUrl, githubToken) {
   try {
@@ -153,6 +183,8 @@ export async function getWorkspace(workspaceId) {
   }
 }
 
+// ── Chat / Ask ───────────────────────────────────────────────────────────────
+
 export async function askQuestion(workspaceId, sessionId, question, sourceIds) {
   try {
     const { data } = await authedRequest({
@@ -183,6 +215,43 @@ export async function getChatHistory(workspaceId, sessionId) {
   }
 }
 
+export async function getChatSessions(workspaceId) {
+  try {
+    const { data } = await authedRequest({
+      method: "get",
+      url: `/api/chat/sessions/${workspaceId}`,
+    });
+    return data.sessions || [];
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function createNewSession(workspaceId) {
+  try {
+    const { data } = await authedRequest({
+      method: "post",
+      url: `/api/chat/session/${workspaceId}/new`,
+    });
+    return data.session_id;
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function deleteSession(workspaceId, sessionId) {
+  try {
+    await authedRequest({
+      method: "delete",
+      url: `/api/workspace/${workspaceId}/sessions/${sessionId}`,
+    });
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+// ── Staleness ────────────────────────────────────────────────────────────────
+
 export async function getStalenessAlerts(workspaceId) {
   try {
     const { data } = await authedRequest({
@@ -206,6 +275,8 @@ export async function resolveStaleChunk(chunkId) {
     throw new Error(extractError(error));
   }
 }
+
+// ── Auth / user ───────────────────────────────────────────────────────────────
 
 export async function getUserProfile() {
   try {
