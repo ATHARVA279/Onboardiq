@@ -7,6 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from Database.database import get_db
 from Middleware.auth import get_current_user
 from Services.github_ingestion import connect_and_ingest_repo
+from Services.url_ingestion import ingest_url_source
 from models.requests import ConnectGithubRequest, CreateWorkspaceRequest
 from models.responses import JobResponse, WorkspaceResponse
 
@@ -166,6 +167,88 @@ async def connect_github_repo(
         str(source_id),
         str(job["_id"]),
     )
+
+    return _job_response_payload(job)
+
+
+@router.post("/workspace/{workspace_id}/source/{source_id}/reindex", response_model=JobResponse)
+async def reindex_source(
+    workspace_id: str,
+    source_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
+    db = await get_db()
+    workspace_object_id = ObjectId(workspace_id)
+    source_object_id = ObjectId(source_id)
+
+    workspace = await db.workspaces.find_one({"_id": workspace_object_id})
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    if workspace["owner_uid"] != current_user["uid"]:
+        raise HTTPException(status_code=403, detail="Only the workspace owner can reindex sources")
+
+    # Find the source in the workspace
+    source = next((s for s in workspace.get("sources", []) if s["source_id"] == source_object_id), None)
+    if not source:
+        raise HTTPException(status_code=404, detail="Source not found in workspace")
+
+    # Delete all existing chunks for this source
+    await db.chunks.delete_many({
+        "workspace_id": workspace_object_id,
+        "source_id": source_object_id
+    })
+
+    # Update source status
+    now = datetime.now(timezone.utc)
+    await db.workspaces.update_one(
+        {"_id": workspace_object_id, "sources.source_id": source_object_id},
+        {
+            "$set": {
+                "sources.$.indexing_status": "pending",
+                "sources.$.chunk_count": 0,
+                "sources.$.file_count": 0,
+                "updated_at": now
+            }
+        }
+    )
+
+    # Create new job
+    job_type = "github_ingest" if source["source_type"] == "github_repo" else "url_ingest"
+    job = {
+        "_id": ObjectId(),
+        "workspace_id": workspace_object_id,
+        "source_id": source_object_id,
+        "job_type": job_type,
+        "status": "queued",
+        "progress_current": 0,
+        "progress_total": 0,
+        "progress_message": f"Queued for {job_type.replace('_', ' ')}",
+        "error_message": None,
+        "started_at": None,
+        "completed_at": None,
+        "created_at": now,
+    }
+    await db.jobs.insert_one(job)
+
+    # Spawn background task
+    if source["source_type"] == "github_repo":
+        background_tasks.add_task(
+            connect_and_ingest_repo,
+            source["url"],
+            None,  # Using default token for reindex
+            workspace_id,
+            str(source_object_id),
+            str(job["_id"]),
+        )
+    else:
+        background_tasks.add_task(
+            ingest_url_source,
+            source["url"],
+            workspace_id,
+            str(source_object_id),
+            str(job["_id"]),
+        )
 
     return _job_response_payload(job)
 

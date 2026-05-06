@@ -232,7 +232,6 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
         background: isActive ? "rgba(0,255,156,0.06)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
         borderLeft: isActive ? "2px solid #00ff9c" : "2px solid transparent",
         border: "none",
-        borderLeft: isActive ? "2px solid #00ff9c" : "2px solid transparent",
         padding: "8px 10px",
         borderRadius: "0 8px 8px 0",
         cursor: "pointer",

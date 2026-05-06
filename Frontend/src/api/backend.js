@@ -159,6 +159,41 @@ export async function connectUrl(workspaceId, url, displayName) {
   }
 }
 
+export async function getSourcePages(workspaceId, sourceId) {
+  try {
+    const { data } = await authedRequest({
+      method: "get",
+      url: `/api/workspace/${workspaceId}/source/${sourceId}/pages`,
+    });
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function deleteSource(workspaceId, sourceId) {
+  try {
+    await authedRequest({
+      method: "delete",
+      url: `/api/workspace/${workspaceId}/source/${sourceId}`,
+    });
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function reindexSource(workspaceId, sourceId) {
+  try {
+    const { data } = await authedRequest({
+      method: "post",
+      url: `/api/workspace/${workspaceId}/source/${sourceId}/reindex`,
+    });
+    return data;
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
 export async function getJobStatus(workspaceId, jobId) {
   try {
     const { data } = await authedRequest({

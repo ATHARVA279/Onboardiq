@@ -22,6 +22,7 @@ import {
   getJobStatus,
   getStalenessAlerts,
   getWorkspace,
+  reindexSource,
 } from "../api/backend";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { formatRelativeTime, scoreColor } from "../utils/formatters";
@@ -128,8 +129,8 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
     setLoading(true);
     setError("");
     try {
-      await connectUrl(workspaceId, docsUrl.trim(), displayName.trim());
-      await onConnected({ type: "url" });
+      const job = await connectUrl(workspaceId, docsUrl.trim(), displayName.trim() || undefined);
+      await onConnected({ type: "url", job });
       onClose();
       setDocsUrl("");
       setDisplayName("");
@@ -250,21 +251,31 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
                 value={docsUrl}
                 onChange={(event) => setDocsUrl(event.target.value)}
                 className="oi-input mt-2 w-full"
-                placeholder="https://docs.company.com/auth"
+                placeholder="https://docs.yourproject.com"
                 required
               />
+              <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+                Onboardiq will automatically discover and index linked pages on the same domain up to 20 pages.
+              </p>
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">Display Name</span>
+              <span className="text-sm font-medium text-[var(--color-text)]">
+                Display Name
+                <span className="ml-1 text-xs font-normal text-[var(--color-muted)]">(optional)</span>
+              </span>
               <input
                 type="text"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 className="oi-input mt-2 w-full"
-                placeholder="Authentication Docs"
+                placeholder="e.g. API Documentation, User Guide"
               />
             </label>
+
+            <div className="rounded-lg border border-[rgba(234,179,8,0.35)] bg-[rgba(234,179,8,0.08)] px-4 py-3 text-sm leading-6 text-yellow-400">
+              ⚠️ Some sites may block automated scraping. If indexing fails, try a different documentation format.
+            </div>
 
             {error ? (
               <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
@@ -364,7 +375,7 @@ export default function Dashboard() {
 
   const handleConnectSuccess = async ({ type, job }) => {
     await refreshWorkspace();
-    if (type === "github" && job?.source_id) {
+    if (job?.source_id) {
       setJobMap((current) => ({
         ...current,
         [job.source_id]: { ...job, id: job.id || job._id },
@@ -373,7 +384,18 @@ export default function Dashboard() {
   };
 
   const handleReindex = async (source) => {
-    setError(`Re-index endpoint is not wired yet for ${source.display_name || source.url}.`);
+    try {
+      const job = await reindexSource(workspace.id, source.source_id);
+      await refreshWorkspace();
+      if (job?.source_id) {
+        setJobMap((current) => ({
+          ...current,
+          [job.source_id]: { ...job, id: job.id || job._id },
+        }));
+      }
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
