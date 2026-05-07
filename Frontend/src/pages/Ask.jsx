@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, ChevronDown, Code2, Database, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
-import EmptyState from "../components/common/EmptyState";
 import MarkdownRenderer from "../components/chat/MarkdownRenderer";
 import TypingIndicator from "../components/chat/TypingIndicator";
+import ConnectSourceModal from "../components/sources/ConnectSourceModal";
 import { useWorkspace } from "../context/WorkspaceContext";
 import {
   askQuestion,
@@ -293,10 +293,11 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
 
 export default function Ask() {
   const navigate = useNavigate();
-  const { workspace } = useWorkspace();
+  const { workspace, refreshWorkspace } = useWorkspace();
   const workspaceId = workspace?.id || workspace?._id;
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
 
   const completedSources = useMemo(
     () => (workspace?.sources || []).filter((s) => s.indexing_status === "completed"),
@@ -316,6 +317,10 @@ export default function Ask() {
     setSelectedSourceIds((cur) =>
       cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
     );
+
+  const handleConnectSuccess = useCallback(async () => {
+    await refreshWorkspace();
+  }, [refreshWorkspace]);
 
   // ── Sessions ──────────────────────────────────────────────────────────────
   const [sessions, setSessions] = useState([]);
@@ -513,6 +518,11 @@ export default function Ask() {
   };
 
   const handleAsk = async () => {
+    if (!completedSources.length) {
+      setConnectModalOpen(true);
+      return;
+    }
+
     if (!question.trim() || sendLoading || retryCountdown !== null) return;
     const q = question.trim();
     setMessages((cur) => [
@@ -526,20 +536,6 @@ export default function Ask() {
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
-
-  if (!completedSources.length) {
-    return (
-      <AppShell>
-        <EmptyState
-          icon={Database}
-          title="No completed sources available"
-          description="Connect and finish indexing at least one source before asking questions."
-          actionLabel="Go to Sources"
-          onAction={() => navigate("/sources")}
-        />
-      </AppShell>
-    );
-  }
 
   return (
     <AppShell>
@@ -756,60 +752,123 @@ export default function Ask() {
               padding: "24px 32px",
             }}
           >
-            {messages.length === 0 && !messagesLoading && !sendLoading && (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                  textAlign: "center",
-                  opacity: 0.8,
-                  paddingBottom: "80px",
-                }}
-              >
+            {messages.length === 0 && !messagesLoading && !sendLoading &&
+              (completedSources.length ? (
                 <div
                   style={{
-                    width: "56px",
-                    height: "56px",
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, rgba(0,255,156,0.15) 0%, rgba(46,117,182,0.15) 100%)",
-                    border: "1px solid rgba(0,255,156,0.2)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                    textAlign: "center",
+                    opacity: 0.8,
+                    paddingBottom: "80px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, rgba(0,255,156,0.15) 0%, rgba(46,117,182,0.15) 100%)",
+                      border: "1px solid rgba(0,255,156,0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    <Sparkles size={24} color="#00ff9c" />
+                  </div>
+                  <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#f1f5f9", marginBottom: "8px" }}>
+                    Ask your codebase anything
+                  </h2>
+                  <p style={{ fontSize: "14px", color: "#4b5563", maxWidth: "400px", lineHeight: "1.7" }}>
+                    Ask about auth flows, deployment steps, architecture decisions, or any part of your indexed codebase.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setQuestion("How does our authentication flow work?")}
+                    style={{
+                      marginTop: "20px",
+                      padding: "10px 20px",
+                      backgroundColor: "rgba(0,255,156,0.1)",
+                      border: "1px solid rgba(0,255,156,0.25)",
+                      borderRadius: "10px",
+                      color: "#00ff9c",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      transition: "background 0.15s",
+                    }}
+                  >
+                    Try a sample question →
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    marginBottom: "16px",
+                    height: "100%",
+                    paddingBottom: "80px",
                   }}
                 >
-                  <Sparkles size={24} color="#00ff9c" />
+                  <div
+                    style={{
+                      width: "100%",
+                      maxWidth: "520px",
+                      borderRadius: "20px",
+                      border: "1px solid rgba(0,255,156,0.18)",
+                      background: "linear-gradient(180deg, rgba(16,22,32,0.96) 0%, rgba(13,17,23,0.98) 100%)",
+                      padding: "28px",
+                      textAlign: "center",
+                      boxShadow: "0 20px 50px rgba(0,0,0,0.28)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "18px",
+                        margin: "0 auto 18px",
+                        background: "rgba(0,255,156,0.12)",
+                        border: "1px solid rgba(0,255,156,0.22)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Database size={28} color="#00ff9c" />
+                    </div>
+                    <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f1f5f9", marginBottom: "10px" }}>
+                      Connect a source to start asking questions
+                    </h2>
+                    <p style={{ fontSize: "14px", color: "#94a3b8", lineHeight: "1.7", margin: 0 }}>
+                      Connect a GitHub repo or documentation URL to start asking questions.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setConnectModalOpen(true)}
+                      style={{
+                        marginTop: "22px",
+                        padding: "11px 18px",
+                        backgroundColor: "#00ff9c",
+                        border: "none",
+                        borderRadius: "12px",
+                        color: "#080c10",
+                        fontSize: "13px",
+                        fontWeight: "700",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Connect source
+                    </button>
+                  </div>
                 </div>
-                <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#f1f5f9", marginBottom: "8px" }}>
-                  Ask your codebase anything
-                </h2>
-                <p style={{ fontSize: "14px", color: "#4b5563", maxWidth: "400px", lineHeight: "1.7" }}>
-                  Ask about auth flows, deployment steps, architecture decisions, or any part of your indexed codebase.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setQuestion("How does our authentication flow work?")}
-                  style={{
-                    marginTop: "20px",
-                    padding: "10px 20px",
-                    backgroundColor: "rgba(0,255,156,0.1)",
-                    border: "1px solid rgba(0,255,156,0.25)",
-                    borderRadius: "10px",
-                    color: "#00ff9c",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    transition: "background 0.15s",
-                  }}
-                >
-                  Try a sample question →
-                </button>
-              </div>
-            )}
+              ))}
 
             {messagesLoading && (
               <p style={{ textAlign: "center", fontSize: "13px", color: "#4b5563", paddingTop: "40px" }}>
@@ -889,6 +948,7 @@ export default function Ask() {
                 ref={textareaRef}
                 value={question}
                 rows={1}
+                disabled={!completedSources.length}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -896,7 +956,7 @@ export default function Ask() {
                     handleAsk();
                   }
                 }}
-                placeholder="Ask anything about your codebase… (Enter to send, Shift+Enter for newline)"
+                placeholder={completedSources.length ? "Ask anything about your codebase… (Enter to send, Shift+Enter for newline)" : "Connect a source to start asking questions"}
                 style={{
                   flex: 1,
                   background: "none",
@@ -909,19 +969,21 @@ export default function Ask() {
                   maxHeight: "120px",
                   overflowY: "auto",
                   fontFamily: "inherit",
+                  opacity: completedSources.length ? 1 : 0.6,
+                  cursor: completedSources.length ? "text" : "not-allowed",
                 }}
               />
               <button
                 type="button"
                 onClick={handleAsk}
-                disabled={sendLoading || !question.trim()}
+                disabled={!completedSources.length || sendLoading || !question.trim()}
                 style={{
                   width: "34px",
                   height: "34px",
                   borderRadius: "8px",
-                  backgroundColor: question.trim() && !sendLoading ? "#00ff9c" : "#1e2d1e",
+                  backgroundColor: completedSources.length && question.trim() && !sendLoading ? "#00ff9c" : "#1e2d1e",
                   border: "none",
-                  cursor: question.trim() && !sendLoading ? "pointer" : "not-allowed",
+                  cursor: completedSources.length && question.trim() && !sendLoading ? "pointer" : "not-allowed",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -932,16 +994,25 @@ export default function Ask() {
               >
                 <ArrowUp
                   size={16}
-                  color={question.trim() && !sendLoading ? "#080c10" : "#4b5563"}
+                  color={completedSources.length && question.trim() && !sendLoading ? "#080c10" : "#4b5563"}
                 />
               </button>
             </div>
             <p style={{ fontSize: "11px", color: "#374151", marginTop: "6px", textAlign: "center" }}>
-              Shift+Enter for newline · answers grounded in your indexed sources
+              {completedSources.length
+                ? "Shift+Enter for newline · answers grounded in your indexed sources"
+                : "Connect a source to enable asking and grounded answers"}
             </p>
           </div>
         </div>
       </div>
+
+      <ConnectSourceModal
+        open={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        workspaceId={workspaceId}
+        onConnected={handleConnectSuccess}
+      />
     </AppShell>
   );
 }

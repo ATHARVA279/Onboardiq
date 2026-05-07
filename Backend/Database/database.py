@@ -51,7 +51,7 @@ async def get_db():
 
 async def init_vector_index():
     """Create the Atlas vector search index for chunks.embedding if needed."""
-    index_name = "chunks_embedding_vector_index"
+    index_name = Config.VECTOR_INDEX_NAME
 
     try:
         try:
@@ -65,15 +65,31 @@ async def init_vector_index():
                 return
 
         definition = {
-            "fields": [
-                {
-                    "type": "vector",
-                    "path": "embedding",
-                    "numDimensions": 768,
-                    "similarity": "cosine",
+            "mappings": {
+                "dynamic": False,
+                "fields": {
+                    "embedding": {
+                        "type": "knnVector",
+                        "dimensions": 1024,
+                        "similarity": "cosine"
+                    },
+                    "workspace_id": {
+                        "type": "filter"
+                    },
+                    "source_type": {
+                        "type": "filter"
+                    },
+                    "source_id": {
+                        "type": "filter"
+                    }
                 }
-            ]
+            }
         }
+
+        # IMPORTANT MIGRATION NOTE:
+        # Existing 768-dimensional embeddings are incompatible with this 1024-dimensional index.
+        # You must delete all existing chunks from the MongoDB chunks collection before re-indexing.
+        # Also, delete the existing vector search index in Atlas UI and let the app recreate it or recreate it manually.
 
         try:
             await chunks_collection.create_search_index(

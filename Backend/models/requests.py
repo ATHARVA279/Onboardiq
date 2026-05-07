@@ -66,6 +66,10 @@ class ChatRequest(RequestModel):
         return _validate_object_id_string(value, "workspace_id")
 
 
+class ReindexRequest(RequestModel):
+    github_token: Optional[str] = Field(default=None, min_length=1, max_length=5000)
+
+
 class CreateWorkspaceRequest(RequestModel):
     name: str = Field(..., min_length=1, max_length=100)
 

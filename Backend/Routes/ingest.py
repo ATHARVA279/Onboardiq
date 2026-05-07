@@ -8,7 +8,7 @@ from Database.database import get_db
 from Middleware.auth import get_current_user
 from Services.github_ingestion import connect_and_ingest_repo
 from Services.url_ingestion import ingest_url_source
-from models.requests import ConnectGithubRequest, CreateWorkspaceRequest
+from models.requests import ConnectGithubRequest, CreateWorkspaceRequest, ReindexRequest
 from models.responses import JobResponse, WorkspaceResponse
 
 router = APIRouter()
@@ -177,6 +177,7 @@ async def reindex_source(
     source_id: str,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
+    request: ReindexRequest = ReindexRequest(),
 ):
     db = await get_db()
     workspace_object_id = ObjectId(workspace_id)
@@ -236,7 +237,7 @@ async def reindex_source(
         background_tasks.add_task(
             connect_and_ingest_repo,
             source["url"],
-            None,  # Using default token for reindex
+            request.github_token,  # Use token from request if provided
             workspace_id,
             str(source_object_id),
             str(job["_id"]),

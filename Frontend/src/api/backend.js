@@ -123,6 +123,27 @@ export function setStoredActiveWorkspaceId(id) {
   }
 }
 
+// ── GitHub PAT (stored per workspace in localStorage) ───────────────────────
+
+const GITHUB_TOKEN_PREFIX = "onboardiq_github_token_";
+
+export function saveGithubToken(workspaceId, token) {
+  if (workspaceId && token) {
+    localStorage.setItem(`${GITHUB_TOKEN_PREFIX}${workspaceId}`, token);
+  }
+}
+
+export function getGithubToken(workspaceId) {
+  if (!workspaceId) return null;
+  return localStorage.getItem(`${GITHUB_TOKEN_PREFIX}${workspaceId}`) || null;
+}
+
+export function clearGithubToken(workspaceId) {
+  if (workspaceId) {
+    localStorage.removeItem(`${GITHUB_TOKEN_PREFIX}${workspaceId}`);
+  }
+}
+
 // ── GitHub / ingest ──────────────────────────────────────────────────────────
 
 export async function connectGithubRepo(workspaceId, repoUrl, githubToken) {
@@ -184,9 +205,11 @@ export async function deleteSource(workspaceId, sourceId) {
 
 export async function reindexSource(workspaceId, sourceId) {
   try {
+    const storedToken = getGithubToken(workspaceId);
     const { data } = await authedRequest({
       method: "post",
       url: `/api/workspace/${workspaceId}/source/${sourceId}/reindex`,
+      data: storedToken ? { github_token: storedToken } : {},
     });
     return data;
   } catch (error) {

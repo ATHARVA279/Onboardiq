@@ -75,6 +75,23 @@ async def ask_question(workspace_id: str, request: ChatRequest, current_user: di
                 confidence_score=0.0,
                 session_id=session_id
             )
+
+        # ── Relevance gate ────────────────────────────────────────────────────
+        # If the highest similarity score is below 0.55 the question is almost
+        # certainly not about this codebase — skip Groq entirely.
+        RELEVANCE_THRESHOLD = 0.55
+        top_score = max((c.get("score", 0.0) for c in retrieved_chunks), default=0.0)
+        logger.info("[chat] top_score=%.4f (threshold=%.2f)", top_score, RELEVANCE_THRESHOLD)
+
+        if top_score < RELEVANCE_THRESHOLD:
+            logger.info("[chat] Relevance gate triggered — returning refusal (top_score=%.4f)", top_score)
+            return ChatResponse(
+                answer="This question does not appear to be related to the indexed codebase. I can only answer questions about the specific project that has been indexed here — try asking about a feature, file, service, or architectural decision in your project.",
+                sources_cited=[],
+                all_retrieved_chunks=[],
+                confidence_score=0.0,
+                session_id=session_id
+            )
             
         # Rerank
         reranked_chunks = await rerank(request.question, retrieved_chunks)

@@ -21,8 +21,10 @@ import {
   connectUrl,
   getJobStatus,
   getStalenessAlerts,
+  getGithubToken,
   getWorkspace,
   reindexSource,
+  saveGithubToken,
 } from "../api/backend";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { formatRelativeTime, scoreColor } from "../utils/formatters";
@@ -104,15 +106,22 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
     if (!open) {
       setError("");
       setLoading(false);
+    } else {
+      // Pre-fill PAT from localStorage when modal opens
+      const stored = getGithubToken(workspaceId);
+      if (stored) setToken(stored);
     }
-  }, [open]);
+  }, [open, workspaceId]);
 
   const handleGithubSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError("");
     try {
-      const job = await connectGithubRepo(workspaceId, repoUrl.trim(), token.trim());
+      const trimmedToken = token.trim();
+      const job = await connectGithubRepo(workspaceId, repoUrl.trim(), trimmedToken);
+      // Persist the token so future connects and reindexes can reuse it
+      if (trimmedToken) saveGithubToken(workspaceId, trimmedToken);
       await onConnected({ type: "github", job });
       onClose();
       setRepoUrl("");
