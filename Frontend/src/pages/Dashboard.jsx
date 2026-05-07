@@ -20,11 +20,12 @@ import {
   connectGithubRepo,
   connectUrl,
   getJobStatus,
-  getStalenessAlerts,
   getGithubToken,
   getWorkspace,
   reindexSource,
   saveGithubToken,
+  getStalenessSummary,
+  getStalenessAlerts,
 } from "../api/backend";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { formatRelativeTime, scoreColor } from "../utils/formatters";
@@ -352,19 +353,29 @@ export default function Dashboard() {
     return () => window.clearInterval(interval);
   }, [jobMap, refreshWorkspace, workspace?.id]);
 
+  const [stalenessSummary, setStalenessSummary] = useState(null);
+
   useEffect(() => {
     if (!workspace?.id) return;
 
     let mounted = true;
-    getStalenessAlerts(workspace.id)
-      .then((data) => {
+    
+    // Fetch summary and top unresolved alerts for preview
+    const fetchStaleness = async () => {
+      try {
+        const [summaryData, alertsData] = await Promise.all([
+          getStalenessSummary(workspace.id),
+          getStalenessAlerts(workspace.id, { resolved: false, limit: 2 })
+        ]);
         if (!mounted) return;
-        setStalenessAlerts(Array.isArray(data) ? data : data?.items || []);
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err.message);
-      });
+        setStalenessSummary(summaryData);
+        setStalenessAlerts(alertsData);
+      } catch (err) {
+        if (mounted) setError(err.message);
+      }
+    };
+
+    fetchStaleness();
 
     return () => {
       mounted = false;
@@ -377,10 +388,10 @@ export default function Dashboard() {
     return {
       sourcesConnected: sources.length,
       filesIndexed: files,
-      alerts: stalenessAlerts.length,
-      healthScore: Math.round(workspace?.health_score || 0),
+      alerts: stalenessSummary?.total_alerts || 0,
+      healthScore: stalenessSummary?.health_score ?? (workspace?.health_score || 100),
     };
-  }, [stalenessAlerts.length, workspace]);
+  }, [stalenessSummary, workspace]);
 
   const handleConnectSuccess = async ({ type, job }) => {
     await refreshWorkspace();
@@ -438,6 +449,51 @@ export default function Dashboard() {
           />
           <HealthScoreCard score={stats.healthScore} />
         </section>
+
+        {stalenessAlerts.length > 0 && (
+          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="text-lg font-semibold text-[var(--color-text)]">Staleness Preview</h3>
+              </div>
+              <button
+                onClick={() => navigate("/staleness")}
+                className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+              >
+                View All Alerts
+              </button>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {stalenessAlerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)] p-4 transition hover:bg-[var(--color-border)]"
+                >
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+                        alert.severity === "high"
+                          ? "bg-red-500"
+                          : alert.severity === "medium"
+                          ? "bg-yellow-500"
+                          : "bg-blue-500"
+                      }`}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text)] line-clamp-1">
+                        {alert.description}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--color-muted)] line-clamp-1">
+                        {alert.alert_type === "readme_stale" ? "README" : `File: ${alert.file_path}`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

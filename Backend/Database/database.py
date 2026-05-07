@@ -14,6 +14,7 @@ questions_collection = None
 jobs_collection = None
 sessions_collection = None
 users_collection = None
+staleness_alerts_collection = None
 
 _indexes_created = False
 _vector_index_checked = False
@@ -22,7 +23,7 @@ _vector_index_checked = False
 async def get_db():
     global client, db
     global workspaces_collection, chunks_collection, questions_collection
-    global jobs_collection, sessions_collection, users_collection
+    global jobs_collection, sessions_collection, users_collection, staleness_alerts_collection
     if client is None:
         client = AsyncIOMotorClient(
             Config.MONGODB_URI,
@@ -38,6 +39,7 @@ async def get_db():
         jobs_collection = db.jobs
         sessions_collection = db.sessions
         users_collection = db.users
+        staleness_alerts_collection = db.staleness_alerts
 
     global _indexes_created, _vector_index_checked
     if not _indexes_created:
@@ -130,6 +132,12 @@ async def create_indexes():
 
         await jobs_collection.create_index("workspace_id")
         await jobs_collection.create_index("status")
+
+        # staleness_alerts indexes
+        await staleness_alerts_collection.create_index("workspace_id")
+        await staleness_alerts_collection.create_index("resolved")
+        await staleness_alerts_collection.create_index("severity")
+        await staleness_alerts_collection.create_index("created_at")
 
         print("MongoDB indexes created successfully")
     except Exception as exc:

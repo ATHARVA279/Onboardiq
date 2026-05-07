@@ -310,11 +310,36 @@ export async function deleteSession(workspaceId, sessionId) {
 
 // ── Staleness ────────────────────────────────────────────────────────────────
 
-export async function getStalenessAlerts(workspaceId) {
+export async function triggerStalenessCheck(workspaceId) {
+  try {
+    const { data } = await authedRequest({
+      method: "post",
+      url: `/api/workspace/${workspaceId}/staleness/check`,
+    });
+    return normalizeJob(data);
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function getStalenessAlerts(workspaceId, params = {}) {
   try {
     const { data } = await authedRequest({
       method: "get",
-      url: `/api/workspace/${workspaceId}/staleness`,
+      url: `/api/workspace/${workspaceId}/staleness/alerts`,
+      params,
+    });
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function resolveAlert(workspaceId, alertId) {
+  try {
+    const { data } = await authedRequest({
+      method: "patch",
+      url: `/api/workspace/${workspaceId}/staleness/alerts/${alertId}/resolve`,
     });
     return data;
   } catch (error) {
@@ -322,17 +347,29 @@ export async function getStalenessAlerts(workspaceId) {
   }
 }
 
-export async function resolveStaleChunk(chunkId) {
+export async function dismissAlert(workspaceId, alertId) {
+  try {
+    await authedRequest({
+      method: "delete",
+      url: `/api/workspace/${workspaceId}/staleness/alerts/${alertId}`,
+    });
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+export async function getStalenessSummary(workspaceId) {
   try {
     const { data } = await authedRequest({
-      method: "post",
-      url: `/api/staleness/${chunkId}/resolve`,
+      method: "get",
+      url: `/api/workspace/${workspaceId}/staleness/summary`,
     });
     return data;
   } catch (error) {
     throw new Error(extractError(error));
   }
 }
+
 
 // ── Auth / user ───────────────────────────────────────────────────────────────
 
