@@ -208,24 +208,31 @@ async def analyze_readme_staleness(workspace_id: str, source_id: str) -> list[di
         c.get("content", "") for c in readme_chunks if c.get("content")
     )
 
-    # Build codebase summary
-    summary_lines = []
+    # Build codebase summary (grouped by file for density)
+    file_map = {}
     for chunk in code_chunks:
-        parts = []
-        if chunk.get("file_path"):
-            parts.append(f"file: {chunk['file_path']}")
-        if chunk.get("chunk_name"):
-            parts.append(f"name: {chunk['chunk_name']}")
-        if chunk.get("chunk_type"):
-            parts.append(f"type: {chunk['chunk_type']}")
-        if parts:
-            summary_lines.append(" | ".join(parts))
+        fp = chunk.get("file_path", "unknown")
+        if fp not in file_map:
+            file_map[fp] = []
+        name = chunk.get("chunk_name")
+        ctype = chunk.get("chunk_type")
+        if name:
+            file_map[fp].append(f"{name} ({ctype or 'code'})")
+
+    summary_lines = []
+    for fp, items in file_map.items():
+        if items:
+            summary_lines.append(f"FILE: {fp} | CONTAINS: {', '.join(items[:15])}")
+        else:
+            summary_lines.append(f"FILE: {fp}")
 
     codebase_summary = "\n".join(summary_lines) if summary_lines else "(no code chunks indexed)"
 
     # Truncate to stay within context limits
-    readme_truncated = readme_text[:6000]
-    summary_truncated = codebase_summary[:4000]
+    # Llama-3.3-70b has a large context window, so we can afford a much bigger summary
+    # to avoid false positives on larger repos.
+    readme_truncated = readme_text[:10000]
+    summary_truncated = codebase_summary[:30000]
 
     prompt = f"""You are analyzing whether a project README is up to date with its codebase.
 
@@ -262,6 +269,15 @@ Return ONLY the JSON array, no other text."""
     if not isinstance(issues, list):
         logger.warning("[staleness] Unexpected response format from Groq for README analysis")
         return []
+
+    # Clear old unresolved README alerts for this source before adding new ones
+    # This prevents duplication when README is re-analyzed
+    db = await get_db()
+    await db.staleness_alerts.delete_many({
+        "source_id": ObjectId(source_id),
+        "alert_type": "readme_stale",
+        "resolved": False
+    })
 
     now = datetime.now(timezone.utc)
     alerts = []
@@ -394,6 +410,19 @@ Return ONLY the JSON object, no other text."""
             continue
 
         doc_chunk_id = doc_chunks[0].get("_id")
+        
+        # Check if an identical unresolved alert already exists
+        existing = await db.staleness_alerts.find_one({
+            "workspace_id": ObjectId(workspace_id),
+            "file_path": file_path,
+            "doc_chunk_id": ObjectId(doc_chunk_id) if doc_chunk_id else None,
+            "resolved": False
+        })
+        
+        if existing:
+            logger.info("[staleness] Alert already exists for %s, skipping duplication", file_path)
+            continue
+
         doc = {
             "workspace_id": ObjectId(workspace_id),
             "source_id": ObjectId(github_source_id),

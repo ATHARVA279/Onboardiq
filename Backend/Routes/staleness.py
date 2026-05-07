@@ -25,6 +25,9 @@ router = APIRouter()
 
 def _serialize_alert(alert: dict) -> dict:
     out = dict(alert)
+    # Map _id to id for frontend consistency
+    if "_id" in out:
+        out["id"] = str(out["_id"])
     for key in ("_id", "workspace_id", "source_id", "doc_chunk_id"):
         if key in out and isinstance(out[key], ObjectId):
             out[key] = str(out[key])
@@ -144,8 +147,13 @@ async def resolve_alert(
     await _require_workspace_access(workspace_id, user_uid, db)
 
     now = datetime.now(timezone.utc)
+    try:
+        oid = ObjectId(alert_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid alert ID format")
+
     result = await db.staleness_alerts.find_one_and_update(
-        {"_id": ObjectId(alert_id), "workspace_id": ObjectId(workspace_id)},
+        {"_id": oid, "workspace_id": ObjectId(workspace_id)},
         {"$set": {
             "resolved": True,
             "resolved_at": now,
@@ -178,8 +186,13 @@ async def dismiss_alert(
     db = await get_db()
     await _require_workspace_access(workspace_id, user_uid, db)
 
+    try:
+        oid = ObjectId(alert_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid alert ID format")
+
     result = await db.staleness_alerts.delete_one(
-        {"_id": ObjectId(alert_id), "workspace_id": ObjectId(workspace_id)}
+        {"_id": oid, "workspace_id": ObjectId(workspace_id)}
     )
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Alert not found")
