@@ -24,7 +24,7 @@ google-resumable-media==2.8.2
 googleapis-common-protos==1.74.0
 greenlet==3.5.0
 grpcio==1.80.0
-grpcio-status>=1.71,<1.75
+grpcio-status>=1.71
 h11==0.16.0
 h2==4.3.0
 hpack==4.1.0
