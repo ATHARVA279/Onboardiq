@@ -35,7 +35,9 @@ function HealthScoreCard({ score }) {
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(100, score));
   const offset = circumference - (progress / 100) * circumference;
-  const color = scoreColor(progress);
+  
+  // Color based on score: >70 = crimson, 40-70 = warning, <40 = error
+  const color = progress > 70 ? '#e5195e' : progress >= 40 ? '#eab308' : '#ef4444';
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
@@ -72,23 +74,46 @@ function HealthScoreCard({ score }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, valueColor = "#F1F5F9" }) {
+function StatCard({ title, value, icon: Icon, valueColor = "#F1F5F9", isAlert = false }) {
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-muted)]">{title}</p>
-          <p className="mt-3 text-4xl font-semibold" style={{ color: valueColor }}>
-            {value}
-          </p>
-        </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)]">
-          <Icon
-            className="h-6 w-6"
-            style={{ color: valueColor === "#F1F5F9" ? "var(--color-primary)" : valueColor }}
-          />
-        </div>
+    <div style={{
+      position: 'relative',
+      borderRadius: '12px',
+      background: 'var(--color-surface)',
+      padding: '24px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)',
+      transition: 'all 0.2s ease'
+    }}>
+      <div>
+        <p style={{
+          fontSize: '12px',
+          fontWeight: '500',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          color: '#555',
+          marginBottom: '12px'
+        }}>
+          {title}
+        </p>
+        <p style={{
+          fontSize: '36px',
+          fontWeight: '700',
+          letterSpacing: '-0.03em',
+          color: valueColor,
+          textShadow: isAlert && value > 0 ? '0 0 20px rgba(239,68,68,0.4)' : 'none'
+        }}>
+          {value}
+        </p>
       </div>
+      <Icon style={{
+        position: 'absolute',
+        bottom: '20px',
+        right: '20px',
+        width: '32px',
+        height: '32px',
+        opacity: 0.15,
+        color: valueColor
+      }} />
     </div>
   );
 }
@@ -420,16 +445,38 @@ export default function Dashboard() {
 
   return (
     <AppShell>
+      {/* Top border glow */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: '240px',
+        right: 0,
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent 0%, rgba(229,25,94,0.4) 40%, rgba(120,40,200,0.3) 70%, transparent 100%)',
+        zIndex: 100,
+        pointerEvents: 'none'
+      }} />
+      
       <div className="space-y-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-text)]">
-              Workspace Dashboard
-            </h1>
-            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
-              Track source indexing, workspace health, and onboarding coverage in one place.
-            </p>
-          </div>
+        {/* Breadcrumb and Header */}
+        <div>
+          <p style={{
+            fontSize: '12px',
+            color: '#4a5568',
+            marginBottom: '8px',
+            fontWeight: '500'
+          }}>
+            {workspace?.name || 'Workspace'} › Dashboard
+          </p>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: '600',
+            letterSpacing: '-0.02em',
+            color: '#f1f5f9',
+            fontFamily: 'Syne, sans-serif'
+          }}>
+            Dashboard
+          </h1>
         </div>
 
         {error ? (
@@ -446,51 +493,119 @@ export default function Dashboard() {
             value={stats.alerts}
             icon={AlertTriangle}
             valueColor={stats.alerts > 0 ? "#EF4444" : "#F1F5F9"}
+            isAlert={true}
           />
           <HealthScoreCard score={stats.healthScore} />
         </section>
 
         {stalenessAlerts.length > 0 && (
-          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+          <section style={{
+            borderRadius: '12px',
+            background: 'var(--color-surface)',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)'
+          }}>
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-red-500">
-                <AlertTriangle className="h-5 w-5" />
-                <h3 className="text-lg font-semibold text-[var(--color-text)]">Staleness Preview</h3>
+              <div className="flex items-center gap-3">
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#f1f5f9',
+                  fontFamily: 'Syne, sans-serif'
+                }}>
+                  Staleness Preview
+                </h3>
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: '#ef4444'
+                }}>
+                  {stalenessAlerts.length}
+                </span>
               </div>
               <button
                 onClick={() => navigate("/staleness")}
-                className="text-sm font-medium text-[var(--color-primary)] hover:underline"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: '#e5195e',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'opacity 0.15s'
+                }}
+                onMouseEnter={e => e.target.style.opacity = '0.8'}
+                onMouseLeave={e => e.target.style.opacity = '1'}
               >
-                View All Alerts
+                View All Alerts →
               </button>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {stalenessAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)] p-4 transition hover:bg-[var(--color-border)]"
-                >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
-                        alert.severity === "high"
-                          ? "bg-red-500"
-                          : alert.severity === "medium"
-                          ? "bg-yellow-500"
-                          : "bg-blue-500"
-                      }`}
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-[var(--color-text)] line-clamp-1">
-                        {alert.description}
-                      </p>
-                      <p className="mt-1 text-xs text-[var(--color-muted)] line-clamp-1">
-                        {alert.alert_type === "readme_stale" ? "README" : `File: ${alert.file_path}`}
-                      </p>
+              {stalenessAlerts.map((alert) => {
+                const severityColors = {
+                  high: { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.3)', text: '#ef4444' },
+                  medium: { bg: 'rgba(234, 179, 8, 0.1)', border: 'rgba(234, 179, 8, 0.3)', text: '#eab308' },
+                  low: { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.3)', text: '#3b82f6' }
+                };
+                const colors = severityColors[alert.severity] || severityColors.low;
+                
+                return (
+                  <div
+                    key={alert.id}
+                    style={{
+                      borderRadius: '8px',
+                      background: 'var(--color-code-bg)',
+                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      padding: '16px',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span style={{
+                        padding: '2px 6px',
+                        borderRadius: '3px',
+                        background: colors.bg,
+                        border: `1px solid ${colors.border}`,
+                        fontSize: '10px',
+                        fontWeight: '600',
+                        color: colors.text,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        flexShrink: 0
+                      }}>
+                        {alert.severity}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          color: '#f1f5f9',
+                          marginBottom: '4px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {alert.description}
+                        </p>
+                        <p style={{
+                          fontSize: '11px',
+                          color: '#4a5568',
+                          fontFamily: 'JetBrains Mono, monospace',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {alert.alert_type === "readme_stale" ? "README" : alert.file_path}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}

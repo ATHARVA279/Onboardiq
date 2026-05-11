@@ -142,7 +142,7 @@ function WorkspaceSwitcher() {
                     type="button"
                     onClick={handleCreate}
                     disabled={!newName.trim() || createLoading}
-                    className="flex-1 rounded-lg bg-[var(--color-primary)] py-1.5 text-xs font-semibold text-[#080c10] transition hover:bg-[#00cc7a] disabled:opacity-60"
+                    className="flex-1 rounded-lg bg-[var(--color-primary)] py-1.5 text-xs font-semibold text-[#080c10] transition hover:bg-[#c91450] disabled:opacity-60"
                   >
                     {createLoading ? "Creating…" : "Create"}
                   </button>

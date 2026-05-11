@@ -1,863 +1,338 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  BookOpen,
-  CheckCircle,
-  ChevronRight,
-  Code2,
-  Database,
-  ExternalLink,
-  FileCheck,
-  Github,
-  GitBranch,
-  Layers3,
-  Linkedin,
-  MessageSquare,
-  Search,
-  Shield,
-  Twitter,
-} from "lucide-react";
-
-const heroAnswer =
-  "The authentication flow starts in the gateway, validates the session token, then hands off to the JWT guard in the API. OAuth refresh logic was added after the Dec 2023 backend review, and the cited sources below explain both the implementation and the rationale.";
-
-const painPoints = [
-  {
-    icon: Search,
-    title: "Siloed Search",
-    description:
-      "Confluence only searches Confluence. GitHub only searches GitHub. Nobody sees the full picture.",
-  },
-  {
-    icon: Shield,
-    title: "Missing the Why",
-    description:
-      "Docs tell you what exists, never why a decision was made. The reasoning lives in a 2-year-old PR.",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Silent Staleness",
-    description:
-      "Code gets refactored. Documentation doesn't. Nobody knows until something breaks.",
-  },
-];
-
-const steps = [
-  {
-    number: "01",
-    icon: GitBranch,
-    title: "Connect Sources",
-    description:
-      "Link your GitHub repos, Confluence spaces, and Notion pages. OnboardIQ indexes everything in under 5 minutes.",
-  },
-  {
-    number: "02",
-    icon: MessageSquare,
-    title: "Ask in Plain English",
-    description:
-      "New developers ask any question about architecture, conventions, or business logic. No query syntax. Just language.",
-  },
-  {
-    number: "03",
-    icon: FileCheck,
-    title: "Get Cited Answers",
-    description:
-      "Every answer cites its exact sources: the code file, the doc page, the Slack thread. No hallucination. No black box.",
-  },
-];
-
-const integrations = [
-  { name: "GitHub", icon: Github },
-  { name: "Confluence", icon: BookOpen },
-  { name: "Notion", icon: Layers3 },
-  { name: "Slack", icon: MessageSquare },
-  { name: "GitBook", icon: BookOpen },
-  { name: "Linear", icon: Activity },
-  { name: "Jira", icon: Shield },
-  { name: "VS Code", icon: Code2 },
-];
-
-const stats = [
-  { value: 5, prefix: "<", suffix: " min", label: "Indexing time for repos up to 10k files" },
-  { value: 3, prefix: "<", suffix: " sec", label: "Time to first cited answer" },
-  { value: 100, prefix: "", suffix: "%", label: "Answers include source attribution" },
-  { value: 80, prefix: ">", suffix: "%", label: "Staleness detection precision" },
-];
-
-function BracketMark() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-5 w-5 text-[var(--color-primary)]"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    >
-      <path d="M8 5H4v14h4" />
-      <path d="M16 5h4v14h-4" />
-    </svg>
-  );
-}
-
-function FeatureBlock({
-  tag,
-  title,
-  body,
-  textSide = "left",
-  visual,
-}) {
-  const textReveal = textSide === "left" ? "left" : "right";
-  const visualReveal = textSide === "left" ? "right" : "left";
-
-  return (
-    <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-      {textSide === "left" ? (
-        <>
-          <div
-            className="oi-scroll-reveal"
-            data-reveal={textReveal}
-            data-observe="feature"
-          >
-            <p className="oi-tag">
-              {tag}
-            </p>
-            <h3 className="font-display mt-4 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
-              {title}
-            </h3>
-            <p className="mt-5 max-w-xl text-base leading-[1.7] text-[var(--color-text)]">
-              {body}
-            </p>
-          </div>
-          <div
-            className="oi-scroll-reveal"
-            data-reveal={visualReveal}
-            data-observe="feature"
-          >
-            {visual}
-          </div>
-        </>
-      ) : (
-        <>
-          <div
-            className="oi-scroll-reveal order-2 lg:order-1"
-            data-reveal={visualReveal}
-            data-observe="feature"
-          >
-            {visual}
-          </div>
-          <div
-            className="oi-scroll-reveal order-1 lg:order-2"
-            data-reveal={textReveal}
-            data-observe="feature"
-          >
-            <p className="oi-tag">
-              {tag}
-            </p>
-            <h3 className="font-display mt-4 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
-              {title}
-            </h3>
-            <p className="mt-5 max-w-xl text-base leading-[1.7] text-[var(--color-text)]">
-              {body}
-            </p>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Code2, Search, Globe, AlertTriangle, MessageSquare, Zap } from 'lucide-react'
+import GlassCard from '../components/ui/GlassCard'
+import AccentButton from '../components/ui/AccentButton'
 
 export default function Landing() {
-  const [navSolid, setNavSolid] = useState(false);
-  const [typedAnswer, setTypedAnswer] = useState("");
-  const [waitlistEmail, setWaitlistEmail] = useState("");
-  const countRefs = useRef([]);
-  const hasTyped = useRef(false);
-  const hasCounted = useRef(false);
-
-  const heroWords = useMemo(
-    () => [
-      "Stop",
-      "Asking",
-      "Senior",
-      "Developers",
-      "Twice.",
-    ],
-    [],
-  );
+  const [scrolled, setScrolled] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    const onScroll = () => {
-      setNavSolid(window.scrollY > 16);
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    const typeDelay = window.setTimeout(() => {
-      if (hasTyped.current) {
-        return;
-      }
-
-      hasTyped.current = true;
-      let index = 0;
-              const interval = window.setInterval(() => {
-        index += 1;
-        setTypedAnswer(heroAnswer.slice(0, index));
-        if (index >= heroAnswer.length) {
-          window.clearInterval(interval);
-        }
-      }, 20);
-    }, 800);
-
-    return () => window.clearTimeout(typeDelay);
-  }, []);
-
-  useEffect(() => {
-    const revealTargets = document.querySelectorAll("[data-observe]");
-    const badges = document.querySelectorAll("[data-seq-badge]");
-    const line = document.querySelector("[data-flow-line]");
-    const statBar = document.querySelector("[data-stats-bar]");
-
-    if (line) {
-      line.style.strokeDasharray = "1";
-      line.style.strokeDashoffset = "1";
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50)
     }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) {
-            return;
-          }
-
-          entry.target.classList.add("is-visible");
-
-          if (entry.target === line) {
-            line.style.strokeDashoffset = "0";
-          }
-
-          if (entry.target === statBar && !hasCounted.current) {
-            hasCounted.current = true;
-            countRefs.current.forEach((node, index) => {
-              if (!node) {
-                return;
-              }
-
-              const target = stats[index].value;
-              const duration = 1200;
-              const start = performance.now();
-
-              const tick = (now) => {
-                const progress = Math.min((now - start) / duration, 1);
-                const nextValue = Math.round(target * progress);
-                node.textContent = `${stats[index].prefix}${nextValue}${stats[index].suffix}`;
-                if (progress < 1) {
-                  window.requestAnimationFrame(tick);
-                }
-              };
-
-              window.requestAnimationFrame(tick);
-            });
-          }
-
-          if (entry.target.dataset.observe === "badge-sequence") {
-            badges.forEach((badge, index) => {
-              window.setTimeout(() => {
-                badge.classList.add("is-visible", "oi-badge-pulse");
-              }, index * 80);
-            });
-          }
-
-          observer.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.2 },
-    );
-
-    revealTargets.forEach((target) => observer.observe(target));
-    if (line) {
-      observer.observe(line);
+  const features = [
+    {
+      icon: Code2,
+      title: 'GitHub Repository Indexing',
+      description: 'Connect any GitHub repo and index every file with language-aware chunking for Python, JavaScript, TypeScript, and Java.'
+    },
+    {
+      icon: Search,
+      title: 'Natural Language Q&A',
+      description: 'Ask questions in plain English and get answers that cite the exact file path, function name, and line numbers.'
+    },
+    {
+      icon: Globe,
+      title: 'Documentation Indexing',
+      description: 'Connect documentation URLs and get answers that combine code context with written documentation simultaneously.'
+    },
+    {
+      icon: AlertTriangle,
+      title: 'Staleness Detection',
+      description: 'Automatically detects when your README or documentation is out of sync with your actual codebase.'
+    },
+    {
+      icon: MessageSquare,
+      title: 'Persistent Chat Sessions',
+      description: 'All conversations are saved per workspace. Return anytime and continue where you left off.'
+    },
+    {
+      icon: Zap,
+      title: 'Multi-Provider AI',
+      description: 'Groq LLaMA 3.3 for fast answers with Gemini as fallback. Answers stay accurate even when providers have rate limits.'
     }
-    if (statBar) {
-      observer.observe(statBar);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+  ]
 
   return (
-    <div className="oi-shell">
-      <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${
-          navSolid
-            ? "border-[var(--color-border)] bg-[rgba(10,14,23,0.95)] backdrop-blur-xl"
-            : "border-transparent bg-[rgba(10,14,23,0.78)]"
-        }`}
-        style={{
-          height: "64px",
-          animation: "pageEnter 500ms ease forwards",
-          opacity: 0,
-          transform: "translateY(-10px)",
-        }}
-      >
-        <span className="oi-drift left-[5%] top-[10px] h-24 w-72 rotate-[8deg]" />
-        <span className="oi-drift right-[10%] top-[18px] h-20 w-60 -rotate-[4deg]" style={{ animationDelay: "4s" }} />
-        <div className="oi-container flex h-full items-center justify-between">
-          <a href="#top" className="flex items-center gap-3">
-            <BracketMark />
-            <span className="font-display text-xl font-bold tracking-tight text-[var(--color-text)]">
-              OnboardIQ
-            </span>
-          </a>
-
-          <nav className="hidden items-center gap-8 text-sm md:flex">
-            {[
-              ["Product", "#product"],
-              ["How It Works", "#how-it-works"],
-              ["Integrations", "#integrations"],
-              ["Pricing", "#waitlist"],
-            ].map(([label, href]) => (
-              <a key={label} href={href} className="oi-nav-link text-[14px]">
-                {label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <a href="#waitlist" className="oi-button oi-button-secondary hidden sm:inline-flex">
-              Request Access
-            </a>
-            <a href="/login" className="text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]">
+    <div style={{ minHeight: '100vh', background: '#080808' }}>
+      {/* Navbar */}
+      <nav style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        height: '72px',
+        display: 'flex',
+        alignItems: 'center',
+        transition: 'all 0.3s ease',
+        background: scrolled ? 'rgba(8, 8, 8, 0.8)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(16px)' : 'none',
+        borderBottom: scrolled ? '1px solid #1a1a1a' : '1px solid transparent',
+      }}>
+        <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 32px',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: '#f0f0f0', letterSpacing: '-0.02em' }}>
+            Onboardiq
+          </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <a href="/login" style={{ color: '#888', fontSize: '14px', textDecoration: 'none', transition: 'color 0.15s' }}
+               onMouseEnter={e => e.target.style.color = '#f0f0f0'}
+               onMouseLeave={e => e.target.style.color = '#888'}>
               Sign In
             </a>
+            <AccentButton onClick={() => navigate('/login')}>
+              Get Started
+            </AccentButton>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main id="top" className="oi-page-enter">
-        <section className="oi-grid-bg flex min-h-screen items-center pt-24">
-          <div className="oi-container grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="max-w-2xl">
-              <div
-                className="inline-flex min-h-[36px] items-center rounded-md border border-[rgba(0,255,156,0.2)] bg-[rgba(13,17,23,0.94)] px-4 py-2 font-mono text-[12px] text-[var(--color-primary)]"
-                style={{
-                  opacity: 0,
-                  transform: "translateY(-20px)",
-                  animation: "heroWord 540ms ease forwards",
-                  animationDelay: "100ms",
-                }}
-              >
-                Developer Onboarding Intelligence
-              </div>
+      {/* Hero Section */}
+      <section style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        paddingTop: '72px'
+      }}>
+        {/* Background gradient */}
+        <div style={{
+          position: 'absolute',
+          top: '20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '800px',
+          height: '800px',
+          background: 'radial-gradient(circle, rgba(229, 25, 94, 0.03) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+        
+        {/* Grid pattern */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M0 0h60v60H0z' fill='none' stroke='%23ffffff' stroke-width='0.5' stroke-opacity='0.03'/%3E%3C/svg%3E")`,
+          backgroundSize: '60px 60px',
+          pointerEvents: 'none'
+        }} />
 
-              <h1 className="font-display mt-8 text-[56px] font-bold leading-[1.1] tracking-[-0.04em] text-[var(--color-text)]">
-                {heroWords.map((word, index) => (
-                  <span
-                    key={word}
-                    className={`oi-word mr-[0.3em] ${word === "Twice." ? "text-[var(--color-primary)]" : ""}`}
-                    style={{ "--word-delay": `${250 + index * 70}ms` }}
-                  >
-                    {word}
-                  </span>
-                ))}
-              </h1>
+        <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 32px',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <h1 style={{
+            fontSize: 'clamp(48px, 8vw, 96px)',
+            fontWeight: '800',
+            letterSpacing: '-0.04em',
+            lineHeight: '1.1',
+            marginBottom: '24px'
+          }}>
+            <div style={{ color: '#f0f0f0' }}>Stop asking seniors</div>
+            <div style={{ color: '#e5195e' }}>the same questions.</div>
+          </h1>
+          
+          <p style={{
+            fontSize: '18px',
+            color: '#888',
+            marginBottom: '40px',
+            maxWidth: '600px',
+            margin: '0 auto 40px'
+          }}>
+            Index your codebase. Ask anything. Get answers with exact source citations.
+          </p>
 
-              <p
-                className="mt-8 max-w-[560px] text-base leading-[1.7] text-[var(--color-text)]"
-                style={{
-                  opacity: 0,
-                  transform: "translateY(24px)",
-                  animation: "heroWord 680ms ease forwards",
-                  animationDelay: "400ms",
-                }}
-              >
-                OnboardIQ indexes your GitHub, Confluence, and Slack into a unified
-                knowledge graph. New developers get answers with citations, not links
-                to a 50-page wiki.
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <AccentButton size="lg" onClick={() => navigate('/login')}>
+              Get Started Free
+            </AccentButton>
+            <AccentButton size="lg" variant="ghost" onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}>
+              View Demo
+            </AccentButton>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" style={{
+        padding: '120px 32px',
+        maxWidth: '1280px',
+        margin: '0 auto'
+      }}>
+        <h2 style={{
+          fontSize: '40px',
+          fontWeight: '700',
+          textAlign: 'center',
+          marginBottom: '64px',
+          color: '#f0f0f0',
+          letterSpacing: '-0.02em'
+        }}>
+          What Onboardiq does
+        </h2>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '24px'
+        }}>
+          {features.map((feature, index) => (
+            <GlassCard key={index} style={{ padding: '32px' }} hover>
+              <feature.icon style={{ width: '32px', height: '32px', color: '#e5195e', marginBottom: '20px' }} />
+              <h3 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#f0f0f0',
+                marginBottom: '12px',
+                letterSpacing: '-0.01em'
+              }}>
+                {feature.title}
+              </h3>
+              <p style={{
+                fontSize: '14px',
+                color: '#888',
+                lineHeight: '1.6'
+              }}>
+                {feature.description}
               </p>
+            </GlassCard>
+          ))}
+        </div>
+      </section>
 
-              <div
-                className="mt-10 flex flex-col gap-4 sm:flex-row"
-                style={{
-                  opacity: 0,
-                  transform: "translateY(24px)",
-                  animation: "heroWord 680ms ease forwards",
-                  animationDelay: "600ms",
-                }}
-              >
-                <a href="#waitlist" className="oi-button oi-button-primary">
-                  Connect Your Repo
-                </a>
-                <a href="#product" className="oi-button oi-button-secondary">
-                  See a Live Demo
-                </a>
-              </div>
+      {/* How It Works Section */}
+      <section style={{
+        padding: '120px 32px',
+        background: '#0d0d0d',
+        borderTop: '1px solid #1a1a1a',
+        borderBottom: '1px solid #1a1a1a'
+      }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '40px',
+            fontWeight: '700',
+            textAlign: 'center',
+            marginBottom: '64px',
+            color: '#f0f0f0',
+            letterSpacing: '-0.02em'
+          }}>
+            How it works
+          </h2>
 
-              <div className="mt-8 flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-muted)]">
-                <span>Indexes in under 5 minutes</span>
-                <span className="text-[var(--color-primary)]">·</span>
-                <span>Answers in under 3 seconds</span>
-                <span className="text-[var(--color-primary)]">·</span>
-                <span>Zero hallucination policy</span>
-              </div>
-            </div>
-
-            <div
-              id="product"
-              className="oi-panel relative overflow-hidden"
-              style={{
-                opacity: 0,
-                transform: "translateY(40px)",
-                animation: "heroWord 720ms ease forwards",
-                animationDelay: "700ms",
-              }}
-            >
-              <div className="border-b border-[var(--color-border)] px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-red)]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-amber)]" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-green)]" />
-                  </div>
-                  <span className="font-mono text-xs text-[var(--color-muted-bright)]">
-                    answer-session://onboardiq
-                  </span>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '32px'
+          }}>
+            {[
+              {
+                step: '1',
+                title: 'Connect your sources',
+                description: 'Connect your GitHub repo or documentation URL. Indexing completes in minutes.'
+              },
+              {
+                step: '2',
+                title: 'Ask questions',
+                description: 'Ask any question about the codebase in natural language. No special syntax required.'
+              },
+              {
+                step: '3',
+                title: 'Get cited answers',
+                description: 'Receive answers showing exact source files and line numbers with full context.'
+              }
+            ].map((item, index) => (
+              <div key={index} style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: 'rgba(229, 25, 94, 0.15)',
+                  border: '1px solid rgba(229, 25, 94, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px',
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: '#e5195e'
+                }}>
+                  {item.step}
                 </div>
-              </div>
-
-              <div className="space-y-6 px-6 py-6">
-                <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-code-bg)] p-4">
-                  <p className="font-mono text-[13px] text-[var(--color-muted-bright)]">Question</p>
-                  <p className="mt-2 text-base text-[var(--color-text)]">
-                    How does our authentication flow work?
-                  </p>
-                </div>
-
-                <div className="rounded-md border border-[rgba(0,255,156,0.18)] bg-[rgba(13,17,23,0.96)] p-5">
-                  <div className="flex items-center gap-3 text-[12px] text-[var(--color-primary)]">
-                    <Database className="h-[18px] w-[18px]" />
-                    <span className="font-mono">Cross-source answer</span>
-                  </div>
-                  <p className="mt-4 min-h-[144px] text-[15px] leading-7 text-[var(--color-text)]">
-                    {typedAnswer}
-                    <span className="ml-0.5 inline-block h-5 w-[1px] bg-[var(--color-primary)] align-middle opacity-70" />
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-3" data-observe="badge-sequence">
-                    {[
-                      ["github", "src/auth/jwt.py", "oi-source-github"],
-                      ["confluence", "Auth Architecture", "oi-source-confluence"],
-                      ["slack", "#backend-decisions Dec 2023", "oi-source-slack"],
-                    ].map(([source, label, color]) => (
-                      <div
-                        key={source}
-                        data-seq-badge="true"
-                        className={`oi-source-badge opacity-0 transition-all duration-500 ${color}`}
-                      >
-                        {source}
-                        <span className="ml-2 text-[var(--color-muted-bright)]">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="oi-section">
-          <div className="oi-container">
-            <div className="max-w-3xl">
-              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
-                The Onboarding Tax
-              </h2>
-              <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
-                Knowledge lives in 5 different tools. New developers interrupt senior
-                engineers 30-50 times a day.
-              </p>
-            </div>
-
-            <div className="mt-16 grid gap-6 lg:grid-cols-3">
-              {painPoints.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <article
-                    key={item.title}
-                    className="oi-panel oi-scroll-reveal p-7"
-                    data-observe="pain"
-                    style={{ "--reveal-delay": `${index * 80}ms` }}
-                  >
-                    <Icon className="h-6 w-6 text-[var(--color-primary)]" />
-                    <h3 className="font-display mt-6 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
-                      {item.title}
-                    </h3>
-                    <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
-                      {item.description}
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section id="how-it-works" className="oi-section oi-surface-blend">
-          <div className="oi-container relative z-10">
-            <div className="max-w-3xl">
-              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
-                From Question to Cited Answer in Seconds
-              </h2>
-            </div>
-
-            <div className="relative mt-14">
-              <svg
-                className="absolute left-0 top-[76px] hidden h-8 w-full lg:block"
-                viewBox="0 0 1200 40"
-                fill="none"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M120 20H1080"
-                  stroke="rgba(0,255,156,0.5)"
-                  strokeWidth="2"
-                  strokeDasharray="8 10"
-                  pathLength="1"
-                  data-flow-line="true"
-                  style={{
-                    strokeDasharray: "1",
-                    strokeDashoffset: "1",
-                    transition: "stroke-dashoffset 1200ms ease",
-                  }}
-                />
-              </svg>
-
-              <div className="grid gap-6 lg:grid-cols-3">
-                {steps.map((step, index) => {
-                  const Icon = step.icon;
-                  return (
-                    <article
-                      key={step.title}
-                      className="oi-panel oi-scroll-reveal relative overflow-hidden p-7"
-                      data-observe="step"
-                      style={{ "--reveal-delay": `${index * 80}ms` }}
-                    >
-                      <span className="font-mono absolute right-6 top-5 text-4xl text-[rgba(0,255,156,0.22)]">
-                        {step.number}
-                      </span>
-                      <Icon className="h-6 w-6 text-[var(--color-primary)]" />
-                      <h3 className="font-display mt-8 text-[24px] font-semibold leading-[1.3] text-[var(--color-text)]">
-                        {step.title}
-                      </h3>
-                      <p className="mt-4 text-base leading-[1.7] text-[var(--color-text)]">
-                        {step.description}
-                      </p>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="oi-section">
-          <div className="oi-container">
-            <div className="max-w-3xl">
-              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
-                Three Things No Other Tool Does Together
-              </h2>
-            </div>
-
-            <div className="mt-16 space-y-24">
-              <FeatureBlock
-                tag="SEARCH"
-                title="Ask Once. Get Every Answer."
-                body="One question simultaneously retrieves from GitHub code, Confluence documentation, and Slack threads. Every result is cited with its source, file path, and last-modified timestamp."
-                textSide="left"
-                visual={
-                  <div className="oi-panel overflow-hidden p-6">
-                    <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-code-bg)] p-5">
-                      <p className="font-mono text-xs text-[var(--color-muted-bright)]">
-                        Query fan-out
-                      </p>
-                      <div className="mt-4 flex items-center gap-3 rounded-md border border-[rgba(0,255,156,0.15)] bg-[rgba(17,24,39,0.92)] px-4 py-3">
-                          <Search className="h-[18px] w-[18px] text-[var(--color-primary)]" />
-                        <span className="text-sm text-[var(--color-text)]">
-                          Show me the auth decision trail
-                        </span>
-                      </div>
-                      <div className="mt-5 grid gap-3">
-                        {[
-                          ["github", "src/auth/jwt.py", "170ms"],
-                          ["confluence", "Auth Architecture", "290ms"],
-                          ["slack", "#backend-decisions", "340ms"],
-                        ].map(([source, path, latency], index) => (
-                          <div
-                            key={source}
-                            className="oi-scroll-reveal flex items-center justify-between rounded-md border border-[var(--color-border)] bg-[rgba(17,24,39,0.82)] px-4 py-3"
-                            data-observe="feature"
-                            style={{ "--reveal-delay": `${index * 80}ms` }}
-                          >
-                            <div>
-                              <p className={`font-mono text-[12px] uppercase ${source === "github" ? "text-[var(--color-muted-bright)]" : source === "confluence" ? "text-[#4A9EF5]" : source === "slack" ? "text-[#E01E5A]" : "text-[var(--color-muted-bright)]"}`}>
-                                {source}
-                              </p>
-                              <p className="mt-1 font-mono text-[13px] text-[var(--color-text)]">
-                                {path}
-                              </p>
-                            </div>
-                            <span className="font-mono text-[12px] text-[var(--color-muted-bright)]">
-                              {latency}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                }
-              />
-
-              <FeatureBlock
-                tag="EMBEDDINGS"
-                title="Questions Retrieve Code, Not Just Docs."
-                body="Most RAG systems miss code entirely. OnboardIQ uses joint embedding so 'how does auth work' retrieves the actual src/auth/jwt.py file, not just a documentation match."
-                textSide="right"
-                visual={
-                  <div className="oi-panel overflow-hidden p-6">
-                    <svg viewBox="0 0 520 320" className="w-full">
-                      <defs>
-                        <linearGradient id="embedLine" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#00FF9C" stopOpacity="0.12" />
-                          <stop offset="100%" stopColor="#00FF9C" stopOpacity="1" />
-                        </linearGradient>
-                      </defs>
-                      <rect x="20" y="50" width="150" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="40" y="82" fill="#8B949E" fontSize="12" fontFamily="JetBrains Mono">
-                        question.txt
-                      </text>
-                      <text x="40" y="104" fill="#E6EDF3" fontSize="14" fontFamily="IBM Plex Sans">
-                        how does auth work
-                      </text>
-
-                      <circle cx="260" cy="160" r="56" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="226" y="166" fill="#00FF9C" fontSize="12" fontFamily="JetBrains Mono">
-                        vector
-                      </text>
-
-                      <rect x="350" y="34" width="140" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="370" y="66" fill="#00FF9C" fontSize="12" fontFamily="JetBrains Mono">
-                        code
-                      </text>
-                      <text x="370" y="88" fill="#E6EDF3" fontSize="13" fontFamily="JetBrains Mono">
-                        src/auth/jwt.py
-                      </text>
-
-                      <rect x="350" y="214" width="140" height="72" rx="12" fill="#0D1117" stroke="#1E2D40" />
-                      <text x="370" y="246" fill="#8B949E" fontSize="12" fontFamily="JetBrains Mono">
-                        docs
-                      </text>
-                      <text x="370" y="268" fill="#E6EDF3" fontSize="13" fontFamily="IBM Plex Sans">
-                        Auth Overview
-                      </text>
-
-                      <path d="M170 86C220 86 196 142 204 142" stroke="url(#embedLine)" strokeWidth="3" fill="none" />
-                      <path d="M316 144C344 122 346 98 350 90" stroke="url(#embedLine)" strokeWidth="3" fill="none" />
-                      <path d="M316 176C344 198 346 222 350 230" stroke="#64748B" strokeOpacity="0.5" strokeWidth="2" fill="none" strokeDasharray="6 7" />
-                    </svg>
-                  </div>
-                }
-              />
-
-              <FeatureBlock
-                tag="MONITORING"
-                title="Docs Lie. We Flag It Automatically."
-                body="When a commit changes code, OnboardIQ semantically compares the new implementation against related documentation. If the docs still say JWT but the code was refactored to OAuth, we flag it before anyone gets confused."
-                textSide="left"
-                visual={
-                  <div className="oi-panel overflow-hidden p-6">
-                    <div className="rounded-md border border-[rgba(245,158,11,0.35)] bg-[rgba(13,17,23,0.96)] p-5">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <AlertTriangle className="h-[18px] w-[18px] text-[var(--color-amber)]" />
-                          <p className="font-display text-xl font-semibold text-[var(--color-text)]">
-                            Staleness Alert
-                          </p>
-                        </div>
-                        <span className="rounded-[4px] border border-[rgba(245,158,11,0.3)] px-2 py-1 font-mono text-[11px] text-[var(--color-amber)]">
-                          REVIEW
-                        </span>
-                      </div>
-                      <div className="mt-5 rounded-md border border-[var(--color-border)] bg-[rgba(17,24,39,0.88)] p-4">
-                        <p className="font-mono text-[12px] text-[var(--color-muted-bright)]">
-                          docs/auth-overview.md
-                        </p>
-                        <p className="mt-3 font-mono text-[13px] text-[var(--color-text)]">
-                          Documentation may be outdated - last code change: 3 days ago
-                        </p>
-                        <div className="mt-4 flex items-center gap-2 text-[13px] text-[var(--color-muted-bright)]">
-                          <CheckCircle className="h-[18px] w-[18px] text-[var(--color-green)]" />
-                          <span>Code now references OAuth refresh handlers</span>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2 text-[13px] text-[var(--color-muted-bright)]">
-                          <AlertTriangle className="h-[18px] w-[18px] text-[var(--color-amber)]" />
-                          <span>Docs still describe JWT-only token rotation</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-              />
-            </div>
-          </div>
-        </section>
-
-        <section id="integrations" className="oi-section">
-          <div className="oi-container">
-            <div className="max-w-3xl">
-              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
-                Indexes Everything Your Team Already Uses
-              </h2>
-            </div>
-
-            <div className="mt-14 grid grid-cols-2 gap-6 md:grid-cols-4">
-              {integrations.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.name}
-                    className="oi-panel oi-integrations-card oi-scroll-reveal flex min-h-[148px] flex-col items-center justify-center gap-4 p-6 text-center"
-                    data-observe="integration"
-                    style={{ "--reveal-delay": `${index * 80}ms` }}
-                  >
-                    <Icon className="h-6 w-6 text-[var(--color-text)]" />
-                    <p className="text-[13px] text-[var(--color-muted-bright)]">{item.name}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className="mt-8 text-center text-sm text-[var(--color-muted-bright)]">
-              More integrations shipping in Phase 3
-            </p>
-          </div>
-        </section>
-
-        <section
-          className="border-y border-[var(--color-border)] bg-[rgba(17,24,39,0.96)] py-10"
-          data-stats-bar="true"
-          data-observe="stats"
-        >
-          <div className="oi-container grid gap-8 lg:grid-cols-4">
-            {stats.map((stat, index) => (
-              <div
-                key={stat.label}
-                className="flex items-start gap-5 border-[var(--color-border)] lg:border-r lg:pr-8 last:border-r-0"
-              >
-                <div
-                  ref={(node) => {
-                    countRefs.current[index] = node;
-                  }}
-                  className="font-mono min-w-[112px] text-4xl font-normal leading-none text-[var(--color-text)] md:text-5xl"
-                >
-                  {`${stat.prefix}0${stat.suffix}`}
-                </div>
-                <p className="max-w-[190px] pt-2 text-sm leading-6 text-[var(--color-muted-bright)]">
-                  {stat.label}
+                <h3 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#f0f0f0',
+                  marginBottom: '12px',
+                  letterSpacing: '-0.01em'
+                }}>
+                  {item.title}
+                </h3>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#888',
+                  lineHeight: '1.6'
+                }}>
+                  {item.description}
                 </p>
               </div>
             ))}
           </div>
-        </section>
-
-        <section id="waitlist" className="oi-section oi-grid-bg">
-          <div className="oi-container">
-            <div className="mx-auto max-w-4xl text-center">
-              <h2 className="font-display text-[40px] font-semibold leading-[1.2] text-[var(--color-text)]">
-                Your team&apos;s knowledge. Finally searchable.
-              </h2>
-              <p className="mt-8 text-base leading-[1.7] text-[var(--color-text)]">
-                Join the waitlist. First 50 teams get free indexing for 3 months.
-              </p>
-
-              <form
-                className="mx-auto mt-10 flex max-w-2xl flex-col gap-3 sm:flex-row"
-                onSubmit={(event) => event.preventDefault()}
-              >
-                <input
-                  type="email"
-                  value={waitlistEmail}
-                  onChange={(event) => setWaitlistEmail(event.target.value)}
-                  placeholder="you@company.com"
-                  className="oi-input w-full flex-1"
-                  aria-label="Email address"
-                />
-                <button type="submit" className="oi-button oi-button-primary sm:min-w-[220px]">
-                  Request Early Access
-                </button>
-              </form>
-
-              <p className="mt-4 font-mono text-[13px] text-[var(--color-muted-bright)]">
-                No credit card. No sales call. Just early access.
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-      <footer className="border-t border-[var(--color-border)] py-16">
-        <div className="oi-container grid gap-10 md:grid-cols-3">
-          <div>
-            <div className="flex items-center gap-3">
-              <BracketMark />
-              <span className="font-display text-xl font-bold">OnboardIQ</span>
-            </div>
-            <p className="mt-4 max-w-sm text-sm leading-7 text-[var(--color-muted-bright)]">
-              Developer onboarding intelligence for engineering teams that need
-              answers with proof, not another search box.
-            </p>
-            <div className="mt-6 flex items-center gap-4 text-[var(--color-muted-bright)]">
-              <a href="https://github.com" aria-label="GitHub" className="transition-colors hover:text-[var(--color-text)]">
-                <Github className="h-5 w-5" />
-              </a>
-              <a href="https://linkedin.com" aria-label="LinkedIn" className="transition-colors hover:text-[var(--color-text)]">
-                <Linkedin className="h-5 w-5" />
-              </a>
-              <a href="https://twitter.com" aria-label="Twitter" className="transition-colors hover:text-[var(--color-text)]">
-                <Twitter className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <p className="font-display text-[24px] font-semibold text-[var(--color-text)]">Product</p>
-            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted-bright)]">
-              {["Features", "Integrations", "Changelog", "Roadmap"].map((item) => (
-                <a key={item} href="#product" className="flex items-center gap-2 transition-colors hover:text-[var(--color-text)]">
-                  <ChevronRight className="h-[18px] w-[18px]" />
-                  {item}
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col md:items-start">
-            <p className="font-display text-[24px] font-semibold text-[var(--color-text)]">Company</p>
-            <div className="mt-4 space-y-4 text-sm text-[var(--color-muted-bright)]">
-              {["About", "Blog", "Contact", "Privacy"].map((item) => (
-                <a key={item} href="#waitlist" className="flex items-center gap-2 transition-colors hover:text-[var(--color-text)]">
-                  <ExternalLink className="h-[18px] w-[18px]" />
-                  {item}
-                </a>
-              ))}
-            </div>
-            <p className="mt-8 font-mono text-[13px] text-[var(--color-muted-bright)]">
-              Built by Atharva Kharade
-            </p>
-          </div>
         </div>
+      </section>
+
+      {/* CTA Section */}
+      <section style={{
+        padding: '120px 32px',
+        textAlign: 'center'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '48px',
+            fontWeight: '700',
+            color: '#f0f0f0',
+            marginBottom: '32px',
+            letterSpacing: '-0.02em'
+          }}>
+            Start understanding your codebase today.
+          </h2>
+          <AccentButton size="lg" onClick={() => navigate('/login')}>
+            Get Started Free
+          </AccentButton>
+          <p style={{
+            marginTop: '16px',
+            fontSize: '13px',
+            color: '#555'
+          }}>
+            Free to use. No credit card required.
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{
+        borderTop: '1px solid #1a1a1a',
+        padding: '32px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        maxWidth: '1280px',
+        margin: '0 auto',
+        color: '#555',
+        fontSize: '14px',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div style={{ fontWeight: '600', color: '#888' }}>Onboardiq</div>
+        <div>© 2026 Onboardiq. All rights reserved.</div>
       </footer>
     </div>
-  );
+  )
 }

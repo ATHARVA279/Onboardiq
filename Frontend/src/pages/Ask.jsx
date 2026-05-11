@@ -44,7 +44,7 @@ function CitationAccordion({ citations }) {
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "#00ff9c",
+          color: "#e5195e",
           fontSize: "12px",
           padding: 0,
           fontWeight: "500",
@@ -64,7 +64,7 @@ function CitationAccordion({ citations }) {
         <div
           style={{
             marginTop: "8px",
-            borderLeft: "2px solid rgba(0,255,156,0.2)",
+            borderLeft: "2px solid rgba(229, 25, 94, 0.2)",
             paddingLeft: "12px",
             display: "flex",
             flexDirection: "column",
@@ -81,7 +81,7 @@ function CitationAccordion({ citations }) {
                   width: "8px",
                   height: "8px",
                   borderRadius: "50%",
-                  backgroundColor: src.source_type?.includes("github") ? "#3b82f6" : "#10b981",
+                  backgroundColor: src.source_type?.includes("github") ? "#3b82f6" : "#e5195e",
                   flexShrink: 0,
                 }}
               />
@@ -129,7 +129,8 @@ function Message({ message }) {
         <div
           style={{
             maxWidth: "70%",
-            backgroundColor: "#1A3A5C",
+            backgroundColor: "rgba(229, 25, 94, 0.12)",
+            border: "1px solid rgba(229, 25, 94, 0.2)",
             color: "#f1f5f9",
             borderRadius: "18px 18px 4px 18px",
             padding: "12px 16px",
@@ -153,7 +154,7 @@ function Message({ message }) {
           width: "28px",
           height: "28px",
           borderRadius: "50%",
-          background: "linear-gradient(135deg, #00ff9c 0%, #2E75B6 100%)",
+          background: "linear-gradient(135deg, #e5195e 0%, #9b2335 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -161,7 +162,7 @@ function Message({ message }) {
           marginTop: "2px",
           fontSize: "10px",
           fontWeight: "700",
-          color: "#080c10",
+          color: "#fff",
         }}
       >
         AI
@@ -229,8 +230,8 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
         display: "block",
         width: "100%",
         textAlign: "left",
-        background: isActive ? "rgba(0,255,156,0.06)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        borderLeft: isActive ? "2px solid #00ff9c" : "2px solid transparent",
+        background: isActive ? "rgba(229, 25, 94, 0.06)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
+        borderLeft: isActive ? "2px solid #e5195e" : "2px solid transparent",
         border: "none",
         padding: "8px 10px",
         borderRadius: "0 8px 8px 0",
@@ -604,7 +605,7 @@ export default function Ask() {
                   display: "flex",
                   transition: "color 0.15s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#00ff9c")}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#e5195e")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#4b5563")}
                 aria-label="New chat"
               >
@@ -629,7 +630,7 @@ export default function Ask() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#00ff9c",
+                      color: "#e5195e",
                       fontSize: "12px",
                       cursor: "pointer",
                     }}
@@ -704,14 +705,14 @@ export default function Ask() {
                     type="checkbox"
                     checked={selectedSourceIds.includes(source.source_id)}
                     onChange={() => toggleSource(source.source_id)}
-                    style={{ accentColor: "#00ff9c", flexShrink: 0 }}
+                    style={{ accentColor: "#e5195e", flexShrink: 0 }}
                   />
                   <span
                     style={{
                       width: "7px",
                       height: "7px",
                       borderRadius: "50%",
-                      backgroundColor: "#10b981",
+                      backgroundColor: "#e5195e",
                       flexShrink: 0,
                     }}
                   />
@@ -771,15 +772,15 @@ export default function Ask() {
                       width: "56px",
                       height: "56px",
                       borderRadius: "50%",
-                      background: "linear-gradient(135deg, rgba(0,255,156,0.15) 0%, rgba(46,117,182,0.15) 100%)",
-                      border: "1px solid rgba(0,255,156,0.2)",
+                      background: "linear-gradient(135deg, rgba(229, 25, 94, 0.15) 0%, rgba(155, 35, 53, 0.15) 100%)",
+                      border: "1px solid rgba(229, 25, 94, 0.2)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       marginBottom: "16px",
                     }}
                   >
-                    <Sparkles size={24} color="#00ff9c" />
+                    <Sparkles size={24} color="#e5195e" />
                   </div>
                   <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#f1f5f9", marginBottom: "8px" }}>
                     Ask your codebase anything
@@ -793,10 +794,10 @@ export default function Ask() {
                     style={{
                       marginTop: "20px",
                       padding: "10px 20px",
-                      backgroundColor: "rgba(0,255,156,0.1)",
-                      border: "1px solid rgba(0,255,156,0.25)",
+                      backgroundColor: "rgba(229, 25, 94, 0.1)",
+                      border: "1px solid rgba(229, 25, 94, 0.25)",
                       borderRadius: "10px",
-                      color: "#00ff9c",
+                      color: "#e5195e",
                       fontSize: "13px",
                       fontWeight: "500",
                       cursor: "pointer",
@@ -821,7 +822,7 @@ export default function Ask() {
                       width: "100%",
                       maxWidth: "520px",
                       borderRadius: "20px",
-                      border: "1px solid rgba(0,255,156,0.18)",
+                      border: "1px solid rgba(229, 25, 94, 0.18)",
                       background: "linear-gradient(180deg, rgba(16,22,32,0.96) 0%, rgba(13,17,23,0.98) 100%)",
                       padding: "28px",
                       textAlign: "center",
@@ -834,14 +835,14 @@ export default function Ask() {
                         height: "60px",
                         borderRadius: "18px",
                         margin: "0 auto 18px",
-                        background: "rgba(0,255,156,0.12)",
-                        border: "1px solid rgba(0,255,156,0.22)",
+                        background: "rgba(229, 25, 94, 0.12)",
+                        border: "1px solid rgba(229, 25, 94, 0.22)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      <Database size={28} color="#00ff9c" />
+                      <Database size={28} color="#e5195e" />
                     </div>
                     <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f1f5f9", marginBottom: "10px" }}>
                       Connect a source to start asking questions
@@ -855,10 +856,10 @@ export default function Ask() {
                       style={{
                         marginTop: "22px",
                         padding: "11px 18px",
-                        backgroundColor: "#00ff9c",
+                        backgroundColor: "#e5195e",
                         border: "none",
                         borderRadius: "12px",
-                        color: "#080c10",
+                        color: "#fff",
                         fontSize: "13px",
                         fontWeight: "700",
                         cursor: "pointer",
@@ -938,7 +939,7 @@ export default function Ask() {
                 transition: "border-color 0.15s",
               }}
               onFocusCapture={(e) =>
-                (e.currentTarget.style.borderColor = "rgba(0,255,156,0.4)")
+                (e.currentTarget.style.borderColor = "rgba(229, 25, 94, 0.4)")
               }
               onBlurCapture={(e) =>
                 (e.currentTarget.style.borderColor = "#1e2d1e")
@@ -977,11 +978,12 @@ export default function Ask() {
                 type="button"
                 onClick={handleAsk}
                 disabled={!completedSources.length || sendLoading || !question.trim()}
+                className="ask-send-button"
                 style={{
                   width: "34px",
                   height: "34px",
                   borderRadius: "8px",
-                  backgroundColor: completedSources.length && question.trim() && !sendLoading ? "#00ff9c" : "#1e2d1e",
+                  backgroundColor: completedSources.length && question.trim() && !sendLoading ? "#e5195e !important" : "#1e2d1e",
                   border: "none",
                   cursor: completedSources.length && question.trim() && !sendLoading ? "pointer" : "not-allowed",
                   display: "flex",
@@ -990,11 +992,21 @@ export default function Ask() {
                   flexShrink: 0,
                   transition: "background-color 0.15s",
                 }}
+                onMouseEnter={(e) => {
+                  if (completedSources.length && question.trim() && !sendLoading) {
+                    e.currentTarget.style.backgroundColor = "#c91450";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (completedSources.length && question.trim() && !sendLoading) {
+                    e.currentTarget.style.backgroundColor = "#e5195e";
+                  }
+                }}
                 aria-label="Send"
               >
                 <ArrowUp
                   size={16}
-                  color={completedSources.length && question.trim() && !sendLoading ? "#080c10" : "#4b5563"}
+                  color={completedSources.length && question.trim() && !sendLoading ? "#fff" : "#4b5563"}
                 />
               </button>
             </div>

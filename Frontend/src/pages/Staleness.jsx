@@ -295,7 +295,12 @@ export default function Staleness() {
                   <div className="flex shrink-0 gap-2 md:flex-col lg:flex-row">
                     <button
                       onClick={() => handleResolve(alert.id)}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700"
+                      className="flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
+                      style={{
+                        backgroundColor: '#e5195e'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#c91450'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e5195e'}
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Resolve
@@ -345,7 +350,7 @@ export default function Staleness() {
                   >
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <CheckCircle2 className="h-4 w-4" style={{ color: '#22c55e' }} />
                         <h4 className="text-sm font-medium line-through decoration-[var(--color-muted)]">
                           {alert.description}
                         </h4>

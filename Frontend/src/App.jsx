@@ -9,6 +9,7 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { onAuthStateChanged } from "firebase/auth";
+import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "./api/firebaseConfig";
 import Loader from "./components/Loader";
 import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
@@ -21,6 +22,25 @@ import Sources from "./pages/Sources";
 import Staleness from "./pages/Staleness";
 import Team from "./pages/Team";
 import WorkspaceSetup from "./pages/WorkspaceSetup";
+
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } }
+};
+
+function PageWrapper({ children }) {
+  return (
+    <motion.div
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 function ProtectedRoute({ children }) {
   const [ready, setReady] = useState(false);
@@ -57,76 +77,80 @@ function WorkspaceGuard({ children }) {
 }
 
 function AppRoutes() {
+  const location = useLocation();
+  
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/landing" element={<Navigate to="/" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Auth initialIsLogin={false} />} />
-      <Route path="/auth" element={<Navigate to="/login" replace />} />
-      <Route path="/app" element={<Navigate to="/dashboard" replace />} />
-      <Route
-        path="/workspace/setup"
-        element={
-          <ProtectedRoute>
-            <WorkspaceGuard>
-              <WorkspaceSetup />
-            </WorkspaceGuard>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <WorkspaceGuard>
-              <Dashboard />
-            </WorkspaceGuard>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/ask"
-        element={
-          <ProtectedRoute>
-            <WorkspaceGuard>
-              <Ask />
-            </WorkspaceGuard>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/sources"
-        element={
-          <ProtectedRoute>
-            <WorkspaceGuard>
-              <Sources />
-            </WorkspaceGuard>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/staleness"
-        element={
-          <ProtectedRoute>
-            <WorkspaceGuard>
-              <Staleness />
-            </WorkspaceGuard>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/team"
-        element={
-          <ProtectedRoute>
-            <WorkspaceGuard>
-              <Team />
-            </WorkspaceGuard>
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
+        <Route path="/landing" element={<Navigate to="/" replace />} />
+        <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
+        <Route path="/signup" element={<PageWrapper><Auth initialIsLogin={false} /></PageWrapper>} />
+        <Route path="/auth" element={<Navigate to="/login" replace />} />
+        <Route path="/app" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/workspace/setup"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGuard>
+                <PageWrapper><WorkspaceSetup /></PageWrapper>
+              </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGuard>
+                <PageWrapper><Dashboard /></PageWrapper>
+              </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ask"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGuard>
+                <PageWrapper><Ask /></PageWrapper>
+              </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sources"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGuard>
+                <PageWrapper><Sources /></PageWrapper>
+              </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staleness"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGuard>
+                <PageWrapper><Staleness /></PageWrapper>
+              </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/team"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGuard>
+                <PageWrapper><Team /></PageWrapper>
+              </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 
@@ -135,7 +159,15 @@ export default function App() {
     <Router>
       <WorkspaceProvider>
         <AppRoutes />
-        <ToastContainer position="top-right" autoClose={3000} theme="light" />
+        <ToastContainer 
+          position="top-right" 
+          autoClose={3000} 
+          theme="dark"
+          style={{
+            background: '#111',
+            border: '1px solid #2a2a2a'
+          }}
+        />
       </WorkspaceProvider>
     </Router>
   );
