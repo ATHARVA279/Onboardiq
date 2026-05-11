@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: onboardiq-backend
+    env: python
+    rootDir: Backend
+    plan: free
+    region: ohio
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION
+        value: python
+      - key: GRPC_DNS_RESOLVER
+        value: native
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
