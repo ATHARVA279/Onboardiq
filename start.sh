@@ -63,7 +63,11 @@ pip install -r requirements.txt --upgrade
 echo -e "${CYAN}[Backend]${NC} Starting FastAPI server..."
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 export GRPC_DNS_RESOLVER=native
-uvicorn app:app --reload --port 8000 &
+python -m uvicorn app:app \
+  --reload \
+  --reload-exclude venv \
+  --reload-exclude node_modules \
+  --port 8000 &
 BACKEND_PID=$!
 
 cd ..
