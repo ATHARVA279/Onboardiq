@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, ChevronDown, Code2, Database, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { ArrowUp, ChevronDown, Code2, Database, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
 import MarkdownRenderer from "../components/chat/MarkdownRenderer";
@@ -18,9 +18,9 @@ import { formatRelativeTime } from "../utils/formatters";
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function confidenceMeta(score) {
-  if (score > 80) return { label: "High", bg: "#15803d", text: "#bbf7d0" };
-  if (score >= 60) return { label: "Medium", bg: "#854d0e", text: "#fef08a" };
-  return { label: "Low", bg: "#7f1d1d", text: "#fca5a5" };
+  if (score > 80) return { label: "High", bg: "var(--accent-muted)", text: "var(--status-success)" };
+  if (score >= 60) return { label: "Medium", bg: "var(--accent-muted)", text: "var(--status-medium)" };
+  return { label: "Low", bg: "var(--accent-muted)", text: "var(--status-high)" };
 }
 
 function sessionKey(workspaceId) {
@@ -29,90 +29,46 @@ function sessionKey(workspaceId) {
 
 // ── Citations accordion ───────────────────────────────────────────────────────
 
-function CitationAccordion({ citations }) {
-  const [open, setOpen] = useState(false);
+function CitationChips({ citations }) {
+  const [showAll, setShowAll] = useState(false);
+  const displayedCitations = showAll ? citations : citations.slice(0, 4);
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "4px",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "#e5195e",
-          fontSize: "12px",
-          padding: 0,
-          fontWeight: "500",
-        }}
-      >
-        {citations.length} source{citations.length === 1 ? "" : "s"}
-        <ChevronDown
-          size={12}
-          style={{
-            transition: "transform 0.2s",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        />
-      </button>
-
-      {open && (
-        <div
-          style={{
-            marginTop: "8px",
-            borderLeft: "2px solid rgba(229, 25, 94, 0.2)",
-            paddingLeft: "12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-          }}
-        >
-          {citations.map((src, i) => (
-            <div
-              key={`${src.chunk_id}-${i}`}
-              style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
-            >
-              <span
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  backgroundColor: src.source_type?.includes("github") ? "#3b82f6" : "#e5195e",
-                  flexShrink: 0,
-                }}
-              />
-              <code
-                style={{
-                  fontSize: "11px",
-                  color: "#94a3b8",
-                  fontFamily: "monospace",
-                  wordBreak: "break-all",
-                }}
-              >
-                {src.file_path || "unknown"}
-              </code>
-              {src.start_line && (
-                <span style={{ fontSize: "11px", color: "#64748b" }}>
-                  L{src.start_line}{src.end_line ? `-${src.end_line}` : ""}
-                </span>
-              )}
-              <span
-                style={{
-                  fontSize: "11px",
-                  color: "#64748b",
-                  marginLeft: "auto",
-                }}
-              >
-                {Math.round((src.similarity_score || 0) * 100)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="mt-3 pt-3 border-t border-[var(--bg-hover)]">
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <Database className="w-3 h-3 text-[var(--accent-primary)]" />
+        <span className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">Sources</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {displayedCitations.map((src, i) => (
+          <div
+            key={`${src.chunk_id}-${i}`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--bg-hover)] hover:border-[var(--accent-primary)]/40 transition-all cursor-pointer group max-w-[200px]"
+            title={src.file_path}
+          >
+            <Code2 className="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] transition-colors" />
+            <span className="text-[12px] font-medium text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)]">
+              {src.file_path?.split('/').pop() || "source"}
+            </span>
+          </div>
+        ))}
+        {!showAll && citations.length > 4 && (
+          <button
+            onClick={() => setShowAll(true)}
+            className="flex items-center px-2 text-[11px] text-[var(--accent-primary)] font-bold hover:underline"
+          >
+            +{citations.length - 4} more
+          </button>
+        )}
+        {showAll && citations.length > 4 && (
+          <button
+            onClick={() => setShowAll(false)}
+            className="flex items-center px-2 text-[11px] text-[var(--text-tertiary)] font-bold hover:underline"
+          >
+            Show less
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -129,12 +85,12 @@ function Message({ message }) {
         <div
           style={{
             maxWidth: "70%",
-            backgroundColor: "rgba(229, 25, 94, 0.12)",
-            border: "1px solid rgba(229, 25, 94, 0.2)",
-            color: "#f1f5f9",
+            backgroundColor: "var(--accent-muted)",
+            border: "1px solid var(--accent-primary-hover)",
+            color: "var(--text-primary)",
             borderRadius: "18px 18px 4px 18px",
-            padding: "12px 16px",
-            fontSize: "14px",
+            padding: "14px 20px",
+            fontSize: "15px",
             lineHeight: "1.6",
             wordBreak: "break-word",
           }}
@@ -145,77 +101,48 @@ function Message({ message }) {
     );
   }
 
-  // Assistant message — document style, no bubble
   return (
-    <div style={{ display: "flex", gap: "10px", marginBottom: "24px", maxWidth: "85%" }}>
-      {/* Avatar */}
+    <div style={{ display: "flex", gap: "12px", marginBottom: "32px", maxWidth: "90%" }}>
       <div
         style={{
-          width: "28px",
-          height: "28px",
-          borderRadius: "50%",
-          background: "linear-gradient(135deg, #e5195e 0%, #9b2335 100%)",
+          width: "32px",
+          height: "32px",
+          borderRadius: "8px",
+          background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
           marginTop: "2px",
-          fontSize: "10px",
+          fontSize: "11px",
           fontWeight: "700",
-          color: "#fff",
+          color: "var(--bg-base)",
         }}
       >
-        AI
+        IQ
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Answer content */}
         <MarkdownRenderer content={message.content || ""} />
 
-        {/* Meta bar */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: "8px",
-            paddingTop: "8px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            flexWrap: "wrap",
-            gap: "8px",
+            marginTop: "12px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                backgroundColor: conf.bg,
-                color: conf.text,
-                fontSize: "11px",
-                fontWeight: "600",
-                padding: "2px 8px",
-                borderRadius: "999px",
-              }}
-            >
-              {conf.label}
-            </span>
-            <span style={{ fontSize: "11px", color: "#4b5563" }}>
+          {message.sources?.length > 0 && (
+            <CitationChips citations={message.sources} />
+          )}
+          <div className="mt-3 flex items-center justify-between">
+            <span style={{ fontSize: "11px", color: "var(--text-tertiary)" }}>
               {formatRelativeTime(message.created_at)}
             </span>
           </div>
-
-          {message.sources?.length > 0 && (
-            <CitationAccordion citations={message.sources} />
-          )}
         </div>
       </div>
     </div>
   );
 }
-
-// ── Session item ──────────────────────────────────────────────────────────────
 
 function SessionItem({ session, isActive, onSelect, onDelete }) {
   const [hovered, setHovered] = useState(false);
@@ -230,21 +157,21 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
         display: "block",
         width: "100%",
         textAlign: "left",
-        background: isActive ? "rgba(229, 25, 94, 0.06)" : hovered ? "rgba(255,255,255,0.04)" : "transparent",
-        borderLeft: isActive ? "2px solid #e5195e" : "2px solid transparent",
+        background: isActive ? "var(--bg-hover)" : hovered ? "var(--bg-base)" : "transparent",
+        borderLeft: isActive ? "2px solid var(--accent-primary)" : "2px solid transparent",
         border: "none",
-        padding: "8px 10px",
+        padding: "10px 14px",
         borderRadius: "0 8px 8px 0",
         cursor: "pointer",
         position: "relative",
-        transition: "all 0.15s",
+        transition: "all 0.2s",
       }}
     >
       <p
         style={{
-          fontSize: "13px",
+          fontSize: "14px",
           fontWeight: "500",
-          color: isActive ? "#f1f5f9" : "#94a3b8",
+          color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",
@@ -254,7 +181,7 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
       >
         {session.preview || "New Chat"}
       </p>
-      <p style={{ fontSize: "11px", color: "#4b5563", margin: "2px 0 0 0" }}>
+      <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: "4px 0 0 0" }}>
         {formatRelativeTime(session.updated_at)}
       </p>
 
@@ -273,14 +200,14 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "#6b7280",
+            color: "var(--text-tertiary)",
             padding: "4px",
             borderRadius: "4px",
             display: "flex",
             alignItems: "center",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#6b7280")}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--status-high)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-tertiary)")}
           aria-label="Delete session"
         >
           <Trash2 size={13} />
@@ -289,8 +216,6 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
     </button>
   );
 }
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export default function Ask() {
   const navigate = useNavigate();
@@ -305,14 +230,13 @@ export default function Ask() {
     [workspace],
   );
 
-  // ── Source selection ──────────────────────────────────────────────────────
-  const [selectedSourceIds, setSelectedSourceIds] = useState(() =>
-    completedSources.map((s) => s.source_id),
-  );
+  const [selectedSourceIds, setSelectedSourceIds] = useState([]);
 
   useEffect(() => {
-    setSelectedSourceIds(completedSources.map((s) => s.source_id));
-  }, [completedSources]);
+    if (completedSources.length > 0 && selectedSourceIds.length === 0) {
+      setSelectedSourceIds(completedSources.map((s) => s.source_id));
+    }
+  }, [completedSources, selectedSourceIds.length]);
 
   const toggleSource = (id) =>
     setSelectedSourceIds((cur) =>
@@ -323,7 +247,6 @@ export default function Ask() {
     await refreshWorkspace();
   }, [refreshWorkspace]);
 
-  // ── Sessions ──────────────────────────────────────────────────────────────
   const [sessions, setSessions] = useState([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState(null);
@@ -343,13 +266,12 @@ export default function Ask() {
     }
   }, [workspaceId]);
 
-  // ── Messages ──────────────────────────────────────────────────────────────
   const [messages, setMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [question, setQuestion] = useState("");
   const [sendLoading, setSendLoading] = useState(false);
   const [error, setError] = useState("");
-  const [retryCountdown, setRetryCountdown] = useState(null); // seconds remaining
+  const [retryCountdown, setRetryCountdown] = useState(null);
   const retryTimerRef = useRef(null);
 
   const loadSessionMessages = useCallback(
@@ -390,21 +312,18 @@ export default function Ask() {
       setActiveSessionId(target.session_id);
       await loadSessionMessages(target.session_id);
     })();
-  }, [workspaceId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [workspaceId, loadSessions, loadSessionMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sendLoading]);
 
-  // Auto-grow textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }, [question]);
-
-  // ── Session actions ───────────────────────────────────────────────────────
 
   const handleSelectSession = async (sid) => {
     setActiveSessionId(sid);
@@ -454,8 +373,6 @@ export default function Ask() {
     }
   };
 
-  // ── Send ──────────────────────────────────────────────────────────────────
-
   const startRetryCountdown = (seconds, pendingQuestion, pendingSessionId) => {
     setRetryCountdown(seconds);
     let remaining = seconds;
@@ -465,9 +382,7 @@ export default function Ask() {
       if (remaining <= 0) {
         clearInterval(retryTimerRef.current);
         setRetryCountdown(null);
-        // Auto-retry: restore question and re-send
         setQuestion(pendingQuestion);
-        // Small timeout to let state settle before re-triggering
         setTimeout(() => {
           setMessages((cur) => [
             ...cur,
@@ -484,9 +399,6 @@ export default function Ask() {
     setError("");
     try {
       const res = await askQuestion(workspaceId, sessionId || undefined, q, selectedSourceIds);
-
-      // Detect structured ai_unavailable error returned as 200 from axios interceptor
-      // (axios throws on non-2xx but the backend returns 503 JSON, so it will throw)
       if (res.session_id && res.session_id !== activeSessionId) {
         setActiveSessionId(res.session_id);
         localStorage.setItem(sessionKey(workspaceId), res.session_id);
@@ -504,7 +416,6 @@ export default function Ask() {
       ]);
       await loadSessions();
     } catch (err) {
-      // Check if this is the structured ai_unavailable error
       const data = err?.response?.data || err?.data;
       if (data?.error === "ai_unavailable" || (typeof data === "string" && data.includes("ai_unavailable"))) {
         const waitSecs = data?.retry_after_seconds || 30;
@@ -523,7 +434,6 @@ export default function Ask() {
       setConnectModalOpen(true);
       return;
     }
-
     if (!question.trim() || sendLoading || retryCountdown !== null) return;
     const q = question.trim();
     setMessages((cur) => [
@@ -531,63 +441,58 @@ export default function Ask() {
       { id: crypto.randomUUID(), role: "user", content: q, created_at: new Date().toISOString() },
     ]);
     setQuestion("");
-    // Clear any existing countdown
     if (retryTimerRef.current) { clearInterval(retryTimerRef.current); setRetryCountdown(null); }
     await doAsk(q, activeSessionId);
   };
-
-  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <AppShell>
       <div
         style={{
           display: "flex",
-          height: "calc(100vh - 3rem)",
+          height: "calc(100vh - 6rem)",
           overflow: "hidden",
           borderRadius: "20px",
-          border: "1px solid #1e2d1e",
-          backgroundColor: "#0d1117",
+          border: "1px solid var(--bg-hover)",
+          backgroundColor: "var(--bg-surface)",
         }}
       >
-        {/* ── LEFT PANEL: fixed 280px ── */}
         <div
           style={{
             width: "280px",
             minWidth: "280px",
             display: "flex",
             flexDirection: "column",
-            borderRight: "1px solid #1e2d1e",
+            borderRight: "1px solid var(--bg-hover)",
+            backgroundColor: "var(--bg-base)",
             overflow: "hidden",
           }}
         >
-          {/* Chat history — top 60% */}
           <div
             style={{
               flex: "0 0 60%",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
-              borderBottom: "1px solid #1e2d1e",
+              borderBottom: "1px solid var(--bg-hover)",
             }}
           >
-            {/* Header */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "12px 14px",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--bg-hover)",
               }}
             >
               <span
                 style={{
                   fontSize: "10px",
                   fontWeight: "700",
-                  letterSpacing: "0.12em",
+                  letterSpacing: "0.15em",
                   textTransform: "uppercase",
-                  color: "#4b5563",
+                  color: "var(--text-tertiary)",
                 }}
               >
                 Chats
@@ -599,43 +504,44 @@ export default function Ask() {
                   background: "none",
                   border: "none",
                   cursor: "pointer",
-                  color: "#4b5563",
+                  color: "var(--text-tertiary)",
                   padding: "4px",
                   borderRadius: "6px",
                   display: "flex",
-                  transition: "color 0.15s",
+                  transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#e5195e")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#4b5563")}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--accent-primary)";
+                  e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
                 aria-label="New chat"
               >
-                <Pencil size={13} />
+                <Pencil size={14} />
               </button>
             </div>
 
-            {/* Session list */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
               {sessionsLoading ? (
-                <p style={{ fontSize: "12px", color: "#4b5563", padding: "12px 14px" }}>
-                  Loading…
-                </p>
+                <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Loader2 className="h-4 w-4 animate-spin text-var(--accent-primary)" />
+                  <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>Loading chats…</span>
+                </div>
               ) : sessions.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "24px 14px" }}>
-                  <p style={{ fontSize: "12px", color: "#4b5563", marginBottom: "8px" }}>
-                    No chats yet
+                <div style={{ textAlign: "center", padding: "32px 20px" }}>
+                  <p style={{ fontSize: "13px", color: "var(--text-tertiary)", marginBottom: "12px" }}>
+                    No search history
                   </p>
                   <button
                     type="button"
                     onClick={handleNewChat}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#e5195e",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                    }}
+                    className="oi-button oi-button-secondary"
+                    style={{ minHeight: "36px", padding: "0 12px", fontSize: "12px" }}
                   >
-                    Start one →
+                    Start your first chat
                   </button>
                 </div>
               ) : (
@@ -652,7 +558,6 @@ export default function Ask() {
             </div>
           </div>
 
-          {/* Sources — bottom 40% */}
           <div
             style={{
               flex: "0 0 40%",
@@ -665,61 +570,48 @@ export default function Ask() {
               style={{
                 display: "flex",
                 alignItems: "center",
-                padding: "12px 14px",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--bg-hover)",
               }}
             >
               <span
                 style={{
                   fontSize: "10px",
                   fontWeight: "700",
-                  letterSpacing: "0.12em",
+                  letterSpacing: "0.15em",
                   textTransform: "uppercase",
-                  color: "#4b5563",
+                  color: "var(--text-tertiary)",
                 }}
               >
                 Sources
               </span>
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
               {completedSources.map((source) => (
                 <label
                   key={source.source_id}
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px",
-                    padding: "7px 14px",
+                    gap: "10px",
+                    padding: "8px 20px",
                     cursor: "pointer",
-                    transition: "background 0.1s",
+                    transition: "background 0.2s",
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = "transparent")
-                  }
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                 >
                   <input
                     type="checkbox"
                     checked={selectedSourceIds.includes(source.source_id)}
                     onChange={() => toggleSource(source.source_id)}
-                    style={{ accentColor: "#e5195e", flexShrink: 0 }}
+                    style={{ accentColor: "var(--accent-primary)", flexShrink: 0 }}
                   />
                   <span
                     style={{
-                      width: "7px",
-                      height: "7px",
-                      borderRadius: "50%",
-                      backgroundColor: "#e5195e",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#94a3b8",
+                      fontSize: "13px",
+                      color: "var(--text-secondary)",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -735,7 +627,6 @@ export default function Ask() {
           </div>
         </div>
 
-        {/* ── RIGHT PANEL: chat ── */}
         <div
           style={{
             flex: 1,
@@ -743,14 +634,14 @@ export default function Ask() {
             flexDirection: "column",
             overflow: "hidden",
             minWidth: 0,
+            backgroundColor: "var(--bg-surface)",
           }}
         >
-          {/* Message list */}
           <div
             style={{
               flex: 1,
               overflowY: "auto",
-              padding: "24px 32px",
+              padding: "40px 60px",
             }}
           >
             {messages.length === 0 && !messagesLoading && !sendLoading &&
@@ -763,193 +654,150 @@ export default function Ask() {
                     justifyContent: "center",
                     height: "100%",
                     textAlign: "center",
-                    opacity: 0.8,
-                    paddingBottom: "80px",
+                    paddingBottom: "100px",
                   }}
                 >
                   <div
                     style={{
-                      width: "56px",
-                      height: "56px",
-                      borderRadius: "50%",
-                      background: "linear-gradient(135deg, rgba(229, 25, 94, 0.15) 0%, rgba(155, 35, 53, 0.15) 100%)",
-                      border: "1px solid rgba(229, 25, 94, 0.2)",
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "16px",
+                      background: "var(--accent-muted)",
+                      border: "1px solid var(--accent-primary-hover)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      marginBottom: "16px",
+                      marginBottom: "24px",
+                      boxShadow: "0 0 40px var(--accent-glow)",
                     }}
                   >
-                    <Sparkles size={24} color="#e5195e" />
+                    <Sparkles size={32} color="var(--accent-primary)" />
                   </div>
-                  <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#f1f5f9", marginBottom: "8px" }}>
-                    Ask your codebase anything
+                  <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "16px" }}>
+                    What can I help you find?
                   </h2>
-                  <p style={{ fontSize: "14px", color: "#4b5563", maxWidth: "400px", lineHeight: "1.7" }}>
-                    Ask about auth flows, deployment steps, architecture decisions, or any part of your indexed codebase.
+                  <p style={{ fontSize: "17px", color: "var(--text-tertiary)", maxWidth: "520px", lineHeight: "1.7" }}>
+                    Search across your repositories and documentation with precision. IQ provides answers with full source citations.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setQuestion("How does our authentication flow work?")}
-                    style={{
-                      marginTop: "20px",
-                      padding: "10px 20px",
-                      backgroundColor: "rgba(229, 25, 94, 0.1)",
-                      border: "1px solid rgba(229, 25, 94, 0.25)",
-                      borderRadius: "10px",
-                      color: "#e5195e",
-                      fontSize: "13px",
-                      fontWeight: "500",
-                      cursor: "pointer",
-                      transition: "background 0.15s",
-                    }}
-                  >
-                    Try a sample question →
-                  </button>
+                  
+                  <div style={{ marginTop: "40px", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px" }}>
+                    {[
+                      "How does authentication work?",
+                      "Explain the deployment flow",
+                      "Find database migrations"
+                    ].map(suggestion => (
+                      <button
+                        key={suggestion}
+                        onClick={() => setQuestion(suggestion)}
+                        style={{
+                          padding: "12px 24px",
+                          backgroundColor: "var(--bg-base)",
+                          border: "1px solid var(--bg-hover)",
+                          borderRadius: "12px",
+                          color: "var(--text-secondary)",
+                          fontSize: "15px",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = "var(--accent-primary)";
+                          e.currentTarget.style.color = "var(--text-primary)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = "var(--bg-hover)";
+                          e.currentTarget.style.color = "var(--text-secondary)";
+                        }}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "100%",
-                    paddingBottom: "80px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100%",
-                      maxWidth: "520px",
-                      borderRadius: "20px",
-                      border: "1px solid rgba(229, 25, 94, 0.18)",
-                      background: "linear-gradient(180deg, rgba(16,22,32,0.96) 0%, rgba(13,17,23,0.98) 100%)",
-                      padding: "28px",
-                      textAlign: "center",
-                      boxShadow: "0 20px 50px rgba(0,0,0,0.28)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "60px",
-                        height: "60px",
-                        borderRadius: "18px",
-                        margin: "0 auto 18px",
-                        background: "rgba(229, 25, 94, 0.12)",
-                        border: "1px solid rgba(229, 25, 94, 0.22)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Database size={28} color="#e5195e" />
-                    </div>
-                    <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f1f5f9", marginBottom: "10px" }}>
-                      Connect a source to start asking questions
-                    </h2>
-                    <p style={{ fontSize: "14px", color: "#94a3b8", lineHeight: "1.7", margin: 0 }}>
-                      Connect a GitHub repo or documentation URL to start asking questions.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setConnectModalOpen(true)}
-                      style={{
-                        marginTop: "22px",
-                        padding: "11px 18px",
-                        backgroundColor: "#e5195e",
-                        border: "none",
-                        borderRadius: "12px",
-                        color: "#fff",
-                        fontSize: "13px",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Connect source
-                    </button>
-                  </div>
+                <div style={{ textAlign: "center", paddingTop: "100px" }}>
+                  <p style={{ color: "var(--text-secondary)" }}>Connect a source to start searching.</p>
                 </div>
               ))}
-
-            {messagesLoading && (
-              <p style={{ textAlign: "center", fontSize: "13px", color: "#4b5563", paddingTop: "40px" }}>
-                Loading messages…
-              </p>
-            )}
 
             {messages.map((m) => (
               <Message key={m.id} message={m} />
             ))}
-
-            {sendLoading && <TypingIndicator />}
-
+            
+            {sendLoading && (
+              <div style={{ display: "flex", gap: "12px", marginBottom: "32px" }}>
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    background: "var(--bg-hover)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Loader2 className="h-4 w-4 animate-spin text-var(--accent-primary)" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <TypingIndicator />
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
           <div
             style={{
-              borderTop: "1px solid #1e2d1e",
-              padding: "16px 24px",
-              backgroundColor: "#0d1117",
+              padding: "24px 60px 40px",
+              borderTop: "1px solid var(--bg-hover)",
+              backgroundColor: "var(--bg-surface)",
             }}
           >
             {error && (
               <div
                 style={{
-                  marginBottom: "12px",
-                  padding: "10px 14px",
-                  backgroundColor: retryCountdown !== null
-                    ? "rgba(120,80,10,0.4)"
-                    : "rgba(127,29,29,0.4)",
-                  border: `1px solid ${retryCountdown !== null ? "rgba(234,179,8,0.35)" : "rgba(239,68,68,0.3)"}`,
+                  marginBottom: "16px",
+                  padding: "12px 16px",
                   borderRadius: "10px",
+                  backgroundColor: retryCountdown !== null ? "rgba(212,168,67,0.1)" : "rgba(239,68,68,0.1)",
+                  border: `1px solid ${retryCountdown !== null ? "var(--accent-primary-hover)" : "var(--status-high)"}`,
+                  color: retryCountdown !== null ? "var(--accent-primary)" : "var(--status-high)",
                   fontSize: "13px",
-                  color: retryCountdown !== null ? "#fde68a" : "#fca5a5",
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "12px",
+                  gap: "10px",
                 }}
               >
-                <span>{error}</span>
-                {retryCountdown !== null && (
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      fontVariantNumeric: "tabular-nums",
-                      fontWeight: "600",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {retryCountdown}s
-                  </span>
-                )}
+                {retryCountdown !== null && <Loader2 className="h-4 w-4 animate-spin" />}
+                {error}
               </div>
             )}
+
             <div
               style={{
+                position: "relative",
                 display: "flex",
-                alignItems: "flex-end",
-                gap: "10px",
-                backgroundColor: "#161b22",
-                border: "1px solid #1e2d1e",
-                borderRadius: "14px",
-                padding: "10px 12px",
-                transition: "border-color 0.15s",
+                flexDirection: "column",
+                backgroundColor: "var(--bg-base)",
+                borderRadius: "16px",
+                border: "1px solid var(--bg-hover)",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
               }}
-              onFocusCapture={(e) =>
-                (e.currentTarget.style.borderColor = "rgba(229, 25, 94, 0.4)")
-              }
-              onBlurCapture={(e) =>
-                (e.currentTarget.style.borderColor = "#1e2d1e")
-              }
+              onFocusCapture={(e) => {
+                e.currentTarget.style.borderColor = "var(--accent-primary)";
+                e.currentTarget.style.boxShadow = "0 8px 32px var(--accent-glow)";
+              }}
+              onBlurCapture={(e) => {
+                e.currentTarget.style.borderColor = "var(--bg-hover)";
+                e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.2)";
+              }}
             >
               <textarea
                 ref={textareaRef}
                 value={question}
-                rows={1}
-                disabled={!completedSources.length}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -957,73 +805,68 @@ export default function Ask() {
                     handleAsk();
                   }
                 }}
-                placeholder={completedSources.length ? "Ask anything about your codebase… (Enter to send, Shift+Enter for newline)" : "Connect a source to start asking questions"}
+                placeholder={
+                  completedSources.length
+                    ? "Ask a question about your sources…"
+                    : "Connect a source to start searching…"
+                }
+                disabled={!completedSources.length || sendLoading || retryCountdown !== null}
                 style={{
-                  flex: 1,
+                  width: "100%",
+                  padding: "16px 60px 16px 20px",
                   background: "none",
                   border: "none",
                   outline: "none",
                   resize: "none",
-                  color: "#f1f5f9",
-                  fontSize: "14px",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
                   lineHeight: "1.6",
                   maxHeight: "120px",
-                  overflowY: "auto",
                   fontFamily: "inherit",
-                  opacity: completedSources.length ? 1 : 0.6,
-                  cursor: completedSources.length ? "text" : "not-allowed",
                 }}
               />
+              
               <button
                 type="button"
                 onClick={handleAsk}
-                disabled={!completedSources.length || sendLoading || !question.trim()}
+                disabled={!question.trim() || sendLoading || retryCountdown !== null}
                 className="ask-send-button"
                 style={{
-                  width: "34px",
-                  height: "34px",
-                  borderRadius: "8px",
-                  backgroundColor: completedSources.length && question.trim() && !sendLoading ? "#e5195e !important" : "#1e2d1e",
-                  border: "none",
-                  cursor: completedSources.length && question.trim() && !sendLoading ? "pointer" : "not-allowed",
+                  position: "absolute",
+                  right: "12px",
+                  bottom: "12px",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  flexShrink: 0,
-                  transition: "background-color 0.15s",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  backgroundColor: "var(--bg-hover)",
+                  color: "var(--text-tertiary)",
                 }}
-                onMouseEnter={(e) => {
-                  if (completedSources.length && question.trim() && !sendLoading) {
-                    e.currentTarget.style.backgroundColor = "#c91450";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (completedSources.length && question.trim() && !sendLoading) {
-                    e.currentTarget.style.backgroundColor = "#e5195e";
-                  }
-                }}
-                aria-label="Send"
               >
-                <ArrowUp
-                  size={16}
-                  color={completedSources.length && question.trim() && !sendLoading ? "#fff" : "#4b5563"}
-                />
+                {sendLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowUp size={18} />
+                )}
               </button>
             </div>
-            <p style={{ fontSize: "11px", color: "#374151", marginTop: "6px", textAlign: "center" }}>
-              {completedSources.length
-                ? "Shift+Enter for newline · answers grounded in your indexed sources"
-                : "Connect a source to enable asking and grounded answers"}
+            
+            <p style={{ marginTop: "16px", fontSize: "11px", color: "var(--text-tertiary)", textAlign: "center" }}>
+              Press Enter to send. Use Shift+Enter for new lines.
             </p>
           </div>
         </div>
       </div>
 
       <ConnectSourceModal
-        open={connectModalOpen}
+        isOpen={connectModalOpen}
         onClose={() => setConnectModalOpen(false)}
-        workspaceId={workspaceId}
-        onConnected={handleConnectSuccess}
+        onSuccess={handleConnectSuccess}
       />
     </AppShell>
   );

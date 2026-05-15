@@ -7,19 +7,19 @@ export default function AccentButton({ children, onClick, loading, disabled, var
   
   const variants = {
     primary: {
-      background: loading || disabled ? '#333' : '#e5195e',
-      color: loading || disabled ? '#666' : '#fff',
+      background: loading || disabled ? 'var(--bg-hover)' : 'var(--accent-primary)',
+      color: loading || disabled ? 'var(--text-tertiary)' : '#000',
       border: 'none',
     },
     ghost: {
       background: 'transparent',
-      color: '#888',
-      border: '1px solid #2a2a2a',
+      color: 'var(--text-secondary)',
+      border: '1px solid var(--border-subtle)',
     },
     outline: {
       background: 'transparent',
-      color: '#e5195e',
-      border: '1px solid #e5195e',
+      color: 'var(--accent-primary)',
+      border: '1px solid var(--accent-primary)',
     }
   }
   
@@ -32,27 +32,32 @@ export default function AccentButton({ children, onClick, loading, disabled, var
         ...variants[variant],
         borderRadius: '8px',
         fontFamily: 'Inter, sans-serif',
-        fontWeight: '500',
+        fontWeight: '600',
         cursor: disabled || loading ? 'not-allowed' : 'pointer',
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: '8px',
         transition: 'all 0.15s ease',
         letterSpacing: '-0.01em',
         whiteSpace: 'nowrap',
       }}
       onMouseEnter={e => {
-        if (!disabled && !loading && variant === 'primary') {
-          e.currentTarget.style.background = '#ff2070'
+        if (!disabled && !loading) {
+          if (variant === 'primary') {
+            e.currentTarget.style.background = 'var(--accent-primary-hover)'
+            e.currentTarget.style.boxShadow = '0 8px 24px var(--accent-glow)'
+          } else {
+            e.currentTarget.style.background = 'var(--bg-hover)'
+          }
           e.currentTarget.style.transform = 'translateY(-1px)'
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(229, 25, 94, 0.3)'
         }
       }}
       onMouseLeave={e => {
-        if (!disabled && !loading && variant === 'primary') {
-          e.currentTarget.style.background = '#e5195e'
-          e.currentTarget.style.transform = 'translateY(0)'
+        if (!disabled && !loading) {
+          e.currentTarget.style.background = variants[variant].background
           e.currentTarget.style.boxShadow = 'none'
+          e.currentTarget.style.transform = 'translateY(0)'
         }
       }}
     >
@@ -60,8 +65,8 @@ export default function AccentButton({ children, onClick, loading, disabled, var
         <>
           <span style={{
             width: '14px', height: '14px',
-            border: '2px solid #555',
-            borderTopColor: '#888',
+            border: '2px solid var(--text-tertiary)',
+            borderTopColor: 'var(--text-primary)',
             borderRadius: '50%',
             animation: 'spin 0.6s linear infinite',
             display: 'inline-block'

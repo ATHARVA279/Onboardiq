@@ -4,8 +4,8 @@ export default function Card({ children, className = '', hover = false, padding 
     return (
         <div
             className={`
-        bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-xl ${padding}
-        ${hover ? 'hover:border-zinc-700 hover:bg-zinc-900 transition-all duration-300' : ''}
+        bg-[var(--bg-surface)] border border-[var(--bg-hover)] rounded-xl ${padding}
+        ${hover ? 'hover:border-[var(--accent-primary)] hover:bg-[var(--bg-hover)] transition-all duration-300 shadow-xl shadow-black/40' : ''}
         ${className}
       `}
             {...props}

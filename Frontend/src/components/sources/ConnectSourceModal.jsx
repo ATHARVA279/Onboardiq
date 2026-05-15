@@ -70,14 +70,14 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
       <div className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-[var(--color-text)]">Connect New Source</h3>
-            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+            <h3 className="text-2xl font-semibold text-[var(--text-primary)]">Connect New Source</h3>
+            <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
               Add a repository or documentation source to your workspace.
             </p>
           </div>
         </div>
 
-        <div className="mt-6 flex rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)] p-1">
+        <div className="mt-6 flex rounded-lg border border-[var(--bg-hover)] bg-[var(--bg-base)] p-1">
           {[
             { id: "github", label: "GitHub Repository" },
             { id: "url", label: "Documentation URL" },
@@ -88,8 +88,8 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
               onClick={() => setTab(item.id)}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-medium transition ${
                 tab === item.id
-                  ? "bg-[var(--color-surface)] text-[var(--color-text)]"
-                  : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
+                  ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
               {item.label}
@@ -100,7 +100,7 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
         {tab === "github" ? (
           <form onSubmit={handleGithubSubmit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">Repository URL</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">Repository URL</span>
               <input
                 type="url"
                 value={repoUrl}
@@ -112,7 +112,7 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">
+              <span className="text-sm font-medium text-[var(--text-primary)]">
                 Personal Access Token
               </span>
               <div className="relative mt-2">
@@ -126,22 +126,24 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
                 <button
                   type="button"
                   onClick={() => setShowToken((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
                 >
                   {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-[var(--color-muted)]">
-                Optional for public repos. Required for private repos. Needs repo:read scope.
+              <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+                Optional for public repos. Required for private repos. Needs
+                `repo:read` scope.
               </p>
             </label>
 
-            <div className="rounded-lg border border-[rgba(59,130,246,0.3)] bg-[rgba(59,130,246,0.12)] px-4 py-3 text-sm leading-7 text-[var(--color-primary)]">
-              Without a token, GitHub rate limits drop to 60 requests per hour, which can cause larger repositories to fail before indexing completes.
+            <div className="rounded-lg border border-[var(--accent-muted)] bg-[var(--accent-muted)]/10 px-4 py-3 text-sm leading-7 text-[var(--accent-primary)]">
+              Without a token, GitHub rate limits drop to 60 requests per hour, which
+              can cause larger repositories to fail before indexing completes.
             </div>
 
             {error ? (
-              <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+              <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
                 {error}
               </div>
             ) : null}
@@ -167,7 +169,7 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
         ) : (
           <form onSubmit={handleDocsSubmit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">Documentation URL</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">Documentation URL</span>
               <input
                 type="url"
                 value={docsUrl}
@@ -176,15 +178,15 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
                 placeholder="https://docs.yourproject.com"
                 required
               />
-              <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+              <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
                 Onboardiq will automatically discover and index linked pages on the same domain up to 20 pages.
               </p>
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">
+              <span className="text-sm font-medium text-[var(--text-primary)]">
                 Display Name
-                <span className="ml-1 text-xs font-normal text-[var(--color-muted)]">(optional)</span>
+                <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">(optional)</span>
               </span>
               <input
                 type="text"
@@ -195,12 +197,12 @@ export default function ConnectSourceModal({ open, onClose, workspaceId, onConne
               />
             </label>
 
-            <div className="rounded-lg border border-[rgba(234,179,8,0.35)] bg-[rgba(234,179,8,0.08)] px-4 py-3 text-sm leading-6 text-yellow-400">
+            <div className="rounded-lg border border-[var(--status-medium)]/30 bg-[var(--status-medium)]/10 px-4 py-3 text-sm leading-6 text-[var(--status-medium)]">
               ⚠️ Some sites may block automated scraping. If indexing fails, try a different documentation format.
             </div>
 
             {error ? (
-              <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+              <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
                 {error}
               </div>
             ) : null}

@@ -4,30 +4,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Modern color palette
-        primary: {
-          50: "#f0f9ff",
-          100: "#e0f2fe",
-          200: "#bae6fd",
-          300: "#7dd3fc",
-          400: "#38bdf8",
-          500: "#0ea5e9",
-          600: "#0284c7",
-          700: "#0369a1",
-          800: "#075985",
-          900: "#0c4a6e",
+        // Modern Charcoal + Gold palette
+        bg: {
+          base: "#0C0C0E",
+          surface: "#1A1A1F",
+          elevated: "#1A1A1F",
+          hover: "#24242A",
         },
         accent: {
-          50: "#fdf4ff",
-          100: "#fae8ff",
-          200: "#f5d0fe",
-          300: "#f0abfc",
-          400: "#e879f9",
-          500: "#d946ef",
-          600: "#c026d3",
-          700: "#a21caf",
-          800: "#86198f",
-          900: "#701a75",
+          primary: "#D4A843",
+          hover: "#A07830",
+          muted: "rgba(212, 168, 67, 0.12)",
+          glow: "rgba(212, 168, 67, 0.15)",
+        },
+        text: {
+          primary: "#F0F0F6",
+          secondary: "#A1A1AE",
+          tertiary: "#6B6B78",
+        },
+        status: {
+          high: "#EF4444",
+          medium: "#F59E0B",
+          low: "#D4A843",
+          success: "#10B981",
+        },
+        // Legacy support if needed, but updated to theme
+        primary: {
+          50: "#fcf9ee",
+          100: "#f7f0d4",
+          200: "#eee0aa",
+          300: "#e1ca76",
+          400: "#d4a843", // accent-primary
+          500: "#c39336",
+          600: "#a07830", // accent-primary-hover
+          700: "#865f28",
+          800: "#6e4e24",
+          900: "#5b4221",
         },
       },
       fontFamily: {

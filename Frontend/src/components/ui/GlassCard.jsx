@@ -4,8 +4,8 @@ export default function GlassCard({ children, style, className, hover = false, o
       onClick={onClick}
       className={className}
       style={{
-        background: 'rgba(255, 255, 255, 0.04)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border-subtle)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderRadius: '12px',
@@ -15,14 +15,14 @@ export default function GlassCard({ children, style, className, hover = false, o
       }}
       onMouseEnter={e => {
         if (hover) {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.07)'
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'
+          e.currentTarget.style.background = 'var(--bg-hover)'
+          e.currentTarget.style.borderColor = 'var(--border-default)'
         }
       }}
       onMouseLeave={e => {
         if (hover) {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+          e.currentTarget.style.background = 'var(--bg-elevated)'
+          e.currentTarget.style.borderColor = 'var(--border-subtle)'
         }
       }}
     >

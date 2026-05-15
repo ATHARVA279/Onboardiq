@@ -242,27 +242,27 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-2 bg-zinc-900 rounded-full mb-6 border border-zinc-800">
-            <Sparkles className="w-4 h-4 text-emerald-400 mr-2" />
-            <span className="text-xs font-medium text-zinc-400">
+          <div className="inline-flex items-center justify-center p-2 bg-[var(--bg-elevated)] rounded-full mb-6 border border-[var(--bg-hover)]">
+            <Sparkles className="w-4 h-4 text-[var(--accent-primary)] mr-2" />
+            <span className="text-xs font-medium text-[var(--text-secondary)]">
               AI-Powered Learning
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-zinc-100 mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] mb-4 tracking-tight">
             Transform content into{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-emerald-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-hover)]">
               knowledge
             </span>
           </h1>
-          <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+          <p className="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto">
             Enter any URL to extract key concepts and prepare the document for
             chat-based review.
           </p>
         </div>
 
         {initializingML && (
-          <Card className="mb-8 border-emerald-500/20 bg-emerald-500/5">
-            <div className="flex items-center gap-3 text-emerald-300 text-sm">
+          <Card className="mb-8 border-[var(--accent-muted)] bg-[var(--accent-muted)]/5">
+            <div className="flex items-center gap-3 text-[var(--accent-primary)] text-sm">
               <Settings className="w-4 h-4 animate-spin" />
               Initializing AI models (first time only)...
             </div>
@@ -270,11 +270,11 @@ export default function Home() {
         )}
 
         {/* Extract Section */}
-        <Card className="mb-12 p-8 border-zinc-800 shadow-2xl shadow-black/50">
+        <Card className="mb-12 p-8 border-[var(--bg-hover)] shadow-2xl">
           <div className="flex flex-col gap-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <LinkIcon className="h-5 w-5 text-zinc-500" />
+                <LinkIcon className="h-5 w-5 text-[var(--text-tertiary)]" />
               </div>
               <Input
                 type="text"
@@ -282,7 +282,7 @@ export default function Home() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleExtract()}
-                className="pl-11 py-4 text-lg bg-zinc-950 border-zinc-800 focus:border-emerald-500"
+                className="pl-11 py-4 text-lg bg-[var(--bg-base)] border-[var(--bg-hover)] focus:border-[var(--accent-primary)]"
               />
             </div>
 
@@ -296,7 +296,7 @@ export default function Home() {
               >
                 {loading ? (
                   <>
-                    <PulseLoader color="#22c55e" size={8} className="mr-2" />
+                    <PulseLoader color="var(--accent-primary)" size={8} className="mr-2" />
                     Extracting...
                   </>
                 ) : (
@@ -323,13 +323,13 @@ export default function Home() {
 
           {loading && (
             <div className="mt-8">
-              <div className="flex justify-between text-sm text-zinc-400 mb-2">
+              <div className="flex justify-between text-sm text-[var(--text-tertiary)] mb-2">
                 <span>{status}</span>
                 <span>{progress}%</span>
               </div>
-              <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-[var(--bg-hover)] rounded-full h-1.5 overflow-hidden">
                 <div
-                  className="bg-emerald-500 h-full transition-all duration-500 ease-out"
+                  className="bg-[var(--accent-primary)] h-full transition-all duration-500 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -340,8 +340,8 @@ export default function Home() {
         {concepts.length > 0 && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-zinc-100 flex items-center gap-2">
-                <Target className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-xl font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <Target className="w-5 h-5 text-[var(--accent-primary)]" />
                 Key Concepts
               </h3>
               <Badge variant="default">{concepts.length} Found</Badge>
@@ -378,15 +378,15 @@ export default function Home() {
             ].map((feature, i) => (
               <div
                 key={i}
-                className="p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800/50"
+                className="p-6 rounded-2xl bg-[var(--bg-surface)]/30 border border-[var(--bg-hover)]/50"
               >
-                <div className="w-12 h-12 mx-auto bg-zinc-900 rounded-xl flex items-center justify-center mb-4 border border-zinc-800">
-                  <feature.icon className="w-6 h-6 text-zinc-400" />
+                <div className="w-12 h-12 mx-auto bg-[var(--bg-elevated)] rounded-xl flex items-center justify-center mb-4 border border-[var(--bg-hover)]">
+                  <feature.icon className="w-6 h-6 text-[var(--text-tertiary)]" />
                 </div>
-                <h3 className="font-semibold text-zinc-200 mb-2">
+                <h3 className="font-semibold text-[var(--text-secondary)] mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-zinc-500">{feature.desc}</p>
+                <p className="text-sm text-[var(--text-tertiary)]">{feature.desc}</p>
               </div>
             ))}
           </div>

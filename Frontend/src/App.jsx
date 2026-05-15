@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import Sources from "./pages/Sources";
 import Staleness from "./pages/Staleness";
 import Team from "./pages/Team";
@@ -85,7 +86,7 @@ function AppRoutes() {
         <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
         <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
-        <Route path="/signup" element={<PageWrapper><Auth initialIsLogin={false} /></PageWrapper>} />
+        <Route path="/signup" element={<PageWrapper><Signup /></PageWrapper>} />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="/app" element={<Navigate to="/dashboard" replace />} />
         <Route
@@ -163,10 +164,9 @@ export default function App() {
           position="top-right" 
           autoClose={3000} 
           theme="dark"
-          style={{
-            background: '#111',
-            border: '1px solid #2a2a2a'
-          }}
+          toastClassName="bg-[var(--bg-surface)] border border-[var(--bg-hover)] text-[var(--text-primary)]"
+          bodyClassName="text-sm font-medium"
+          progressClassName="bg-[var(--accent-primary)]"
         />
       </WorkspaceProvider>
     </Router>

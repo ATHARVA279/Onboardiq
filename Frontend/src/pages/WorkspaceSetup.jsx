@@ -28,34 +28,34 @@ export default function WorkspaceSetup() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--bg-base)] px-4">
       <div className="w-full max-w-xl text-center">
         <div className="flex flex-col items-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1A3A5C] text-xl font-bold text-white">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-elevated)] text-xl font-bold text-[var(--accent-primary)]">
             O
           </div>
-          <p className="mt-4 text-2xl font-bold text-[#1A3A5C]">Onboardiq</p>
+          <p className="mt-4 text-2xl font-bold text-[var(--text-primary)]">Onboardiq</p>
         </div>
 
-        <h1 className="mt-10 text-3xl font-semibold tracking-tight text-[#1E293B]">
+        <h1 className="mt-10 text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
           Create your team workspace
         </h1>
-        <p className="mx-auto mt-4 max-w-lg text-base leading-8 text-[#64748B]">
+        <p className="mx-auto mt-4 max-w-lg text-base leading-8 text-[var(--text-secondary)]">
           Connect your codebase and start answering developer questions instantly.
         </p>
 
         <form
           onSubmit={handleCreate}
-          className="mt-10 rounded-3xl border border-slate-200 bg-white p-8 text-left shadow-sm"
+          className="mt-10 rounded-3xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-8 text-left shadow-lg"
         >
           <label className="block">
-            <span className="text-sm font-medium text-[#1E293B]">Workspace Name</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">Workspace Name</span>
             <input
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="e.g. Backend Team, Platform Engineering"
-              className="mt-3 h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-[#1E293B] outline-none transition focus:border-[#2E75B6] focus:ring-4 focus:ring-[#2E75B6]/10"
+              className="mt-3 h-12 w-full rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-elevated)] px-4 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent-primary)] focus:ring-4 focus:ring-[var(--accent-muted)]"
               required
               minLength={1}
               maxLength={100}
@@ -63,7 +63,7 @@ export default function WorkspaceSetup() {
           </label>
 
           {error ? (
-            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mt-4 rounded-2xl border border-[var(--status-high)]/20 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
               {error}
             </div>
           ) : null}
@@ -71,7 +71,7 @@ export default function WorkspaceSetup() {
           <button
             type="submit"
             disabled={loading || !name.trim()}
-            className="mt-6 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#2E75B6] px-4 text-sm font-medium text-white transition hover:bg-[#255f93] disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-6 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent-primary)] px-4 text-sm font-medium text-[var(--bg-base)] transition hover:bg-[var(--accent-primary-hover)] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? (
               <>

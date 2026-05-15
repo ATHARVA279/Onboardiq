@@ -12,9 +12,6 @@ export default function MarkdownRenderer({ content }) {
           const codeContent = String(children).replace(/\n$/, '')
           const match = /language-(\w+)/.exec(className || '')
 
-          // Multi-signal inline detection:
-          // react-markdown passes `inline=true` for backtick spans inside paragraphs.
-          // As a defence, also treat single-line, short, no-language-tag code as inline.
           const isMultiLine = codeContent.includes('\n')
           const hasLanguageClass = !!match
           const isShort = codeContent.length < 80
@@ -25,13 +22,13 @@ export default function MarkdownRenderer({ content }) {
             return (
               <code
                 style={{
-                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                  color: '#818cf8',
-                  padding: '1px 5px',
-                  borderRadius: '3px',
+                  backgroundColor: 'var(--accent-muted)',
+                  color: 'var(--accent-primary)',
+                  padding: '2px 5px',
+                  borderRadius: '4px',
                   fontSize: '0.85em',
                   fontFamily: '"Fira Code", "Cascadia Code", Consolas, monospace',
-                  border: '1px solid rgba(99, 102, 241, 0.15)',
+                  border: '1px solid var(--accent-glow)',
                   whiteSpace: 'nowrap',
                   lineHeight: 'inherit',
                 }}
@@ -41,44 +38,49 @@ export default function MarkdownRenderer({ content }) {
             )
           }
 
-          // Multi-line code block
           return (
             <div
               style={{
                 position: 'relative',
-                margin: '16px 0',
-                borderRadius: '8px',
+                margin: '20px 0',
+                borderRadius: '12px',
                 overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: '1px solid var(--bg-hover)',
               }}
             >
               <div
                 style={{
-                  backgroundColor: '#1e1e2e',
-                  color: '#6b7280',
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-tertiary)',
                   fontSize: '11px',
-                  padding: '6px 16px',
+                  padding: '8px 16px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  borderBottom: '1px solid var(--bg-hover)',
                 }}
               >
-                <span style={{ fontFamily: 'monospace' }}>{match ? match[1] : 'code'}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: '500' }}>{match ? match[1] : 'code'}</span>
                 <button
                   onClick={() => navigator.clipboard.writeText(codeContent)}
                   style={{
                     background: 'none',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    color: '#9ca3af',
+                    border: '1px solid var(--bg-hover)',
+                    color: 'var(--text-secondary)',
                     cursor: 'pointer',
                     fontSize: '11px',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    transition: 'all 0.15s',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    transition: 'all 0.2s',
                   }}
-                  onMouseEnter={(e) => (e.target.style.color = '#fff')}
-                  onMouseLeave={(e) => (e.target.style.color = '#9ca3af')}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
                   Copy
                 </button>
@@ -89,10 +91,10 @@ export default function MarkdownRenderer({ content }) {
                 PreTag="div"
                 customStyle={{
                   margin: 0,
-                  padding: '16px',
-                  backgroundColor: '#1a1b26',
-                  fontSize: '13px',
-                  lineHeight: '1.6',
+                  padding: '20px',
+                  backgroundColor: 'var(--bg-base)',
+                  fontSize: '14px',
+                  lineHeight: '1.7',
                   borderRadius: 0,
                 }}
               >
@@ -107,10 +109,10 @@ export default function MarkdownRenderer({ content }) {
             <p
               style={{
                 marginTop: 0,
-                marginBottom: '14px',
-                lineHeight: '1.75',
-                color: '#e2e8f0',
-                fontSize: '14px',
+                marginBottom: '16px',
+                lineHeight: '1.8',
+                color: 'var(--text-secondary)',
+                fontSize: '15px',
                 wordBreak: 'break-word',
               }}
             >
@@ -123,10 +125,11 @@ export default function MarkdownRenderer({ content }) {
           return (
             <ul
               style={{
-                paddingLeft: '20px',
-                marginBottom: '10px',
-                lineHeight: '1.75',
+                paddingLeft: '24px',
+                marginBottom: '12px',
+                lineHeight: '1.8',
                 listStyleType: 'disc',
+                color: 'var(--text-secondary)',
               }}
             >
               {children}
@@ -138,10 +141,11 @@ export default function MarkdownRenderer({ content }) {
           return (
             <ol
               style={{
-                paddingLeft: '20px',
-                marginBottom: '10px',
-                lineHeight: '1.75',
+                paddingLeft: '24px',
+                marginBottom: '12px',
+                lineHeight: '1.8',
                 listStyleType: 'decimal',
+                color: 'var(--text-secondary)',
               }}
             >
               {children}
@@ -153,9 +157,9 @@ export default function MarkdownRenderer({ content }) {
           return (
             <li
               style={{
-                marginBottom: '4px',
-                color: '#e2e8f0',
-                fontSize: '14px',
+                marginBottom: '6px',
+                color: 'var(--text-secondary)',
+                fontSize: '15px',
                 display: 'list-item',
               }}
             >
@@ -168,13 +172,13 @@ export default function MarkdownRenderer({ content }) {
           return (
             <h1
               style={{
-                fontSize: '18px',
+                fontSize: '22px',
                 fontWeight: '700',
-                marginBottom: '10px',
-                marginTop: '18px',
-                color: '#f1f5f9',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                paddingBottom: '6px',
+                marginBottom: '12px',
+                marginTop: '24px',
+                color: 'var(--text-primary)',
+                borderBottom: '1px solid var(--bg-hover)',
+                paddingBottom: '8px',
               }}
             >
               {children}
@@ -186,11 +190,11 @@ export default function MarkdownRenderer({ content }) {
           return (
             <h2
               style={{
-                fontSize: '16px',
+                fontSize: '19px',
                 fontWeight: '600',
-                marginBottom: '8px',
-                marginTop: '16px',
-                color: '#f1f5f9',
+                marginBottom: '10px',
+                marginTop: '20px',
+                color: 'var(--text-primary)',
               }}
             >
               {children}
@@ -202,11 +206,11 @@ export default function MarkdownRenderer({ content }) {
           return (
             <h3
               style={{
-                fontSize: '14px',
+                fontSize: '16px',
                 fontWeight: '600',
-                marginBottom: '6px',
-                marginTop: '12px',
-                color: '#00ff9c',
+                marginBottom: '8px',
+                marginTop: '16px',
+                color: 'var(--accent-primary)',
               }}
             >
               {children}
@@ -218,12 +222,16 @@ export default function MarkdownRenderer({ content }) {
           return (
             <blockquote
               style={{
-                borderLeft: '3px solid #00ff9c',
-                paddingLeft: '12px',
+                borderLeft: '4px solid var(--accent-primary)',
+                paddingLeft: '16px',
                 marginLeft: 0,
-                marginBottom: '10px',
-                color: '#94a3b8',
+                marginBottom: '14px',
+                color: 'var(--text-tertiary)',
                 fontStyle: 'italic',
+                backgroundColor: 'var(--accent-muted)',
+                paddingTop: '8px',
+                paddingBottom: '8px',
+                borderRadius: '0 8px 8px 0',
               }}
             >
               {children}
@@ -232,11 +240,11 @@ export default function MarkdownRenderer({ content }) {
         },
 
         strong({ children }) {
-          return <strong style={{ fontWeight: '600', color: '#f1f5f9' }}>{children}</strong>
+          return <strong style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{children}</strong>
         },
 
         em({ children }) {
-          return <em style={{ color: '#cbd5e1', fontStyle: 'italic' }}>{children}</em>
+          return <em style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{children}</em>
         },
 
         a({ children, href }) {
@@ -246,10 +254,13 @@ export default function MarkdownRenderer({ content }) {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                color: '#00ff9c',
+                color: 'var(--accent-primary)',
                 textDecoration: 'underline',
-                textUnderlineOffset: '3px',
+                textUnderlineOffset: '4px',
+                transition: 'opacity 0.2s',
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.8')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
               {children}
             </a>
@@ -258,7 +269,7 @@ export default function MarkdownRenderer({ content }) {
 
         table({ children }) {
           return (
-            <div style={{ overflowX: 'auto', marginBottom: '12px' }}>
+            <div style={{ overflowX: 'auto', marginBottom: '16px', borderRadius: '8px', border: '1px solid var(--bg-hover)' }}>
               <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '13px' }}>
                 {children}
               </table>
@@ -270,12 +281,12 @@ export default function MarkdownRenderer({ content }) {
           return (
             <th
               style={{
-                border: '1px solid rgba(255,255,255,0.1)',
-                padding: '8px 12px',
-                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderBottom: '1px solid var(--bg-hover)',
+                padding: '10px 14px',
+                backgroundColor: 'var(--bg-surface)',
                 fontWeight: '600',
                 textAlign: 'left',
-                color: '#f1f5f9',
+                color: 'var(--text-primary)',
               }}
             >
               {children}
@@ -287,9 +298,9 @@ export default function MarkdownRenderer({ content }) {
           return (
             <td
               style={{
-                border: '1px solid rgba(255,255,255,0.08)',
-                padding: '8px 12px',
-                color: '#e2e8f0',
+                borderBottom: '1px solid var(--bg-hover)',
+                padding: '10px 14px',
+                color: 'var(--text-secondary)',
               }}
             >
               {children}
@@ -299,7 +310,7 @@ export default function MarkdownRenderer({ content }) {
 
         sup({ children }) {
           return (
-            <sup style={{ color: '#00ff9c', fontSize: '0.75em', fontWeight: '600' }}>
+            <sup style={{ color: 'var(--accent-primary)', fontSize: '0.75em', fontWeight: '600' }}>
               {children}
             </sup>
           )

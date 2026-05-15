@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
-import { ArrowRight, Loader2, Lock, Mail } from "lucide-react";
+import { signInWithPopup, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { auth, googleProvider } from "../api/firebaseConfig";
 import GlassCard from "../components/ui/GlassCard";
 
-export default function Login() {
+export default function Signup() {
   const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,12 +28,18 @@ export default function Login() {
     }
   };
 
-  const handleEmailLogin = async (event) => {
+  const handleSignup = async (event) => {
     event.preventDefault();
+    if (!fullName.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: fullName.trim() });
+      toast.success("Welcome to Onboardiq!");
       navigate("/dashboard");
     } catch (err) {
       setError(err.message);
@@ -89,19 +96,19 @@ export default function Login() {
             lineHeight: '1.1',
             marginBottom: '24px'
           }}>
-            Your codebase.<br />Fully understood.
+            Accelerate your<br />onboarding.
           </h1>
           <p style={{
             fontSize: '18px',
             color: 'var(--text-secondary)',
             lineHeight: '1.6'
           }}>
-            Stop asking senior developers the same questions. Get instant answers with exact source citations.
+            Index your engineering knowledge and give every new developer a cited path to answers. Start building your workspace in seconds.
           </p>
         </div>
       </div>
 
-      {/* Right side - Login form */}
+      {/* Right side - Signup form */}
       <div style={{
         flex: 1,
         display: 'flex',
@@ -128,14 +135,14 @@ export default function Login() {
             marginBottom: '8px',
             letterSpacing: '-0.02em'
           }}>
-            Welcome back
+            Create account
           </h2>
           <p style={{
             fontSize: '14px',
             color: 'var(--text-secondary)',
             marginBottom: '32px'
           }}>
-            Sign in to access your workspace
+            Stand up your team knowledge base today
           </p>
 
           {/* Google Sign In */}
@@ -215,7 +222,47 @@ export default function Login() {
           </div>
 
           {/* Email/Password Form */}
-          <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: 'var(--text-secondary)',
+                marginBottom: '8px'
+              }}>
+                Full Name
+              </label>
+              <div style={{ position: 'relative' }}>
+                <User style={{
+                  position: 'absolute',
+                  left: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '16px',
+                  height: '16px',
+                  color: 'var(--text-tertiary)',
+                  pointerEvents: 'none'
+                }} />
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Ada Lovelace"
+                  style={{ ...inputStyle, paddingLeft: '44px' }}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'var(--accent-primary)'
+                    e.target.style.boxShadow = '0 0 0 3px var(--accent-muted)'
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'var(--bg-hover)'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                  required
+                />
+              </div>
+            </div>
+
             <div>
               <label style={{
                 display: 'block',
@@ -281,7 +328,7 @@ export default function Login() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   style={{ ...inputStyle, paddingLeft: '44px' }}
                   onFocus={e => {
                     e.target.style.borderColor = 'var(--accent-primary)'
@@ -348,27 +395,27 @@ export default function Login() {
               {loading ? (
                 <>
                   <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 0.6s linear infinite' }} />
-                  Signing In...
+                  Signing Up...
                 </>
               ) : (
                 <>
-                  Sign In
+                  Sign Up
                   <ArrowRight style={{ width: '16px', height: '16px' }} />
                 </>
               )}
             </button>
           </form>
 
-          {/* Sign up link */}
+          {/* Login link */}
           <p style={{
             marginTop: '24px',
             fontSize: '13px',
             color: 'var(--text-secondary)',
             textAlign: 'center'
           }}>
-            Don't have an account?{' '}
+            Already have an account?{' '}
             <Link
-              to="/signup"
+              to="/login"
               style={{
                 color: 'var(--accent-primary)',
                 textDecoration: 'none',
@@ -378,7 +425,7 @@ export default function Login() {
               onMouseEnter={e => e.target.style.color = 'var(--accent-primary-hover)'}
               onMouseLeave={e => e.target.style.color = 'var(--accent-primary)'}
             >
-              Sign up
+              Sign in
             </Link>
           </p>
         </GlassCard>

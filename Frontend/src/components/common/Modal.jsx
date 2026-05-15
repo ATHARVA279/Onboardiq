@@ -22,7 +22,7 @@ export default function Modal({ open, onClose, children }) {
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_8px_24px_rgba(0,0,0,0.3)]"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         {children}

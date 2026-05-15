@@ -50,7 +50,7 @@ export default function Landing() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080808' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
       {/* Navbar */}
       <nav style={{
         position: 'fixed',
@@ -62,9 +62,9 @@ export default function Landing() {
         display: 'flex',
         alignItems: 'center',
         transition: 'all 0.3s ease',
-        background: scrolled ? 'rgba(8, 8, 8, 0.8)' : 'transparent',
+        background: scrolled ? 'rgba(12, 12, 14, 0.8)' : 'transparent',
         backdropFilter: scrolled ? 'blur(16px)' : 'none',
-        borderBottom: scrolled ? '1px solid #1a1a1a' : '1px solid transparent',
+        borderBottom: scrolled ? '1px solid var(--border-subtle)' : '1px solid transparent',
       }}>
         <div style={{
           maxWidth: '1280px',
@@ -75,13 +75,13 @@ export default function Landing() {
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <div style={{ fontSize: '24px', fontWeight: '800', color: '#f0f0f0', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
             Onboardiq
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <a href="/login" style={{ color: '#888', fontSize: '14px', textDecoration: 'none', transition: 'color 0.15s' }}
-               onMouseEnter={e => e.target.style.color = '#f0f0f0'}
-               onMouseLeave={e => e.target.style.color = '#888'}>
+            <a href="/login" style={{ color: 'var(--text-secondary)', fontSize: '14px', textDecoration: 'none', transition: 'color 0.15s' }}
+               onMouseEnter={e => e.target.style.color = 'var(--text-primary)'}
+               onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>
               Sign In
             </a>
             <AccentButton onClick={() => navigate('/login')}>
@@ -109,7 +109,7 @@ export default function Landing() {
           transform: 'translateX(-50%)',
           width: '800px',
           height: '800px',
-          background: 'radial-gradient(circle, rgba(229, 25, 94, 0.03) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, var(--accent-muted) 0%, transparent 70%)',
           pointerEvents: 'none'
         }} />
         
@@ -117,7 +117,7 @@ export default function Landing() {
         <div style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M0 0h60v60H0z' fill='none' stroke='%23ffffff' stroke-width='0.5' stroke-opacity='0.03'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h60v60H0z' fill='none'/%3E%3Cpath d='M0 0h60v60H0z' fill='none' stroke='%23D4A843' stroke-width='0.5' stroke-opacity='0.03'/%3E%3C/svg%3E")`,
           backgroundSize: '60px 60px',
           pointerEvents: 'none'
         }} />
@@ -137,13 +137,13 @@ export default function Landing() {
             lineHeight: '1.1',
             marginBottom: '24px'
           }}>
-            <div style={{ color: '#f0f0f0' }}>Stop asking seniors</div>
-            <div style={{ color: '#e5195e' }}>the same questions.</div>
+            <div style={{ color: 'var(--text-primary)' }}>Stop asking seniors</div>
+            <div style={{ color: 'var(--accent-primary)' }}>the same questions.</div>
           </h1>
           
           <p style={{
             fontSize: '18px',
-            color: '#888',
+            color: 'var(--text-secondary)',
             marginBottom: '40px',
             maxWidth: '600px',
             margin: '0 auto 40px'
@@ -173,7 +173,7 @@ export default function Landing() {
           fontWeight: '700',
           textAlign: 'center',
           marginBottom: '64px',
-          color: '#f0f0f0',
+          color: 'var(--text-primary)',
           letterSpacing: '-0.02em'
         }}>
           What Onboardiq does
@@ -186,11 +186,11 @@ export default function Landing() {
         }}>
           {features.map((feature, index) => (
             <GlassCard key={index} style={{ padding: '32px' }} hover>
-              <feature.icon style={{ width: '32px', height: '32px', color: '#e5195e', marginBottom: '20px' }} />
+              <feature.icon style={{ width: '32px', height: '32px', color: 'var(--accent-primary)', marginBottom: '20px' }} />
               <h3 style={{
                 fontSize: '20px',
                 fontWeight: '600',
-                color: '#f0f0f0',
+                color: 'var(--text-primary)',
                 marginBottom: '12px',
                 letterSpacing: '-0.01em'
               }}>
@@ -198,7 +198,7 @@ export default function Landing() {
               </h3>
               <p style={{
                 fontSize: '14px',
-                color: '#888',
+                color: 'var(--text-secondary)',
                 lineHeight: '1.6'
               }}>
                 {feature.description}
@@ -211,9 +211,9 @@ export default function Landing() {
       {/* How It Works Section */}
       <section style={{
         padding: '120px 32px',
-        background: '#0d0d0d',
-        borderTop: '1px solid #1a1a1a',
-        borderBottom: '1px solid #1a1a1a'
+        background: 'var(--bg-surface)',
+        borderTop: '1px solid var(--border-subtle)',
+        borderBottom: '1px solid var(--border-subtle)'
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <h2 style={{
@@ -221,7 +221,7 @@ export default function Landing() {
             fontWeight: '700',
             textAlign: 'center',
             marginBottom: '64px',
-            color: '#f0f0f0',
+            color: 'var(--text-primary)',
             letterSpacing: '-0.02em'
           }}>
             How it works
@@ -254,22 +254,23 @@ export default function Landing() {
                   width: '64px',
                   height: '64px',
                   borderRadius: '50%',
-                  background: 'rgba(229, 25, 94, 0.15)',
-                  border: '1px solid rgba(229, 25, 94, 0.3)',
+                  background: 'var(--accent-muted)',
+                  border: '1px solid var(--accent-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 24px',
                   fontSize: '24px',
                   fontWeight: '700',
-                  color: '#e5195e'
+                  color: 'var(--accent-primary)',
+                  boxShadow: '0 0 20px var(--accent-glow)'
                 }}>
                   {item.step}
                 </div>
                 <h3 style={{
                   fontSize: '20px',
                   fontWeight: '600',
-                  color: '#f0f0f0',
+                  color: 'var(--text-primary)',
                   marginBottom: '12px',
                   letterSpacing: '-0.01em'
                 }}>
@@ -277,7 +278,7 @@ export default function Landing() {
                 </h3>
                 <p style={{
                   fontSize: '14px',
-                  color: '#888',
+                  color: 'var(--text-secondary)',
                   lineHeight: '1.6'
                 }}>
                   {item.description}
@@ -297,7 +298,7 @@ export default function Landing() {
           <h2 style={{
             fontSize: '48px',
             fontWeight: '700',
-            color: '#f0f0f0',
+            color: 'var(--text-primary)',
             marginBottom: '32px',
             letterSpacing: '-0.02em'
           }}>
@@ -309,7 +310,7 @@ export default function Landing() {
           <p style={{
             marginTop: '16px',
             fontSize: '13px',
-            color: '#555'
+            color: 'var(--text-tertiary)'
           }}>
             Free to use. No credit card required.
           </p>
@@ -318,19 +319,19 @@ export default function Landing() {
 
       {/* Footer */}
       <footer style={{
-        borderTop: '1px solid #1a1a1a',
+        borderTop: '1px solid var(--border-subtle)',
         padding: '32px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         maxWidth: '1280px',
         margin: '0 auto',
-        color: '#555',
+        color: 'var(--text-tertiary)',
         fontSize: '14px',
         flexWrap: 'wrap',
         gap: '16px'
       }}>
-        <div style={{ fontWeight: '600', color: '#888' }}>Onboardiq</div>
+        <div style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>Onboardiq</div>
         <div>© 2026 Onboardiq. All rights reserved.</div>
       </footer>
     </div>

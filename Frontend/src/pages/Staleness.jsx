@@ -119,7 +119,7 @@ export default function Staleness() {
     return (
       <AppShell>
         <div className="flex h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
         </div>
       </AppShell>
     );
@@ -130,8 +130,8 @@ export default function Staleness() {
       <div className="mx-auto max-w-5xl space-y-8">
         {/* Summary Bar */}
         <div className="grid gap-6 md:grid-cols-4">
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
-            <p className="text-sm font-medium text-[var(--color-muted)]">Health Score</p>
+          <div className="rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm">
+            <p className="text-sm font-medium text-[var(--text-tertiary)]">Health Score</p>
             <div className="mt-2 flex items-baseline gap-2">
               <span
                 className="text-4xl font-bold"
@@ -139,30 +139,30 @@ export default function Staleness() {
               >
                 {summary?.health_score || 100}
               </span>
-              <span className="text-sm text-[var(--color-muted)]">/ 100</span>
+              <span className="text-sm text-[var(--text-tertiary)]">/ 100</span>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm md:col-span-2">
+          <div className="rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm md:col-span-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--color-muted)]">Active Issues</p>
+                <p className="text-sm font-medium text-[var(--text-tertiary)]">Active Issues</p>
                 <div className="mt-2 flex gap-4">
                   <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-red-500" />
-                    <span className="text-sm font-medium text-[var(--color-text)]">
+                    <div className="h-2 w-2 rounded-full bg-[var(--status-high)] shadow-[0_0_8px_var(--status-high)]" />
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
                       {summary?.high_severity || 0} High
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span className="text-sm font-medium text-[var(--color-text)]">
+                    <div className="h-2 w-2 rounded-full bg-[var(--status-medium)] shadow-[0_0_8px_var(--status-medium)]" />
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
                       {summary?.medium_severity || 0} Medium
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span className="text-sm font-medium text-[var(--color-text)]">
+                    <div className="h-2 w-2 rounded-full bg-[var(--accent-primary)] shadow-[0_0_8px_var(--accent-primary)]" />
+                    <span className="text-sm font-medium text-[var(--text-primary)]">
                       {summary?.low_severity || 0} Low
                     </span>
                   </div>
@@ -170,22 +170,22 @@ export default function Staleness() {
               </div>
               <div className="text-right">
                 <div className="mb-1 flex items-center justify-end gap-1.5">
-                  <span className="inline-flex items-center rounded-full bg-[var(--color-code-bg)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-primary)]">
+                  <span className="inline-flex items-center rounded-full bg-[var(--bg-hover)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent-primary)]">
                     {summary?.mode === "readme" ? "README Mode" : "Documentation Mode"}
                   </span>
                 </div>
-                <p className="text-xs text-[var(--color-muted)]">
+                <p className="text-xs text-[var(--text-tertiary)]">
                   Last checked {formatRelativeTime(summary?.last_checked_at)}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-center rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm">
+          <div className="flex items-center justify-center rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm">
             <button
               onClick={handleCheckNow}
               disabled={checking}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-3 font-semibold text-[var(--bg-base)] transition hover:bg-[var(--accent-primary-hover)] disabled:opacity-50"
             >
               {checking ? (
                 <>
@@ -203,15 +203,15 @@ export default function Staleness() {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          <div className="rounded-xl border border-[var(--status-high)]/20 bg-[var(--status-high)]/10 p-4 text-sm text-[var(--status-high)]">
             {error}
           </div>
         )}
 
         {/* Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--bg-hover)] pb-4">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-[var(--color-muted)]" />
+            <Filter className="h-4 w-4 text-[var(--text-tertiary)]" />
             <div className="flex gap-1">
               {["all", "high", "medium", "low"].map((sev) => (
                 <button
@@ -219,8 +219,8 @@ export default function Staleness() {
                   onClick={() => setSeverityFilter(sev)}
                   className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                     severityFilter === sev
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "text-[var(--color-muted)] hover:bg-[var(--color-code-bg)]"
+                      ? "bg-[var(--accent-primary)] text-[var(--bg-base)]"
+                      : "text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)]"
                   }`}
                 >
                   {sev.charAt(0).toUpperCase() + sev.slice(1)}
@@ -236,7 +236,7 @@ export default function Staleness() {
             filteredAlerts.map((alert) => (
               <div
                 key={alert.id}
-                className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm transition hover:shadow-md"
+                className="group relative overflow-hidden rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm transition hover:border-[var(--accent-primary)]/20"
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex-1 space-y-3">
@@ -244,42 +244,42 @@ export default function Staleness() {
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
                           alert.severity === "high"
-                            ? "bg-red-100 text-red-700"
+                            ? "bg-[var(--status-high)]/10 text-[var(--status-high)]"
                             : alert.severity === "medium"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-blue-100 text-blue-700"
+                            ? "bg-[var(--status-medium)]/10 text-[var(--status-medium)]"
+                            : "bg-[var(--accent-muted)] text-[var(--accent-primary)]"
                         }`}
                       >
                         {alert.severity}
                       </span>
-                      <span className="rounded-full bg-[var(--color-code-bg)] px-2.5 py-0.5 text-xs font-medium text-[var(--color-muted)]">
+                      <span className="rounded-full bg-[var(--bg-hover)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-tertiary)]">
                         {alert.alert_type === "readme_stale" ? "README" : "Documentation"}
                       </span>
                       {alert.file_path && (
-                        <code className="rounded bg-[var(--color-code-bg)] px-1.5 py-0.5 text-xs text-[var(--color-primary)]">
+                        <code className="rounded bg-[var(--bg-hover)] px-1.5 py-0.5 text-xs text-[var(--accent-primary)]">
                           {alert.file_path}
                         </code>
                       )}
                     </div>
 
-                    <h3 className="text-lg font-medium text-[var(--color-text)]">
+                    <h3 className="text-lg font-medium text-[var(--text-primary)]">
                       {alert.description}
                     </h3>
 
                     {alert.readme_excerpt && (
-                      <div className="rounded-lg bg-[var(--color-code-bg)] p-3">
-                        <p className="font-mono text-sm italic text-[var(--color-muted)]">
+                      <div className="rounded-lg bg-[var(--bg-base)] p-3 border border-[var(--bg-hover)]">
+                        <p className="font-mono text-sm italic text-[var(--text-tertiary)]">
                           "{alert.readme_excerpt}"
                         </p>
                       </div>
                     )}
 
-                    <div className="flex items-start gap-2 text-sm text-[var(--color-primary)]">
+                    <div className="flex items-start gap-2 text-sm text-[var(--accent-primary)]">
                       <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
                       <p>{alert.suggestion}</p>
                     </div>
 
-                    <div className="flex items-center gap-4 text-xs text-[var(--color-muted)]">
+                    <div className="flex items-center gap-4 text-xs text-[var(--text-tertiary)]">
                       <div className="flex items-center gap-1">
                         <History className="h-3 w-3" />
                         {formatRelativeTime(alert.created_at)}
@@ -295,19 +295,14 @@ export default function Staleness() {
                   <div className="flex shrink-0 gap-2 md:flex-col lg:flex-row">
                     <button
                       onClick={() => handleResolve(alert.id)}
-                      className="flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white transition"
-                      style={{
-                        backgroundColor: '#e5195e'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#c91450'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#e5195e'}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[var(--accent-primary)] px-4 py-2 text-sm font-semibold text-[var(--bg-base)] transition hover:bg-[var(--accent-primary-hover)]"
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       Resolve
                     </button>
                     <button
                       onClick={() => handleDismiss(alert.id)}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[var(--color-code-bg)] px-4 py-2 text-sm font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-border)]"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[var(--bg-hover)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--status-high)]/30 border border-transparent"
                     >
                       Dismiss
                     </button>
@@ -335,7 +330,7 @@ export default function Staleness() {
           <div className="mt-12 space-y-4">
             <button
               onClick={() => setShowResolvedList(!showResolvedList)}
-              className="flex w-full items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm font-medium text-[var(--color-text)] transition hover:bg-[var(--color-code-bg)]"
+              className="flex w-full items-center justify-between rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-4 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--bg-hover)]"
             >
               <span>Resolved Alerts ({resolvedAlerts.length})</span>
               {showResolvedList ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -346,16 +341,16 @@ export default function Staleness() {
                 {resolvedAlerts.map((alert) => (
                   <div
                     key={alert.id}
-                    className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-sm"
+                    className="rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm"
                   >
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4" style={{ color: '#22c55e' }} />
-                        <h4 className="text-sm font-medium line-through decoration-[var(--color-muted)]">
+                        <CheckCircle2 className="h-4 w-4 text-[var(--status-success)]" />
+                        <h4 className="text-sm font-medium line-through decoration-[var(--text-tertiary)] text-[var(--text-secondary)]">
                           {alert.description}
                         </h4>
                       </div>
-                      <p className="text-xs text-[var(--color-muted)]">
+                      <p className="text-xs text-[var(--text-tertiary)]">
                         Resolved by {alert.resolved_by_uid || "System"} {formatRelativeTime(alert.resolved_at)}
                       </p>
                     </div>

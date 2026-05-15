@@ -36,18 +36,17 @@ function HealthScoreCard({ score }) {
   const progress = Math.max(0, Math.min(100, score));
   const offset = circumference - (progress / 100) * circumference;
   
-  // Color based on score: >70 = crimson, 40-70 = warning, <40 = error
-  const color = progress > 70 ? '#e5195e' : progress >= 40 ? '#eab308' : '#ef4444';
+  const color = progress > 70 ? 'var(--accent-primary)' : progress >= 40 ? 'var(--status-medium)' : 'var(--status-high)';
 
   return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+    <div className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[var(--color-muted)]">Documentation Health</p>
-          <p className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{progress}%</p>
+          <p className="text-sm font-medium text-[var(--text-tertiary)]">Documentation Health</p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{progress}%</p>
         </div>
         <svg className="h-28 w-28 -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r={radius} stroke="var(--color-border)" strokeWidth="8" fill="none" />
+          <circle cx="50" cy="50" r={radius} stroke="var(--bg-hover)" strokeWidth="8" fill="none" />
           <circle
             cx="50"
             cy="50"
@@ -58,13 +57,14 @@ function HealthScoreCard({ score }) {
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
+            className="transition-all duration-1000 ease-out"
           />
           <text
             x="50"
             y="55"
             textAnchor="middle"
             transform="rotate(90 50 50)"
-            className="fill-[var(--color-text)] text-[18px] font-semibold"
+            className="fill-[var(--text-primary)] text-[18px] font-semibold"
           >
             {progress}
           </text>
@@ -74,23 +74,23 @@ function HealthScoreCard({ score }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, valueColor = "#F1F5F9", isAlert = false }) {
+function StatCard({ title, value, icon: Icon, valueColor = "var(--text-primary)", isAlert = false }) {
   return (
     <div style={{
       position: 'relative',
       borderRadius: '12px',
-      background: 'var(--color-surface)',
+      background: 'var(--bg-surface)',
       padding: '24px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)',
       transition: 'all 0.2s ease'
     }}>
       <div>
         <p style={{
-          fontSize: '12px',
-          fontWeight: '500',
-          letterSpacing: '0.06em',
+          fontSize: '11px',
+          fontWeight: '600',
+          letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: '#555',
+          color: 'var(--text-tertiary)',
           marginBottom: '12px'
         }}>
           {title}
@@ -100,7 +100,7 @@ function StatCard({ title, value, icon: Icon, valueColor = "#F1F5F9", isAlert = 
           fontWeight: '700',
           letterSpacing: '-0.03em',
           color: valueColor,
-          textShadow: isAlert && value > 0 ? '0 0 20px rgba(239,68,68,0.4)' : 'none'
+          textShadow: isAlert && value > 0 ? '0 0 20px var(--status-high)' : 'none'
         }}>
           {value}
         </p>
@@ -111,7 +111,7 @@ function StatCard({ title, value, icon: Icon, valueColor = "#F1F5F9", isAlert = 
         right: '20px',
         width: '32px',
         height: '32px',
-        opacity: 0.15,
+        opacity: 0.1,
         color: valueColor
       }} />
     </div>
@@ -133,7 +133,6 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
       setError("");
       setLoading(false);
     } else {
-      // Pre-fill PAT from localStorage when modal opens
       const stored = getGithubToken(workspaceId);
       if (stored) setToken(stored);
     }
@@ -146,7 +145,6 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
     try {
       const trimmedToken = token.trim();
       const job = await connectGithubRepo(workspaceId, repoUrl.trim(), trimmedToken);
-      // Persist the token so future connects and reindexes can reuse it
       if (trimmedToken) saveGithubToken(workspaceId, trimmedToken);
       await onConnected({ type: "github", job });
       onClose();
@@ -181,14 +179,14 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
       <div className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-[var(--color-text)]">Connect New Source</h3>
-            <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+            <h3 className="text-2xl font-semibold text-[var(--text-primary)]">Connect New Source</h3>
+            <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
               Add a repository or documentation source to your workspace.
             </p>
           </div>
         </div>
 
-        <div className="mt-6 flex rounded-lg border border-[var(--color-border)] bg-[var(--color-code-bg)] p-1">
+        <div className="mt-6 flex rounded-lg border border-[var(--bg-hover)] bg-[var(--bg-base)] p-1">
           {[
             { id: "github", label: "GitHub Repository" },
             { id: "url", label: "Documentation URL" },
@@ -199,8 +197,8 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
               onClick={() => setTab(item.id)}
               className={`flex-1 rounded-xl px-4 py-3 text-sm font-medium transition ${
                 tab === item.id
-                  ? "bg-[var(--color-surface)] text-[var(--color-text)]"
-                  : "text-[var(--color-muted)] hover:text-[var(--color-text)]"
+                  ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               }`}
             >
               {item.label}
@@ -211,7 +209,7 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
         {tab === "github" ? (
           <form onSubmit={handleGithubSubmit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">Repository URL</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">Repository URL</span>
               <input
                 type="url"
                 value={repoUrl}
@@ -223,7 +221,7 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">
+              <span className="text-sm font-medium text-[var(--text-primary)]">
                 Personal Access Token
               </span>
               <div className="relative mt-2">
@@ -237,24 +235,24 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
                 <button
                   type="button"
                   onClick={() => setShowToken((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
                 >
                   {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-[var(--color-muted)]">
+              <p className="mt-2 text-xs text-[var(--text-tertiary)]">
                 Optional for public repos. Required for private repos. Needs
                 `repo:read` scope.
               </p>
             </label>
 
-            <div className="rounded-lg border border-[rgba(59,130,246,0.3)] bg-[rgba(59,130,246,0.12)] px-4 py-3 text-sm leading-7 text-[var(--color-primary)]">
+            <div className="rounded-lg border border-[var(--accent-muted)] bg-[var(--accent-muted)]/10 px-4 py-3 text-sm leading-7 text-[var(--accent-primary)]">
               Without a token, GitHub rate limits drop to 60 requests per hour, which
               can cause larger repositories to fail before indexing completes.
             </div>
 
             {error ? (
-              <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+              <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
                 {error}
               </div>
             ) : null}
@@ -280,7 +278,7 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
         ) : (
           <form onSubmit={handleDocsSubmit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">Documentation URL</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">Documentation URL</span>
               <input
                 type="url"
                 value={docsUrl}
@@ -289,15 +287,15 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
                 placeholder="https://docs.yourproject.com"
                 required
               />
-              <p className="mt-1.5 text-xs text-[var(--color-muted)]">
+              <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
                 Onboardiq will automatically discover and index linked pages on the same domain up to 20 pages.
               </p>
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-[var(--color-text)]">
+              <span className="text-sm font-medium text-[var(--text-primary)]">
                 Display Name
-                <span className="ml-1 text-xs font-normal text-[var(--color-muted)]">(optional)</span>
+                <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">(optional)</span>
               </span>
               <input
                 type="text"
@@ -308,12 +306,12 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
               />
             </label>
 
-            <div className="rounded-lg border border-[rgba(234,179,8,0.35)] bg-[rgba(234,179,8,0.08)] px-4 py-3 text-sm leading-6 text-yellow-400">
+            <div className="rounded-lg border border-[var(--status-medium)]/30 bg-[var(--status-medium)]/10 px-4 py-3 text-sm leading-6 text-[var(--status-medium)]">
               ⚠️ Some sites may block automated scraping. If indexing fails, try a different documentation format.
             </div>
 
             {error ? (
-              <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+              <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
                 {error}
               </div>
             ) : null}
@@ -385,7 +383,6 @@ export default function Dashboard() {
 
     let mounted = true;
     
-    // Fetch summary and top unresolved alerts for preview
     const fetchStaleness = async () => {
       try {
         const [summaryData, alertsData] = await Promise.all([
@@ -449,10 +446,10 @@ export default function Dashboard() {
       <div style={{
         position: 'fixed',
         top: 0,
-        left: '240px',
+        left: '256px',
         right: 0,
         height: '1px',
-        background: 'linear-gradient(90deg, transparent 0%, rgba(229,25,94,0.4) 40%, rgba(120,40,200,0.3) 70%, transparent 100%)',
+        background: 'linear-gradient(90deg, transparent 0%, var(--accent-glow) 40%, var(--accent-muted) 70%, transparent 100%)',
         zIndex: 100,
         pointerEvents: 'none'
       }} />
@@ -462,25 +459,26 @@ export default function Dashboard() {
         <div>
           <p style={{
             fontSize: '12px',
-            color: '#4a5568',
+            color: 'var(--text-tertiary)',
             marginBottom: '8px',
-            fontWeight: '500'
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
           }}>
             {workspace?.name || 'Workspace'} › Dashboard
           </p>
           <h1 style={{
-            fontSize: '22px',
-            fontWeight: '600',
+            fontSize: '24px',
+            fontWeight: '700',
             letterSpacing: '-0.02em',
-            color: '#f1f5f9',
-            fontFamily: 'Syne, sans-serif'
+            color: 'var(--text-primary)',
           }}>
-            Dashboard
+            Workspace Dashboard
           </h1>
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.12)] px-4 py-3 text-sm text-[var(--color-red)]">
+          <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
             {error}
           </div>
         ) : null}
@@ -492,7 +490,7 @@ export default function Dashboard() {
             title="Staleness Alerts"
             value={stats.alerts}
             icon={AlertTriangle}
-            valueColor={stats.alerts > 0 ? "#EF4444" : "#F1F5F9"}
+            valueColor={stats.alerts > 0 ? "var(--status-high)" : "var(--text-primary)"}
             isAlert={true}
           />
           <HealthScoreCard score={stats.healthScore} />
@@ -501,65 +499,59 @@ export default function Dashboard() {
         {stalenessAlerts.length > 0 && (
           <section style={{
             borderRadius: '12px',
-            background: 'var(--color-surface)',
+            background: 'var(--bg-surface)',
             padding: '24px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06)'
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)'
           }}>
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <h3 style={{
                   fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#f1f5f9',
-                  fontFamily: 'Syne, sans-serif'
+                  fontWeight: '700',
+                  color: 'var(--text-primary)',
                 }}>
                   Staleness Preview
                 </h3>
                 <span style={{
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: 'var(--status-high-rgb, rgba(239, 68, 68, 0.15))',
+                  border: '1px solid var(--status-high)',
                   fontSize: '11px',
-                  fontWeight: '600',
-                  color: '#ef4444'
+                  fontWeight: '700',
+                  color: 'var(--status-high)'
                 }}>
-                  {stalenessAlerts.length}
+                  {stalenessAlerts.length} Active
                 </span>
               </div>
               <button
                 onClick={() => navigate("/staleness")}
                 style={{
                   fontSize: '13px',
-                  fontWeight: '500',
-                  color: '#e5195e',
+                  fontWeight: '600',
+                  color: 'var(--accent-primary)',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
-                  transition: 'opacity 0.15s'
+                  transition: 'all 0.15s ease'
                 }}
-                onMouseEnter={e => e.target.style.opacity = '0.8'}
-                onMouseLeave={e => e.target.style.opacity = '1'}
+                onMouseEnter={e => e.target.style.color = 'var(--accent-primary-hover)'}
+                onMouseLeave={e => e.target.style.color = 'var(--accent-primary)'}
               >
                 View All Alerts →
               </button>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {stalenessAlerts.map((alert) => {
-                const severityColors = {
-                  high: { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.3)', text: '#ef4444' },
-                  medium: { bg: 'rgba(234, 179, 8, 0.1)', border: 'rgba(234, 179, 8, 0.3)', text: '#eab308' },
-                  low: { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.3)', text: '#3b82f6' }
-                };
-                const colors = severityColors[alert.severity] || severityColors.low;
+                const colors = alert.severity === 'high' ? 'var(--status-high)' : alert.severity === 'medium' ? 'var(--status-medium)' : 'var(--accent-primary)';
                 
                 return (
                   <div
                     key={alert.id}
                     style={{
                       borderRadius: '8px',
-                      background: 'var(--color-code-bg)',
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
+                      background: 'var(--bg-base)',
+                      border: '1px solid var(--bg-hover)',
                       padding: '16px',
                       transition: 'all 0.15s'
                     }}
@@ -568,11 +560,11 @@ export default function Dashboard() {
                       <span style={{
                         padding: '2px 6px',
                         borderRadius: '3px',
-                        background: colors.bg,
-                        border: `1px solid ${colors.border}`,
+                        background: `${colors}15`,
+                        border: `1px solid ${colors}40`,
                         fontSize: '10px',
-                        fontWeight: '600',
-                        color: colors.text,
+                        fontWeight: '700',
+                        color: colors,
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         flexShrink: 0
@@ -582,8 +574,8 @@ export default function Dashboard() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
                           fontSize: '13px',
-                          fontWeight: '500',
-                          color: '#f1f5f9',
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
                           marginBottom: '4px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -593,8 +585,8 @@ export default function Dashboard() {
                         </p>
                         <p style={{
                           fontSize: '11px',
-                          color: '#4a5568',
-                          fontFamily: 'JetBrains Mono, monospace',
+                          color: 'var(--text-tertiary)',
+                          fontFamily: 'monospace',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
@@ -613,8 +605,8 @@ export default function Dashboard() {
         <section className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-[var(--color-text)]">Connected Sources</h2>
-              <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Connected Sources</h2>
+              <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
                 Monitor indexing status and keep your knowledge graph up to date.
               </p>
             </div>
@@ -650,28 +642,28 @@ export default function Dashboard() {
           )}
         </section>
 
-        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+        <section className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-semibold text-[var(--color-text)]">Recent Questions</h2>
-              <p className="mt-2 text-sm leading-7 text-[var(--color-muted)]">
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Recent Questions</h2>
+              <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
                 The latest developer questions asked against this workspace.
               </p>
             </div>
           </div>
 
           {recentQuestions.length ? (
-            <div className="mt-5 divide-y divide-[var(--color-border)]">
+            <div className="mt-5 divide-y divide-[var(--bg-hover)]">
               {recentQuestions.slice(0, 5).map((question) => (
                 <div
                   key={question.id}
                   className="flex items-center justify-between gap-4 py-4"
                 >
                   <div>
-                    <p className="font-medium text-[var(--color-text)]">{question.question_text}</p>
-                    <p className="mt-1 text-sm text-[var(--color-muted)]">{question.asked_by_name}</p>
+                    <p className="font-semibold text-[var(--text-primary)]">{question.question_text}</p>
+                    <p className="mt-1 text-sm text-[var(--text-tertiary)]">{question.asked_by_name}</p>
                   </div>
-                  <p className="shrink-0 text-sm text-[var(--color-muted)]">
+                  <p className="shrink-0 text-sm text-[var(--text-tertiary)]">
                     {formatRelativeTime(question.created_at)}
                   </p>
                 </div>

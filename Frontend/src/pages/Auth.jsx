@@ -22,7 +22,7 @@ function BracketMark() {
   return (
     <svg
       aria-hidden="true"
-      className="h-5 w-5 text-[var(--color-primary)]"
+      className="h-5 w-5 text-[var(--accent-primary)]"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -77,22 +77,22 @@ const Auth = ({ initialIsLogin = true }) => {
   };
 
   return (
-    <div className="oi-grid-bg relative min-h-screen overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(59,130,246,0.14),transparent_42%),radial-gradient(ellipse_at_bottom_right,rgba(59,130,246,0.08),transparent_36%)]" />
+    <div className="oi-grid-bg relative min-h-screen overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,var(--accent-muted),transparent_42%),radial-gradient(ellipse_at_bottom_right,rgba(212,168,67,0.05),transparent_36%)]" />
 
       <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1440px] grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(380px,440px)]">
-        <section className="flex min-w-0 flex-col justify-between border-b border-[var(--color-border)] px-6 py-8 sm:px-10 md:min-h-screen md:border-b-0 md:border-r md:px-10 md:py-10 lg:px-14">
+        <section className="flex min-w-0 flex-col justify-between border-b border-[var(--bg-hover)] px-6 py-8 sm:px-10 md:min-h-screen md:border-b-0 md:border-r md:px-10 md:py-10 lg:px-14">
           <div className="flex items-center justify-between gap-4">
             <Link to="/" className="flex items-center gap-3">
               <BracketMark />
-              <span className="font-display text-xl font-bold tracking-tight text-[var(--color-text)]">
+              <span className="font-display text-xl font-bold tracking-tight text-[var(--text-primary)]">
                 OnboardIQ
               </span>
             </Link>
 
             <Link
               to="/"
-              className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-text)]"
+              className="inline-flex min-h-[44px] items-center gap-2 text-sm text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
             >
               Back to site
               <ChevronRight className="h-4 w-4" />
@@ -100,17 +100,17 @@ const Auth = ({ initialIsLogin = true }) => {
           </div>
 
           <div className="py-10 md:py-12 lg:py-14">
-            <div className="inline-flex min-h-[36px] items-center rounded-md border border-[rgba(59,130,246,0.35)] bg-[rgba(17,24,39,0.9)] px-4 py-2 font-mono text-[12px] text-[var(--color-primary)]">
+            <div className="inline-flex min-h-[36px] items-center rounded-md border border-[var(--accent-muted)] bg-[var(--bg-surface)] px-4 py-2 font-mono text-[12px] text-[var(--accent-primary)]">
               Secure workspace access
             </div>
 
-            <h1 className="font-display mt-8 max-w-[520px] text-[40px] font-bold leading-[1.04] tracking-[-0.04em] text-[var(--color-text)] lg:text-[56px]">
+            <h1 className="font-display mt-8 max-w-[520px] text-[40px] font-bold leading-[1.04] tracking-[-0.04em] text-[var(--text-primary)] lg:text-[56px]">
               {isLogin
                 ? "Resume onboarding with context."
                 : "Stand up your team knowledge base."}
             </h1>
 
-            <p className="font-editorial mt-6 max-w-[500px] text-[19px] leading-8 text-[var(--color-muted)] lg:text-[20px] lg:leading-9">
+            <p className="font-editorial mt-6 max-w-[500px] text-[19px] leading-8 text-[var(--text-tertiary)] lg:text-[20px] lg:leading-9">
               {isLogin
                 ? "Sign in to search across code, docs, and team decisions from one precise interface."
                 : "Create an account to index your engineering knowledge and give every new developer a cited path to answers."}
@@ -138,13 +138,13 @@ const Auth = ({ initialIsLogin = true }) => {
                 return (
                   <div
                     key={item.title}
-                    className="rounded-xl border border-[var(--color-border)] bg-[rgba(17,24,39,0.72)] p-5"
+                    className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-elevated)] p-5"
                   >
-                    <Icon className="h-5 w-5 text-[var(--color-primary)]" />
-                    <h2 className="font-display mt-4 text-lg font-semibold text-[var(--color-text)]">
+                    <Icon className="h-5 w-5 text-[var(--accent-primary)]" />
+                    <h2 className="font-display mt-4 text-lg font-semibold text-[var(--text-primary)]">
                       {item.title}
                     </h2>
-                    <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
+                    <p className="mt-3 text-sm leading-7 text-[var(--text-tertiary)]">
                       {item.body}
                     </p>
                   </div>
@@ -153,32 +153,32 @@ const Auth = ({ initialIsLogin = true }) => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--color-muted)]">
+          <div className="flex flex-wrap items-center gap-3 text-[13px] text-[var(--text-tertiary)]">
             <span>SSO-ready foundation</span>
-            <span className="text-[var(--color-primary)]">·</span>
+            <span className="text-[var(--accent-primary)]">·</span>
             <span>Encrypted auth flow</span>
-            <span className="text-[var(--color-primary)]">·</span>
+            <span className="text-[var(--accent-primary)]">·</span>
             <span>Built for engineering teams</span>
           </div>
         </section>
 
         <section className="flex items-center justify-center px-6 py-10 sm:px-10 md:px-8 md:py-8 lg:px-14">
-          <div className="w-full max-w-[460px] rounded-2xl border border-[var(--color-border)] bg-[rgba(17,24,39,0.9)] p-6 shadow-[0_24px_60px_rgba(2,8,23,0.34)] sm:p-8 md:sticky md:top-8">
+          <div className="w-full max-w-[460px] rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl sm:p-8 md:sticky md:top-8">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--color-primary)]">
+                <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-[var(--accent-primary)]">
                   {isLogin ? "Sign In" : "Create Account"}
                 </p>
-                <h2 className="font-display mt-3 text-3xl font-semibold text-[var(--color-text)]">
+                <h2 className="font-display mt-3 text-3xl font-semibold text-[var(--text-primary)]">
                   {isLogin ? "Access your workspace" : "Request your workspace"}
                 </h2>
               </div>
-              <div className="hidden h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[rgba(13,17,23,0.9)] sm:flex">
-                <Shield className="h-5 w-5 text-[var(--color-primary)]" />
+              <div className="hidden h-12 w-12 items-center justify-center rounded-lg border border-[var(--bg-hover)] bg-[var(--bg-elevated)] sm:flex">
+                <Shield className="h-5 w-5 text-[var(--accent-primary)]" />
               </div>
             </div>
 
-            <p className="font-editorial mt-4 text-[18px] leading-8 text-[var(--color-muted)]">
+            <p className="font-editorial mt-4 text-[18px] leading-8 text-[var(--text-tertiary)]">
               {isLogin
                 ? "Continue into the product dashboard and pick up where your team left off."
                 : "Set up your account and start turning fragmented team knowledge into one searchable system."}
@@ -187,7 +187,7 @@ const Auth = ({ initialIsLogin = true }) => {
             <button
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="mt-8 flex min-h-[52px] w-full items-center justify-center gap-3 rounded-md border border-[var(--color-border)] bg-[rgba(13,17,23,0.96)] px-4 text-sm font-medium text-[var(--color-text)] transition-all duration-200 hover:border-[rgba(59,130,246,0.5)] hover:bg-[rgba(17,24,39,0.96)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-8 flex min-h-[52px] w-full items-center justify-center gap-3 rounded-md border border-[var(--bg-hover)] bg-[var(--bg-elevated)] px-4 text-sm font-medium text-[var(--text-primary)] transition-all duration-200 hover:border-[var(--accent-primary)] hover:bg-[var(--bg-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -218,10 +218,10 @@ const Auth = ({ initialIsLogin = true }) => {
 
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[var(--color-border)]" />
+                <div className="w-full border-t border-[var(--bg-hover)]" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-[rgba(17,24,39,0.9)] px-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
+                <span className="bg-[var(--bg-surface)] px-3 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-tertiary)]">
                   Or use email
                 </span>
               </div>
@@ -230,11 +230,11 @@ const Auth = ({ initialIsLogin = true }) => {
             <form onSubmit={handleEmailAuth} className="space-y-4">
               {!isLogin && (
                 <label className="block">
-                  <span className="mb-2 block text-sm text-[var(--color-muted)]">
+                  <span className="mb-2 block text-sm text-[var(--text-tertiary)]">
                     Full name
                   </span>
                   <div className="relative">
-                    <Shield className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
+                    <Shield className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                     <input
                       type="text"
                       placeholder="Ada Lovelace"
@@ -249,11 +249,11 @@ const Auth = ({ initialIsLogin = true }) => {
               )}
 
               <label className="block">
-                <span className="mb-2 block text-sm text-[var(--color-muted)]">
+                <span className="mb-2 block text-sm text-[var(--text-tertiary)]">
                   Email
                 </span>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
+                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                   <input
                     type="email"
                     placeholder="you@company.com"
@@ -267,11 +267,11 @@ const Auth = ({ initialIsLogin = true }) => {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm text-[var(--color-muted)]">
+                <span className="mb-2 block text-sm text-[var(--text-tertiary)]">
                   Password
                 </span>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted)]" />
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
                   <input
                     type="password"
                     placeholder={
@@ -310,19 +310,19 @@ const Auth = ({ initialIsLogin = true }) => {
               </button>
             </form>
 
-            <div className="mt-6 rounded-lg border border-[var(--color-border)] bg-[rgba(13,17,23,0.86)] px-4 py-3">
-              <p className="text-sm text-[var(--color-muted)]">
+            <div className="mt-6 rounded-lg border border-[var(--bg-hover)] bg-[var(--bg-elevated)] px-4 py-3">
+              <p className="text-sm text-[var(--text-tertiary)]">
                 {isLogin ? "Need an account?" : "Already have an account?"}
                 <button
                   onClick={() => setIsLogin(!isLogin)}
-                  className="ml-2 font-medium text-[var(--color-text)] transition-colors hover:text-[var(--color-primary)]"
+                  className="ml-2 font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent-primary)]"
                 >
                   {isLogin ? "Create one" : "Sign in"}
                 </button>
               </p>
             </div>
 
-            <p className="mt-5 font-mono text-[12px] leading-6 text-[var(--color-muted)]">
+            <p className="mt-5 font-mono text-[12px] leading-6 text-[var(--text-tertiary)]">
               No credit card. No sales call. Just secure access to your
               team&apos;s onboarding intelligence.
             </p>

@@ -2,11 +2,11 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 const variants = {
-    primary: "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border border-transparent shadow-sm",
-    secondary: "bg-zinc-900 text-zinc-100 border border-zinc-800 hover:bg-zinc-800 hover:border-zinc-700 shadow-sm",
-    ghost: "bg-transparent text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900",
-    danger: "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20",
-    gradient: "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:opacity-90 shadow-lg shadow-emerald-500/20 border border-transparent"
+    primary: "bg-[var(--accent-primary)] text-[var(--bg-base)] hover:bg-[var(--accent-primary-hover)] border border-transparent shadow-sm",
+    secondary: "bg-[var(--bg-elevated)] text-[var(--text-primary)] border border-[var(--bg-hover)] hover:bg-[var(--bg-hover)] shadow-sm",
+    ghost: "bg-transparent text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]",
+    danger: "bg-[var(--status-high)]/10 text-[var(--status-high)] border border-[var(--status-high)]/20 hover:bg-[var(--status-high)]/20",
+    gradient: "bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary-hover)] text-[var(--bg-base)] hover:opacity-90 shadow-lg shadow-[var(--accent-muted)] border border-transparent"
 };
 
 const sizes = {

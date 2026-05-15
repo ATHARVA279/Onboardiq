@@ -15,8 +15,8 @@ html {
 }
 
 body {
-  background-color: #080808;
-  color: #f0f0f0;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
   font-family: 'Inter', -apple-system, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -59,13 +59,13 @@ body::before {
 
 /* Selection */
 ::selection {
-  background: rgba(229, 25, 94, 0.3);
-  color: #f0f0f0;
+  background: var(--accent-muted);
+  color: var(--text-primary);
 }
 
 /* Focus */
 *:focus-visible {
-  outline: 1px solid rgba(229, 25, 94, 0.6);
+  outline: 1px solid var(--accent-primary);
   outline-offset: 2px;
 }
 
