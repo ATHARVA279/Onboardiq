@@ -27,48 +27,70 @@ trap cleanup SIGINT SIGTERM
 # 1. Backend (Python 3.12 - FastAPI)
 # ==========================================
 echo -e "${CYAN}[Backend]${NC} Initializing..."
-cd Backend || exit
 
-# Ensure Python 3.12 exists
-if ! command -v python3.12 &> /dev/null
-then
+# Resolve Python 3.12 path
+PYTHON_BIN=$(which python3.12)
+if [ -z "$PYTHON_BIN" ]; then
     echo -e "${RED}Python 3.12 not found. Please install it first.${NC}"
     exit 1
 fi
 
+BACKEND_DIR="$(pwd)/Backend"
+BACKEND_VENV="$BACKEND_DIR/venv"
+VENV_PYTHON="$BACKEND_VENV/bin/python"
+VENV_PIP="$BACKEND_VENV/bin/pip"
+
 # Create virtual environment if not exists
-if [ ! -d "venv" ]; then
+if [ ! -d "$BACKEND_VENV" ]; then
     echo -e "${CYAN}[Backend]${NC} Creating virtual environment (Python 3.12)..."
-    python3.12 -m venv venv
+    $PYTHON_BIN -m venv "$BACKEND_VENV"
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Failed to create virtual environment${NC}"
+        exit 1
+    fi
 fi
 
-# Activate virtual environment
-source venv/bin/activate
-
-# Verify Python version
-PY_VERSION=$(python --version)
-echo -e "${CYAN}[Backend]${NC} Using $PY_VERSION"
-
-if [[ $PY_VERSION != *"3.12"* ]]; then
-    echo -e "${RED}Error: Virtual environment is not using Python 3.12${NC}"
+# Verify venv Python exists
+if [ ! -f "$VENV_PYTHON" ]; then
+    echo -e "${RED}Error: Virtual environment Python not found at $VENV_PYTHON${NC}"
     exit 1
 fi
 
-# Always install/update dependencies (IMPORTANT FIX)
-echo -e "${CYAN}[Backend]${NC} Installing/updating dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt --upgrade
+# Verify Python version using venv python
+PY_VERSION=$($VENV_PYTHON --version 2>&1)
+echo -e "${CYAN}[Backend]${NC} Using $PY_VERSION"
+
+if [[ $PY_VERSION != *"3.12"* ]]; then
+    echo -e "${RED}Error: Virtual environment is not using Python 3.12. Got: $PY_VERSION${NC}"
+    exit 1
+fi
+
+# Install dependencies (only if needed, no upgrade unless -u flag)
+echo -e "${CYAN}[Backend]${NC} Checking dependencies..."
+cd "$BACKEND_DIR"
+$VENV_PIP install -r requirements.txt
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Failed to install dependencies${NC}"
+    exit 1
+fi
+
+# Check if .env exists, warn if not
+if [ ! -f ".env" ]; then
+    echo -e "${RED}⚠️  .env file not found in Backend directory${NC}"
+    echo -e "${RED}Please create Backend/.env with required environment variables${NC}"
+    exit 1
+fi
 
 # Start FastAPI server
-echo -e "${CYAN}[Backend]${NC} Starting FastAPI server..."
+echo -e "${CYAN}[Backend]${NC} Starting FastAPI server on port 8000..."
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 export GRPC_DNS_RESOLVER=native
-python -m uvicorn app:app \
-  --reload \
-  --reload-exclude venv \
-  --reload-exclude node_modules \
-  --port 8000 &
+$VENV_PYTHON -m uvicorn app:app --reload --port 8000 &
 BACKEND_PID=$!
+echo -e "${GREEN}[Backend]${NC} Started with PID $BACKEND_PID"
+
+# Give server time to start
+sleep 2
 
 cd ..
 
