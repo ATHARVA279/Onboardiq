@@ -43,6 +43,7 @@ ANSWER STYLE:
 
 # ── LLM response cleaner ──────────────────────────────────────────────────────
 
+
 def clean_llm_response(text: str) -> str:
     """
     Fix common LLM formatting mistakes before citation parsing:
@@ -51,43 +52,46 @@ def clean_llm_response(text: str) -> str:
     """
     # Pattern: fenced code block that contains a single word/token (no internal newlines)
     single_word_block = re.compile(
-        r'```(?:\w+)?\n(\S+)\n```',
+        r"```(?:\w+)?\n(\S+)\n```",
         re.MULTILINE,
     )
 
     def maybe_inline(match):
         word = match.group(1).strip()
-        if ' ' not in word and '\n' not in word and len(word) < 60:
-            return f'`{word}`'
+        if " " not in word and "\n" not in word and len(word) < 60:
+            return f"`{word}`"
         return match.group(0)
 
     text = single_word_block.sub(maybe_inline, text)
 
     # Fix: inline code span followed by newline + just punctuation → same line
     # e.g. "`foo`\n," → "`foo`,"
-    text = re.sub(r'(`[^`\n]+`)\n+([,;.:])', r'\1\2', text)
+    text = re.sub(r"(`[^`\n]+`)\n+([,;.:])", r"\1\2", text)
 
     # Fix: a line that is ONLY a comma/punctuation after an inline code block run
     # e.g. "`a`, `b`,\n`c`,\nand `d`" — collapse runs of inline-code-with-comma onto one line
     # This is harder; we do a best-effort collapse of lines that start with a backtick or comma
-    lines = text.split('\n')
+    lines = text.split("\n")
     merged = []
     i = 0
     while i < len(lines):
         line = lines[i]
         # If next line starts with ` or , or 'and `' — it's a continuation, merge
-        while (i + 1 < len(lines)
-               and re.match(r'^[,;]?\s*(`|\band\b|\bor\b)', lines[i + 1].strip())
-               and re.search(r'`[^`]+`[,]?\s*$', line)):
+        while (
+            i + 1 < len(lines)
+            and re.match(r"^[,;]?\s*(`|\band\b|\bor\b)", lines[i + 1].strip())
+            and re.search(r"`[^`]+`[,]?\s*$", line)
+        ):
             i += 1
-            line = line.rstrip() + ' ' + lines[i].lstrip()
+            line = line.rstrip() + " " + lines[i].lstrip()
         merged.append(line)
         i += 1
 
-    return '\n'.join(merged)
+    return "\n".join(merged)
 
 
 # ── Context builder ───────────────────────────────────────────────────────────
+
 
 def build_context_prompt(question: str, chunks: List[Dict]) -> str:
     """Builds the structured context string from retrieved chunks."""
@@ -99,7 +103,11 @@ def build_context_prompt(question: str, chunks: List[Dict]) -> str:
     for idx, chunk in enumerate(chunks, 1):
         chunk["source_label"] = f"SOURCE_{idx}"
         ctype = chunk.get("chunk_type", "")
-        if chunk.get("source_type") == "github_code" or ctype in ["function", "class", "method"]:
+        if chunk.get("source_type") == "github_code" or ctype in [
+            "function",
+            "class",
+            "method",
+        ]:
             code_chunks.append((idx, chunk))
         elif chunk.get("source_type") == "github_config" or ctype == "config":
             config_chunks.append((idx, chunk))
@@ -140,22 +148,38 @@ def build_context_prompt(question: str, chunks: List[Dict]) -> str:
 
 # ── Answer generation ─────────────────────────────────────────────────────────
 
-async def generate_answer(question: str, chunks: List[Dict], session_messages: List[Dict]) -> str:
+
+async def generate_answer(
+    question: str, chunks: List[Dict], session_messages: List[Dict]
+) -> str:
     """Calls the LLM with context, question, and session history to get the raw answer."""
     context_str = build_context_prompt(question, chunks)
 
     messages = list(session_messages)
     messages.append({"role": "user", "content": question})
 
-    raw_answer = await chat_completion_with_fallback(SYSTEM_PROMPT, messages, context_str)
+    raw_answer = await chat_completion_with_fallback(
+        SYSTEM_PROMPT, messages, context_str
+    )
     return raw_answer
 
 
 # ── Citation parsing ──────────────────────────────────────────────────────────
 
-SUPERSCRIPTS = {1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', 0: '⁰'}
+SUPERSCRIPTS = {
+    1: "¹",
+    2: "²",
+    3: "³",
+    4: "⁴",
+    5: "⁵",
+    6: "⁶",
+    7: "⁷",
+    8: "⁸",
+    9: "⁹",
+    0: "⁰",
+}
 
-CITATION_PATTERN = re.compile(r'\[SOURCE_(\d+)\]')
+CITATION_PATTERN = re.compile(r"\[SOURCE_(\d+)\]")
 
 
 def parse_citations(answer_text: str, chunks: List[Dict]) -> Dict:
@@ -191,7 +215,7 @@ def parse_citations(answer_text: str, chunks: List[Dict]) -> Dict:
 
     def replace_citation(match):
         n = int(match.group(1))
-        return SUPERSCRIPTS.get(n, f'[{n}]')
+        return SUPERSCRIPTS.get(n, f"[{n}]")
 
     # CRITICAL: only sub [SOURCE_N], touch nothing else
     clean_answer = CITATION_PATTERN.sub(replace_citation, answer_text)
@@ -205,19 +229,21 @@ def parse_citations(answer_text: str, chunks: List[Dict]) -> Dict:
 
 # ── Confidence score ──────────────────────────────────────────────────────────
 
-def calculate_confidence(answer_text: str, chunks: List[Dict], cited_chunks: List[Dict]) -> float:
+
+def calculate_confidence(
+    answer_text: str, chunks: List[Dict], cited_chunks: List[Dict]
+) -> float:
     """Calculates confidence as a weighted score."""
     if not chunks:
         return 0.0
 
     # Component 1: Citation rate (detects both superscript unicode and leftover [SOURCE_N])
-    sentences = [s.strip() for s in re.split(r'[.!?]+', answer_text) if s.strip()]
+    sentences = [s.strip() for s in re.split(r"[.!?]+", answer_text) if s.strip()]
     if not sentences:
         citation_rate = 0.0
     else:
         cited_sentences = sum(
-            1 for s in sentences
-            if re.search(r'[¹²³⁴⁵⁶⁷⁸⁹⁰]|\[SOURCE_\d+\]', s)
+            1 for s in sentences if re.search(r"[¹²³⁴⁵⁶⁷⁸⁹⁰]|\[SOURCE_\d+\]", s)
         )
         citation_rate = cited_sentences / len(sentences)
 
@@ -225,14 +251,18 @@ def calculate_confidence(answer_text: str, chunks: List[Dict], cited_chunks: Lis
 
     # Component 2: Avg similarity score
     if cited_chunks:
-        avg_score = sum(c.get("similarity_score", 0) for c in cited_chunks) / len(cited_chunks)
+        avg_score = sum(c.get("similarity_score", 0) for c in cited_chunks) / len(
+            cited_chunks
+        )
     else:
         avg_score = sum(c.get("score", 0) for c in chunks) / len(chunks)
 
     comp2 = avg_score * 0.4
 
     # Component 3: Source diversity
-    source_types = set(c.get("source_type") for c in cited_chunks if c.get("source_type"))
+    source_types = set(
+        c.get("source_type") for c in cited_chunks if c.get("source_type")
+    )
     if len(source_types) > 1:
         comp3 = 0.2
     elif len(source_types) == 1:

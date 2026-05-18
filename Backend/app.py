@@ -34,13 +34,20 @@ async def _scheduled_staleness_checks():
                 {"sources.indexing_status": "completed"}
             ).to_list(length=None)
 
-            logger.info("[scheduler] Running staleness checks for %d workspaces", len(workspaces))
+            logger.info(
+                "[scheduler] Running staleness checks for %d workspaces",
+                len(workspaces),
+            )
 
             for workspace in workspaces:
                 try:
                     await run_staleness_check(str(workspace["_id"]))
                 except Exception as exc:
-                    logger.error("[scheduler] Staleness check failed for %s: %s", workspace["_id"], exc)
+                    logger.error(
+                        "[scheduler] Staleness check failed for %s: %s",
+                        workspace["_id"],
+                        exc,
+                    )
                 await asyncio.sleep(2)  # Avoid hammering APIs
 
         except Exception as exc:

@@ -74,6 +74,7 @@ def _strip_fences(text: str) -> str:
 # Mode detection
 # ---------------------------------------------------------------------------
 
+
 async def detect_mode(workspace_id: str) -> str:
     """Return 'documentation' if a completed url_doc source exists, else 'readme'."""
     db = await get_db()
@@ -94,14 +95,17 @@ async def detect_mode(workspace_id: str) -> str:
 # Chunk helpers
 # ---------------------------------------------------------------------------
 
+
 async def get_readme_chunks(workspace_id: str, source_id: str) -> list[dict]:
     """Return all github_readme chunks for this source."""
     db = await get_db()
-    cursor = db.chunks.find({
-        "workspace_id": ObjectId(workspace_id),
-        "source_id": ObjectId(source_id),
-        "source_type": "github_readme",
-    })
+    cursor = db.chunks.find(
+        {
+            "workspace_id": ObjectId(workspace_id),
+            "source_id": ObjectId(source_id),
+            "source_type": "github_readme",
+        }
+    )
     return await cursor.to_list(length=None)
 
 
@@ -122,6 +126,7 @@ async def get_latest_code_chunks(workspace_id: str, source_id: str) -> list[dict
 # GitHub commit helper
 # ---------------------------------------------------------------------------
 
+
 async def get_recent_commits(
     repo_full_name: str,
     github_token: Optional[str],
@@ -131,7 +136,9 @@ async def get_recent_commits(
     from github import Github, GithubException
 
     if not github_token:
-        logger.warning("[staleness] No GitHub token — using anonymous access (rate-limited)")
+        logger.warning(
+            "[staleness] No GitHub token — using anonymous access (rate-limited)"
+        )
 
     def _fetch():
         g = Github(github_token) if github_token else Github()
@@ -144,13 +151,21 @@ async def get_recent_commits(
                 changed_files = [f.filename for f in commit.files]
             except Exception:
                 changed_files = []
-            results.append({
-                "sha": commit.sha,
-                "message": commit.commit.message.split("\n")[0],
-                "author": commit.commit.author.name if commit.commit.author else "unknown",
-                "timestamp": commit.commit.author.date.isoformat() if commit.commit.author else None,
-                "changed_files": changed_files,
-            })
+            results.append(
+                {
+                    "sha": commit.sha,
+                    "message": commit.commit.message.split("\n")[0],
+                    "author": (
+                        commit.commit.author.name if commit.commit.author else "unknown"
+                    ),
+                    "timestamp": (
+                        commit.commit.author.date.isoformat()
+                        if commit.commit.author
+                        else None
+                    ),
+                    "changed_files": changed_files,
+                }
+            )
         return results
 
     for attempt in range(3):
@@ -173,6 +188,7 @@ async def get_recent_commits(
 # Alert persistence
 # ---------------------------------------------------------------------------
 
+
 async def _create_alert(doc: dict) -> dict:
     """Insert a staleness alert into MongoDB and return it with string _id."""
     db = await get_db()
@@ -194,13 +210,16 @@ def _serialize_alert(alert: dict) -> dict:
 # Mode 1: README staleness
 # ---------------------------------------------------------------------------
 
+
 async def analyze_readme_staleness(workspace_id: str, source_id: str) -> list[dict]:
     """Compare README content against current codebase and return staleness alerts."""
     readme_chunks = await get_readme_chunks(workspace_id, source_id)
     code_chunks = await get_latest_code_chunks(workspace_id, source_id)
 
     if not readme_chunks:
-        logger.info("[staleness] No README chunks found for source %s — skipping", source_id)
+        logger.info(
+            "[staleness] No README chunks found for source %s — skipping", source_id
+        )
         return []
 
     # Build full README text
@@ -226,7 +245,9 @@ async def analyze_readme_staleness(workspace_id: str, source_id: str) -> list[di
         else:
             summary_lines.append(f"FILE: {fp}")
 
-    codebase_summary = "\n".join(summary_lines) if summary_lines else "(no code chunks indexed)"
+    codebase_summary = (
+        "\n".join(summary_lines) if summary_lines else "(no code chunks indexed)"
+    )
 
     # Truncate to stay within context limits
     # Llama-3.3-70b has a large context window, so we can afford a much bigger summary
@@ -267,17 +288,21 @@ Return ONLY the JSON array, no other text."""
         return []
 
     if not isinstance(issues, list):
-        logger.warning("[staleness] Unexpected response format from Groq for README analysis")
+        logger.warning(
+            "[staleness] Unexpected response format from Groq for README analysis"
+        )
         return []
 
     # Clear old unresolved README alerts for this source before adding new ones
     # This prevents duplication when README is re-analyzed
     db = await get_db()
-    await db.staleness_alerts.delete_many({
-        "source_id": ObjectId(source_id),
-        "alert_type": "readme_stale",
-        "resolved": False
-    })
+    await db.staleness_alerts.delete_many(
+        {
+            "source_id": ObjectId(source_id),
+            "alert_type": "readme_stale",
+            "resolved": False,
+        }
+    )
 
     now = datetime.now(timezone.utc)
     alerts = []
@@ -304,13 +329,18 @@ Return ONLY the JSON array, no other text."""
         alert = await _create_alert(doc)
         alerts.append(alert)
 
-    logger.info("[staleness] README analysis created %d alerts for source %s", len(alerts), source_id)
+    logger.info(
+        "[staleness] README analysis created %d alerts for source %s",
+        len(alerts),
+        source_id,
+    )
     return alerts
 
 
 # ---------------------------------------------------------------------------
 # Mode 2: Documentation staleness
 # ---------------------------------------------------------------------------
+
 
 async def analyze_documentation_staleness(
     workspace_id: str,
@@ -337,14 +367,18 @@ async def analyze_documentation_staleness(
         ).to_list(length=5)
 
         if not file_chunks:
-            logger.debug("[staleness] No chunks for changed file %s — skipping", file_path)
+            logger.debug(
+                "[staleness] No chunks for changed file %s — skipping", file_path
+            )
             continue
 
         # Use the embedding from the first chunk for vector search
         primary_chunk = file_chunks[0]
         embedding = primary_chunk.get("embedding")
         if not embedding:
-            logger.debug("[staleness] Chunk for %s has no embedding — skipping", file_path)
+            logger.debug(
+                "[staleness] Chunk for %s has no embedding — skipping", file_path
+            )
             continue
 
         # Step 2: Vector search against url_doc chunks
@@ -357,20 +391,23 @@ async def analyze_documentation_staleness(
                 source_ids=[url_source_id],
             )
         except Exception as exc:
-            logger.warning("[staleness] Vector search failed for %s: %s", file_path, exc)
+            logger.warning(
+                "[staleness] Vector search failed for %s: %s", file_path, exc
+            )
             continue
 
         # Filter by similarity threshold
         doc_chunks = [c for c in doc_chunks if c.get("score", 0) >= 0.6]
 
         if not doc_chunks:
-            logger.debug("[staleness] No related doc chunks (score≥0.6) for %s — skipping", file_path)
+            logger.debug(
+                "[staleness] No related doc chunks (score≥0.6) for %s — skipping",
+                file_path,
+            )
             continue
 
         # Step 3: Build content strings
-        code_content = "\n\n".join(
-            c.get("content", "") for c in file_chunks
-        )[:3000]
+        code_content = "\n\n".join(c.get("content", "") for c in file_chunks)[:3000]
 
         doc_content = "\n\n---\n\n".join(
             f"[{c.get('chunk_name', 'section')}]\n{c.get('content', '')}"
@@ -402,7 +439,9 @@ Return ONLY the JSON object, no other text."""
             raw = await _groq_call(prompt, max_tokens=500)
             result = json.loads(_strip_fences(raw))
         except Exception as exc:
-            logger.error("[staleness] Doc staleness JSON parse failed for %s: %s", file_path, exc)
+            logger.error(
+                "[staleness] Doc staleness JSON parse failed for %s: %s", file_path, exc
+            )
             continue
 
         if not result.get("is_stale"):
@@ -410,17 +449,22 @@ Return ONLY the JSON object, no other text."""
             continue
 
         doc_chunk_id = doc_chunks[0].get("_id")
-        
+
         # Check if an identical unresolved alert already exists
-        existing = await db.staleness_alerts.find_one({
-            "workspace_id": ObjectId(workspace_id),
-            "file_path": file_path,
-            "doc_chunk_id": ObjectId(doc_chunk_id) if doc_chunk_id else None,
-            "resolved": False
-        })
-        
+        existing = await db.staleness_alerts.find_one(
+            {
+                "workspace_id": ObjectId(workspace_id),
+                "file_path": file_path,
+                "doc_chunk_id": ObjectId(doc_chunk_id) if doc_chunk_id else None,
+                "resolved": False,
+            }
+        )
+
         if existing:
-            logger.info("[staleness] Alert already exists for %s, skipping duplication", file_path)
+            logger.info(
+                "[staleness] Alert already exists for %s, skipping duplication",
+                file_path,
+            )
             continue
 
         doc = {
@@ -445,13 +489,18 @@ Return ONLY the JSON object, no other text."""
         alert = await _create_alert(doc)
         alerts.append(alert)
 
-    logger.info("[staleness] Doc analysis created %d alerts for %d files", len(alerts), len(changed_files))
+    logger.info(
+        "[staleness] Doc analysis created %d alerts for %d files",
+        len(alerts),
+        len(changed_files),
+    )
     return alerts
 
 
 # ---------------------------------------------------------------------------
 # Health score
 # ---------------------------------------------------------------------------
+
 
 async def calculate_health_score(workspace_id: str) -> float:
     """Calculate 0-100 health score and persist it to the workspace document."""
@@ -483,6 +532,7 @@ async def calculate_health_score(workspace_id: str) -> float:
 # Main orchestrator
 # ---------------------------------------------------------------------------
 
+
 async def run_staleness_check(workspace_id: str, job_id: Optional[str] = None) -> dict:
     """
     Main entry point called by background tasks and the scheduler.
@@ -510,16 +560,20 @@ async def run_staleness_check(workspace_id: str, job_id: Optional[str] = None) -
 
     # Get completed GitHub sources
     github_sources = [
-        s for s in workspace.get("sources", [])
+        s
+        for s in workspace.get("sources", [])
         if s.get("source_type") == "github_repo"
         and s.get("indexing_status") == "completed"
     ]
 
     # Get url_doc source for documentation mode
     url_source = next(
-        (s for s in workspace.get("sources", [])
-         if s.get("source_type") == "url_doc"
-         and s.get("indexing_status") == "completed"),
+        (
+            s
+            for s in workspace.get("sources", [])
+            if s.get("source_type") == "url_doc"
+            and s.get("indexing_status") == "completed"
+        ),
         None,
     )
 
@@ -532,16 +586,24 @@ async def run_staleness_check(workspace_id: str, job_id: Optional[str] = None) -
         if mode == "readme":
             alerts = await analyze_readme_staleness(workspace_id, source_id)
             total_alerts.extend(alerts)
-            logger.info("[staleness] Mode=readme: %d issues for source %s", len(alerts), source_id)
+            logger.info(
+                "[staleness] Mode=readme: %d issues for source %s",
+                len(alerts),
+                source_id,
+            )
 
         elif mode == "documentation" and url_source:
             url_source_id = str(url_source["source_id"])
 
             # Extract repo name from URL  (e.g. https://github.com/owner/repo)
             repo_url = source.get("url", "")
-            parts = [p for p in repo_url.replace("https://github.com/", "").split("/") if p]
+            parts = [
+                p for p in repo_url.replace("https://github.com/", "").split("/") if p
+            ]
             if len(parts) < 2:
-                logger.warning("[staleness] Cannot parse repo name from URL: %s", repo_url)
+                logger.warning(
+                    "[staleness] Cannot parse repo name from URL: %s", repo_url
+                )
                 continue
 
             repo_full_name = f"{parts[0]}/{parts[1]}"
@@ -549,7 +611,9 @@ async def run_staleness_check(workspace_id: str, job_id: Optional[str] = None) -
             # Look up stored token from workspace metadata (if saved during connect)
             github_token = source.get("github_token") or os.environ.get("GITHUB_TOKEN")
 
-            commits = await get_recent_commits(repo_full_name, github_token, since_hours=24)
+            commits = await get_recent_commits(
+                repo_full_name, github_token, since_hours=24
+            )
             if not commits:
                 logger.info("[staleness] No commits in last 24h for %s", repo_full_name)
                 continue
@@ -573,7 +637,11 @@ async def run_staleness_check(workspace_id: str, job_id: Optional[str] = None) -
                 commit_message=latest_commit.get("message"),
             )
             total_alerts.extend(alerts)
-            logger.info("[staleness] Mode=documentation: %d issues for source %s", len(alerts), source_id)
+            logger.info(
+                "[staleness] Mode=documentation: %d issues for source %s",
+                len(alerts),
+                source_id,
+            )
 
     # Step 5: Recalculate health score
     health_score = await calculate_health_score(workspace_id)
@@ -591,5 +659,7 @@ async def run_staleness_check(workspace_id: str, job_id: Optional[str] = None) -
         "mode": mode,
         "health_score": health_score,
     }
-    logger.info("[staleness] Check complete for workspace %s: %s", workspace_id, summary)
+    logger.info(
+        "[staleness] Check complete for workspace %s: %s", workspace_id, summary
+    )
     return summary

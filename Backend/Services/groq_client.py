@@ -96,12 +96,16 @@ async def chat_completion(
 
     # Guard: ensure the array ends on a user message (Groq requirement)
     if final_messages[-1]["role"] != "user":
-        logger.warning("[groq] Final messages array does not end with user role — this should not happen")
+        logger.warning(
+            "[groq] Final messages array does not end with user role — this should not happen"
+        )
 
     # --- Call Groq with exponential backoff on rate limit ---
     for attempt in range(3):
         try:
-            logger.debug(f"[groq] Attempt {attempt + 1}, {len(final_messages)} messages")
+            logger.debug(
+                f"[groq] Attempt {attempt + 1}, {len(final_messages)} messages"
+            )
             response = await asyncio.to_thread(
                 client.chat.completions.create,
                 model=GROQ_MODEL,
@@ -121,7 +125,9 @@ async def chat_completion(
             )
             if is_rate_limit and attempt < 2:
                 wait = 5 * (attempt + 1)
-                logger.warning(f"[groq] Rate limited on attempt {attempt + 1}, waiting {wait}s...")
+                logger.warning(
+                    f"[groq] Rate limited on attempt {attempt + 1}, waiting {wait}s..."
+                )
                 await asyncio.sleep(wait)
                 continue
             raise Exception(f"Groq API error: {str(e)}")
@@ -148,7 +154,9 @@ async def _gemini_with_retry(
             )
             if is_rate_limit and attempt < max_retries - 1:
                 wait = 3 * (attempt + 1)
-                logger.warning(f"[gemini-fallback] Rate limited on attempt {attempt + 1}, waiting {wait}s...")
+                logger.warning(
+                    f"[gemini-fallback] Rate limited on attempt {attempt + 1}, waiting {wait}s..."
+                )
                 await asyncio.sleep(wait)
                 continue
             raise
@@ -164,7 +172,9 @@ async def chat_completion_with_fallback(
 ) -> str:
     groq_error = None
     try:
-        result = await chat_completion(system_prompt, messages, context, temperature, max_tokens)
+        result = await chat_completion(
+            system_prompt, messages, context, temperature, max_tokens
+        )
         logger.info(f"Chat completion: provider=groq model={GROQ_MODEL}")
         return result
     except Exception as e:
@@ -173,8 +183,12 @@ async def chat_completion_with_fallback(
 
     try:
         result = await _gemini_with_retry(system_prompt, messages, context)
-        logger.info(f"Chat completion: provider=gemini model=gemini-1.5-flash (groq failed: {groq_error})")
+        logger.info(
+            f"Chat completion: provider=gemini model=gemini-1.5-flash (groq failed: {groq_error})"
+        )
         return result
     except Exception as gemini_e:
         logger.error(f"[gemini-fallback] Also failed: {gemini_e}")
-        raise Exception(f"Both providers failed. Groq: {groq_error} | Gemini: {gemini_e}")
+        raise Exception(
+            f"Both providers failed. Groq: {groq_error} | Gemini: {gemini_e}"
+        )

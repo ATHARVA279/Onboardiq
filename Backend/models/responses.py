@@ -3,7 +3,6 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 WorkspaceSourceType = Literal["github_repo", "confluence", "notion", "url", "slack"]
 WorkspaceIndexingStatus = Literal["pending", "indexing", "completed", "failed"]
 ChunkSourceType = Literal[
@@ -78,13 +77,15 @@ class SourceCitationResponse(ResponseModel):
     start_line: Optional[int] = None
     end_line: Optional[int] = None
     similarity_score: float
-    relevance: Literal['cited', 'retrieved']
+    relevance: Literal["cited", "retrieved"]
 
 
 class ChatResponse(ResponseModel):
     answer_text_clean: str = Field(alias="answer", default="")
     sources_cited: List[SourceCitationResponse]
-    all_retrieved: List[SourceCitationResponse] = Field(alias="all_retrieved_chunks", default_factory=list)
+    all_retrieved: List[SourceCitationResponse] = Field(
+        alias="all_retrieved_chunks", default_factory=list
+    )
     confidence_score: float = Field(..., ge=0, le=100)
     session_id: str
 

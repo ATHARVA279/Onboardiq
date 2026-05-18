@@ -129,7 +129,9 @@ def get_all_files(repo) -> List[Dict]:
             continue
         if any(lower_path.endswith(extension) for extension in SKIP_EXTENSIONS):
             continue
-        if filename in SKIP_FILENAMES or lower_filename in {name.lower() for name in SKIP_FILENAMES}:
+        if filename in SKIP_FILENAMES or lower_filename in {
+            name.lower() for name in SKIP_FILENAMES
+        }:
             continue
 
         _, extension = os.path.splitext(path)
@@ -176,7 +178,12 @@ async def connect_and_ingest_repo(
         )
         await db.workspaces.update_one(
             {"_id": workspace_object_id, "sources.source_id": source_object_id},
-            {"$set": {"sources.$.indexing_status": "indexing", "updated_at": datetime.now(timezone.utc)}},
+            {
+                "$set": {
+                    "sources.$.indexing_status": "indexing",
+                    "updated_at": datetime.now(timezone.utc),
+                }
+            },
         )
 
         files = get_all_files(repo)
@@ -184,7 +191,12 @@ async def connect_and_ingest_repo(
 
         await db.jobs.update_one(
             {"_id": job_object_id},
-            {"$set": {"progress_total": progress_total, "progress_message": "Processing repository files"}},
+            {
+                "$set": {
+                    "progress_total": progress_total,
+                    "progress_message": "Processing repository files",
+                }
+            },
         )
         await db.workspaces.update_one(
             {"_id": workspace_object_id, "sources.source_id": source_object_id},
@@ -207,7 +219,9 @@ async def connect_and_ingest_repo(
                 )
                 total_chunks_created += created
             except Exception as exc:
-                logger.exception("Failed to process file %s: %s", file_object["path"], exc)
+                logger.exception(
+                    "Failed to process file %s: %s", file_object["path"], exc
+                )
             finally:
                 await db.jobs.update_one(
                     {"_id": job_object_id},
@@ -237,7 +251,8 @@ async def connect_and_ingest_repo(
                 "$set": {
                     "sources.$.indexing_status": "completed",
                     "sources.$.last_indexed_at": now,
-                    "sources.$.last_commit_hash": getattr(repo, "pushed_at", None) and repo.get_branch(repo.default_branch).commit.sha,
+                    "sources.$.last_commit_hash": getattr(repo, "pushed_at", None)
+                    and repo.get_branch(repo.default_branch).commit.sha,
                     "sources.$.chunk_count": total_chunks_created,
                     "updated_at": now,
                 }
@@ -298,18 +313,24 @@ async def process_single_file(
             commit_message = commit.commit.message
             author_name = (
                 commit.commit.author.name
-                if getattr(commit, "commit", None) and getattr(commit.commit, "author", None)
+                if getattr(commit, "commit", None)
+                and getattr(commit.commit, "author", None)
                 else None
             )
             commit_datetime = commit.commit.author.date or commit_datetime
     except Exception as exc:
-        logger.warning("Could not fetch commit info for %s: %s", github_file_object["path"], exc)
+        logger.warning(
+            "Could not fetch commit info for %s: %s", github_file_object["path"], exc
+        )
 
     path_lower = github_file_object["path"].lower()
     _, extension = os.path.splitext(github_file_object["path"])
     extension = extension.lower()
 
-    if path_lower in {"readme.md", "./readme.md"} or os.path.basename(path_lower) == "readme.md":
+    if (
+        path_lower in {"readme.md", "./readme.md"}
+        or os.path.basename(path_lower) == "readme.md"
+    ):
         chunk_source_type = "github_readme"
     elif extension in {".yaml", ".yml", ".json", ".toml", ".sh"} and any(
         token in path_lower for token in ("docker", "k8s", "kubernetes", ".github")

@@ -19,7 +19,6 @@ staleness_alerts_collection = None
 _indexes_created = False
 _vector_index_checked = False
 
-
 async def get_db():
     global client, db
     global workspaces_collection, chunks_collection, questions_collection
@@ -30,7 +29,7 @@ async def get_db():
             tlsAllowInvalidCertificates=True,
             serverSelectionTimeoutMS=5000,
             connectTimeoutMS=10000,
-            socketTimeoutMS=10000
+            socketTimeoutMS=10000,
         )
         db = client[Config.DB_NAME]
         workspaces_collection = db.workspaces
@@ -50,14 +49,15 @@ async def get_db():
         _vector_index_checked = True
     return db
 
-
 async def init_vector_index():
     """Create the Atlas vector search index for chunks.embedding if needed."""
     index_name = Config.VECTOR_INDEX_NAME
 
     try:
         try:
-            existing_indexes = await chunks_collection.list_search_indexes().to_list(length=None)
+            existing_indexes = await chunks_collection.list_search_indexes().to_list(
+                length=None
+            )
         except Exception as exc:
             print(f"Vector index availability warning: {exc}")
             return
@@ -73,25 +73,14 @@ async def init_vector_index():
                     "embedding": {
                         "type": "knnVector",
                         "dimensions": 1024,
-                        "similarity": "cosine"
+                        "similarity": "cosine",
                     },
-                    "workspace_id": {
-                        "type": "filter"
-                    },
-                    "source_type": {
-                        "type": "filter"
-                    },
-                    "source_id": {
-                        "type": "filter"
-                    }
-                }
+                    "workspace_id": {"type": "filter"},
+                    "source_type": {"type": "filter"},
+                    "source_id": {"type": "filter"},
+                },
             }
         }
-
-        # IMPORTANT MIGRATION NOTE:
-        # Existing 768-dimensional embeddings are incompatible with this 1024-dimensional index.
-        # You must delete all existing chunks from the MongoDB chunks collection before re-indexing.
-        # Also, delete the existing vector search index in Atlas UI and let the app recreate it or recreate it manually.
 
         try:
             await chunks_collection.create_search_index(
@@ -117,7 +106,6 @@ async def init_vector_index():
         print("MongoDB Atlas vector index created successfully")
     except Exception as exc:
         print(f"Vector index creation warning: {exc}")
-
 
 async def create_indexes():
     """Create indexes for the OnboardIQ collections."""

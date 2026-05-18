@@ -27,8 +27,9 @@ def create_dependency(limiter: Limiter, context_name: str) -> Callable:
         except Exception as err:
             raise HTTPException(
                 status_code=429,
-                detail=f"Rate limit exceeded for {context_name}. Please try again later."
+                detail=f"Rate limit exceeded for {context_name}. Please try again later.",
             )
+
     return dependency
 
 limit_quiz = create_dependency(quiz_limiter, "Quiz Generation")

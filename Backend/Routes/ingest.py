@@ -80,12 +80,16 @@ async def create_workspace(
         raise HTTPException(status_code=400, detail="Workspace name cannot be empty")
 
     # Case-insensitive duplicate check for this user
-    existing = await db.workspaces.find_one({
-        "owner_uid": current_user["uid"],
-        "name": {"$regex": f"^{normalized_name}$", "$options": "i"}
-    })
+    existing = await db.workspaces.find_one(
+        {
+            "owner_uid": current_user["uid"],
+            "name": {"$regex": f"^{normalized_name}$", "$options": "i"},
+        }
+    )
     if existing:
-        raise HTTPException(status_code=409, detail="You already have a workspace with this name")
+        raise HTTPException(
+            status_code=409, detail="You already have a workspace with this name"
+        )
 
     now = datetime.now(timezone.utc)
     workspace = {
@@ -111,7 +115,9 @@ async def connect_github_repo(
     current_user: dict = Depends(get_current_user),
 ):
     if workspace_id != request.workspace_id:
-        raise HTTPException(status_code=400, detail="Path workspace_id does not match request body")
+        raise HTTPException(
+            status_code=400, detail="Path workspace_id does not match request body"
+        )
 
     db = await get_db()
     workspace_object_id = ObjectId(workspace_id)
@@ -119,7 +125,10 @@ async def connect_github_repo(
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
     if workspace["owner_uid"] != current_user["uid"]:
-        raise HTTPException(status_code=403, detail="Only the workspace owner can connect GitHub repositories")
+        raise HTTPException(
+            status_code=403,
+            detail="Only the workspace owner can connect GitHub repositories",
+        )
 
     now = datetime.now(timezone.utc)
     source_id = ObjectId()
@@ -171,7 +180,9 @@ async def connect_github_repo(
     return _job_response_payload(job)
 
 
-@router.post("/workspace/{workspace_id}/source/{source_id}/reindex", response_model=JobResponse)
+@router.post(
+    "/workspace/{workspace_id}/source/{source_id}/reindex", response_model=JobResponse
+)
 async def reindex_source(
     workspace_id: str,
     source_id: str,
@@ -187,18 +198,22 @@ async def reindex_source(
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
     if workspace["owner_uid"] != current_user["uid"]:
-        raise HTTPException(status_code=403, detail="Only the workspace owner can reindex sources")
+        raise HTTPException(
+            status_code=403, detail="Only the workspace owner can reindex sources"
+        )
 
     # Find the source in the workspace
-    source = next((s for s in workspace.get("sources", []) if s["source_id"] == source_object_id), None)
+    source = next(
+        (s for s in workspace.get("sources", []) if s["source_id"] == source_object_id),
+        None,
+    )
     if not source:
         raise HTTPException(status_code=404, detail="Source not found in workspace")
 
     # Delete all existing chunks for this source
-    await db.chunks.delete_many({
-        "workspace_id": workspace_object_id,
-        "source_id": source_object_id
-    })
+    await db.chunks.delete_many(
+        {"workspace_id": workspace_object_id, "source_id": source_object_id}
+    )
 
     # Update source status
     now = datetime.now(timezone.utc)
@@ -209,13 +224,15 @@ async def reindex_source(
                 "sources.$.indexing_status": "pending",
                 "sources.$.chunk_count": 0,
                 "sources.$.file_count": 0,
-                "updated_at": now
+                "updated_at": now,
             }
-        }
+        },
     )
 
     # Create new job
-    job_type = "github_ingest" if source["source_type"] == "github_repo" else "url_ingest"
+    job_type = (
+        "github_ingest" if source["source_type"] == "github_repo" else "url_ingest"
+    )
     job = {
         "_id": ObjectId(),
         "workspace_id": workspace_object_id,

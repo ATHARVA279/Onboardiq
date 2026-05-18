@@ -3,7 +3,6 @@ import os
 import re
 from typing import Dict, List, Optional
 
-
 JS_TS_BOUNDARY = re.compile(
     r"^(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+(\w+)|"
     r"^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(|"
@@ -50,7 +49,9 @@ def detect_language(file_path: str, language: Optional[str] = None) -> str:
     return "plaintext"
 
 
-def chunk_file(content: str, file_path: str, language: Optional[str] = None) -> List[Dict]:
+def chunk_file(
+    content: str, file_path: str, language: Optional[str] = None
+) -> List[Dict]:
     detected_language = detect_language(file_path, language)
 
     if detected_language == "python":
@@ -139,15 +140,24 @@ def _chunk_js_ts(content: str, language: str) -> List[Dict]:
         chunk_name = next((group for group in match.groups() if group), None)
         header = match.group(0)
         chunk_type = (
-            "class" if "class " in header
-            else "interface" if "interface " in header
-            else "type" if re.match(r"^(?:export\s+)?type\s+", header)
-            else "function"
+            "class"
+            if "class " in header
+            else (
+                "interface"
+                if "interface " in header
+                else (
+                    "type"
+                    if re.match(r"^(?:export\s+)?type\s+", header)
+                    else "function"
+                )
+            )
         )
         start_line = _offset_to_line_number(start, line_offsets)
         end_line = _offset_to_line_number(end, line_offsets)
         raw_chunks.append(
-            _single_chunk(snippet, chunk_type, chunk_name, start_line, end_line, language)
+            _single_chunk(
+                snippet, chunk_type, chunk_name, start_line, end_line, language
+            )
         )
 
     # Merge chunks shorter than 100 characters into the next chunk
@@ -200,7 +210,9 @@ def _chunk_java(content: str, language: str) -> List[Dict]:
         start_line = _offset_to_line_number(start, line_offsets)
         end_line = _offset_to_line_number(end, line_offsets)
         chunks.append(
-            _single_chunk(snippet, chunk_type, chunk_name, start_line, end_line, language)
+            _single_chunk(
+                snippet, chunk_type, chunk_name, start_line, end_line, language
+            )
         )
 
     return chunks
@@ -217,7 +229,11 @@ def _chunk_markdown(content: str, language: str) -> List[Dict]:
 
     chunks = []
     for index, start_idx in enumerate(heading_indexes):
-        end_idx = heading_indexes[index + 1] if index + 1 < len(heading_indexes) else len(lines)
+        end_idx = (
+            heading_indexes[index + 1]
+            if index + 1 < len(heading_indexes)
+            else len(lines)
+        )
         section_lines = lines[start_idx:end_idx]
         heading_text = lines[start_idx][3:].strip()
         chunks.append(

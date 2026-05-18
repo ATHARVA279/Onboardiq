@@ -77,12 +77,11 @@ async def check_embedding_service():
         # Test with a simple string
         test_text = "test"
         logger.info("[health] Testing embedding service connectivity...")
-        
+
         result = await asyncio.wait_for(
-            get_embedding(test_text, mode="query"),
-            timeout=30.0
+            get_embedding(test_text, mode="query"), timeout=30.0
         )
-        
+
         if result and len(result) > 0:
             return {
                 "status": "healthy",
@@ -96,7 +95,7 @@ async def check_embedding_service():
                 "service": "embedding",
                 "message": "Embedding service returned empty result",
             }
-            
+
     except asyncio.TimeoutError:
         logger.error("[health] Embedding service timeout (network/DNS issue?)")
         return {
@@ -107,18 +106,26 @@ async def check_embedding_service():
         }
     except Exception as e:
         error_str = str(e).lower()
-        is_dns = any(kw in error_str for kw in ["dns", "address lookup", "resolve", "hostname"])
-        
+        is_dns = any(
+            kw in error_str for kw in ["dns", "address lookup", "resolve", "hostname"]
+        )
+
         logger.error(f"[health] Embedding service error: {e}", exc_info=True)
         return {
             "status": "unhealthy",
             "service": "embedding",
             "error_type": type(e).__name__,
             "error_message": str(e)[:300],
-            "likely_cause": "DNS resolution failure" if is_dns else "Network or API error",
+            "likely_cause": (
+                "DNS resolution failure" if is_dns else "Network or API error"
+            ),
             "recommendation": (
-                "For DNS errors: Check your system's DNS configuration and network connectivity. "
-                "Verify you can reach generativelanguage.googleapis.com. "
-                "For API errors: Verify GOOGLE_API_KEY is valid."
-            ) if is_dns else "Check network connectivity and API key configuration",
+                (
+                    "For DNS errors: Check your system's DNS configuration and network connectivity. "
+                    "Verify you can reach generativelanguage.googleapis.com. "
+                    "For API errors: Verify GOOGLE_API_KEY is valid."
+                )
+                if is_dns
+                else "Check network connectivity and API key configuration"
+            ),
         }

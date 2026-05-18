@@ -23,6 +23,7 @@ router = APIRouter()
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _serialize_alert(alert: dict) -> dict:
     out = dict(alert)
     # Map _id to id for frontend consistency
@@ -38,7 +39,10 @@ async def _require_workspace_access(workspace_id: str, user_uid: str, db) -> dic
     workspace = await db.workspaces.find_one({"_id": ObjectId(workspace_id)})
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
-    if user_uid not in workspace.get("members", []) and workspace.get("owner_uid") != user_uid:
+    if (
+        user_uid not in workspace.get("members", [])
+        and workspace.get("owner_uid") != user_uid
+    ):
         raise HTTPException(status_code=403, detail="Not a member of this workspace")
     return workspace
 
@@ -49,6 +53,7 @@ SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 # ---------------------------------------------------------------------------
 # POST /workspace/{workspace_id}/staleness/check
 # ---------------------------------------------------------------------------
+
 
 @router.post("/workspace/{workspace_id}/staleness/check")
 async def trigger_staleness_check(
@@ -64,7 +69,7 @@ async def trigger_staleness_check(
     now = datetime.now(timezone.utc)
     job_doc = {
         "workspace_id": ObjectId(workspace_id),
-        "source_id": ObjectId(workspace_id),   # workspace-level job
+        "source_id": ObjectId(workspace_id),  # workspace-level job
         "job_type": "staleness_check",
         "status": "queued",
         "progress_current": 0,
@@ -100,6 +105,7 @@ async def trigger_staleness_check(
 # GET /workspace/{workspace_id}/staleness/alerts
 # ---------------------------------------------------------------------------
 
+
 @router.get("/workspace/{workspace_id}/staleness/alerts")
 async def get_staleness_alerts(
     workspace_id: str,
@@ -125,7 +131,10 @@ async def get_staleness_alerts(
 
     # Sort: severity (high first) then created_at desc
     alerts.sort(
-        key=lambda a: (SEVERITY_ORDER.get(a.get("severity", "low"), 2), -a["created_at"].timestamp()),
+        key=lambda a: (
+            SEVERITY_ORDER.get(a.get("severity", "low"), 2),
+            -a["created_at"].timestamp(),
+        ),
     )
 
     return [_serialize_alert(a) for a in alerts]
@@ -134,6 +143,7 @@ async def get_staleness_alerts(
 # ---------------------------------------------------------------------------
 # PATCH /workspace/{workspace_id}/staleness/alerts/{alert_id}/resolve
 # ---------------------------------------------------------------------------
+
 
 @router.patch("/workspace/{workspace_id}/staleness/alerts/{alert_id}/resolve")
 async def resolve_alert(
@@ -154,11 +164,13 @@ async def resolve_alert(
 
     result = await db.staleness_alerts.find_one_and_update(
         {"_id": oid, "workspace_id": ObjectId(workspace_id)},
-        {"$set": {
-            "resolved": True,
-            "resolved_at": now,
-            "resolved_by_uid": user_uid,
-        }},
+        {
+            "$set": {
+                "resolved": True,
+                "resolved_at": now,
+                "resolved_by_uid": user_uid,
+            }
+        },
         return_document=True,
     )
     if not result:
@@ -171,6 +183,7 @@ async def resolve_alert(
 # ---------------------------------------------------------------------------
 # DELETE /workspace/{workspace_id}/staleness/alerts/{alert_id}
 # ---------------------------------------------------------------------------
+
 
 @router.delete(
     "/workspace/{workspace_id}/staleness/alerts/{alert_id}",
@@ -204,6 +217,7 @@ async def dismiss_alert(
 # GET /workspace/{workspace_id}/staleness/summary
 # ---------------------------------------------------------------------------
 
+
 @router.get("/workspace/{workspace_id}/staleness/summary")
 async def get_staleness_summary(
     workspace_id: str,
@@ -220,13 +234,19 @@ async def get_staleness_summary(
         {"$group": {"_id": "$severity", "count": {"$sum": 1}}},
     ]
     cursor = db.staleness_alerts.aggregate(pipeline)
-    severity_counts = {doc["_id"]: doc["count"] for doc in await cursor.to_list(length=None)}
+    severity_counts = {
+        doc["_id"]: doc["count"] for doc in await cursor.to_list(length=None)
+    }
 
     total = sum(severity_counts.values())
 
     # Most recent completed staleness_check job
     last_job = await db.jobs.find_one(
-        {"workspace_id": ObjectId(workspace_id), "job_type": "staleness_check", "status": "completed"},
+        {
+            "workspace_id": ObjectId(workspace_id),
+            "job_type": "staleness_check",
+            "status": "completed",
+        },
         sort=[("completed_at", -1)],
     )
     last_checked_at = last_job.get("completed_at") if last_job else None

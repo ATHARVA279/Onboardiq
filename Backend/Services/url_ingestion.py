@@ -25,10 +25,30 @@ logger = logging.getLogger(__name__)
 
 # File extensions to skip during link discovery
 SKIP_EXTENSIONS = {
-    ".pdf", ".zip", ".tar", ".gz", ".exe", ".bin",
-    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp",
-    ".mp4", ".mp3", ".woff", ".woff2", ".ttf", ".eot",
-    ".css", ".js", ".ts", ".jsx", ".tsx",
+    ".pdf",
+    ".zip",
+    ".tar",
+    ".gz",
+    ".exe",
+    ".bin",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".ico",
+    ".webp",
+    ".mp4",
+    ".mp3",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".eot",
+    ".css",
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
 }
 
 # CSS selectors tried in order to extract main content
@@ -46,7 +66,14 @@ CONTENT_SELECTORS = [
 
 # Tags stripped from <body> fallback
 NOISE_TAGS = ["nav", "header", "footer", "aside", "script", "style"]
-NOISE_CLASSES = ["sidebar", "navigation", "navbar", "cookie-banner", "toc", "breadcrumb"]
+NOISE_CLASSES = [
+    "sidebar",
+    "navigation",
+    "navbar",
+    "cookie-banner",
+    "toc",
+    "breadcrumb",
+]
 
 # Heading detection patterns for chunking
 _NUMBERED_HEADING = re.compile(r"^\d+(\.\d+)*\s+\w")
@@ -54,6 +81,7 @@ _MARKDOWN_HEADING = re.compile(r"^#{1,6}\s+")
 
 
 # ── Normalisation ─────────────────────────────────────────────────────────────
+
 
 def _normalize_url(url: str) -> str:
     """Remove fragment and query string from a URL."""
@@ -74,7 +102,10 @@ def _is_skippable_url(url: str) -> bool:
 
 # ── Page discovery ────────────────────────────────────────────────────────────
 
-async def discover_pages(start_url: str, base_domain: str, max_pages: int = 20) -> list[str]:
+
+async def discover_pages(
+    start_url: str, base_domain: str, max_pages: int = 20
+) -> list[str]:
     """
     BFS crawler: starts at start_url, follows same-domain links,
     returns up to max_pages discovered URLs.
@@ -83,8 +114,7 @@ async def discover_pages(start_url: str, base_domain: str, max_pages: int = 20) 
     queue: list[str] = [start_url]
     headers = {
         "User-Agent": (
-            "Mozilla/5.0 (compatible; OnboardiqBot/1.0; "
-            "+https://onboardiq.dev/bot)"
+            "Mozilla/5.0 (compatible; OnboardiqBot/1.0; " "+https://onboardiq.dev/bot)"
         )
     }
 
@@ -125,6 +155,7 @@ async def discover_pages(start_url: str, base_domain: str, max_pages: int = 20) 
 
 
 # ── Content extraction helpers ────────────────────────────────────────────────
+
 
 def _extract_main_content(soup: BeautifulSoup) -> str:
     """Return clean text of the main content area."""
@@ -170,6 +201,7 @@ def _looks_like_js_required(text: str) -> bool:
 
 # ── Per-page scraper ──────────────────────────────────────────────────────────
 
+
 async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -> int:
     """
     Fetch, parse, chunk, embed, and store one documentation page.
@@ -196,7 +228,9 @@ async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -
             if not _looks_like_js_required(raw_text):
                 html = raw_text
     except Exception as exc:
-        logger.info("[url-ingest] httpx failed for %s: %s — trying Playwright", url, exc)
+        logger.info(
+            "[url-ingest] httpx failed for %s: %s — trying Playwright", url, exc
+        )
 
     # ── Attempt 2: Playwright headless browser ────────────────────────────────
     if html is None:
@@ -206,13 +240,15 @@ async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -
             async with async_playwright() as pw:
                 browser = await pw.chromium.launch(headless=True)
                 page = await browser.new_page()
-                await page.set_extra_http_headers({
-                    "User-Agent": (
-                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/120.0.0.0 Safari/537.36"
-                    )
-                })
+                await page.set_extra_http_headers(
+                    {
+                        "User-Agent": (
+                            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                            "Chrome/120.0.0.0 Safari/537.36"
+                        )
+                    }
+                )
                 await page.goto(url, wait_until="networkidle", timeout=30_000)
                 await page.wait_for_timeout(1000)
                 html = await page.content()
@@ -264,26 +300,28 @@ async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -
 
     docs = []
     for chunk, embedding in zip(chunks, all_embeddings):
-        docs.append({
-            "workspace_id": workspace_oid,
-            "source_id": source_oid,
-            "source_type": "url_doc",
-            "content": chunk["content"],
-            "embedding": embedding,
-            "file_path": None,
-            "language": None,
-            "chunk_type": chunk["chunk_type"],
-            "chunk_name": chunk["chunk_name"],
-            "start_line": None,
-            "end_line": None,
-            "source_url": chunk["source_url"],
-            "page_title": chunk["page_title"],
-            "is_stale": False,
-            "stale_reason": None,
-            "stale_since_commit": None,
-            "stale_detected_at": None,
-            "created_at": now,
-        })
+        docs.append(
+            {
+                "workspace_id": workspace_oid,
+                "source_id": source_oid,
+                "source_type": "url_doc",
+                "content": chunk["content"],
+                "embedding": embedding,
+                "file_path": None,
+                "language": None,
+                "chunk_type": chunk["chunk_type"],
+                "chunk_name": chunk["chunk_name"],
+                "start_line": None,
+                "end_line": None,
+                "source_url": chunk["source_url"],
+                "page_title": chunk["page_title"],
+                "is_stale": False,
+                "stale_reason": None,
+                "stale_since_commit": None,
+                "stale_detected_at": None,
+                "created_at": now,
+            }
+        )
 
     if docs:
         await db.chunks.insert_many(docs)
@@ -293,6 +331,7 @@ async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -
 
 
 # ── Heading-aware chunker ─────────────────────────────────────────────────────
+
 
 def _is_heading(line: str) -> bool:
     stripped = line.strip()
@@ -307,7 +346,9 @@ def _is_heading(line: str) -> bool:
     return False
 
 
-def _split_long_section(words: list[str], max_words: int = 400, overlap: int = 50) -> list[str]:
+def _split_long_section(
+    words: list[str], max_words: int = 400, overlap: int = 50
+) -> list[str]:
     chunks = []
     start = 0
     while start < len(words):
@@ -357,21 +398,24 @@ def chunk_documentation_page(text: str, url: str, title: str) -> list[dict]:
         for sub_text in sub_texts:
             augmented = (
                 f'passage: documentation section titled "{heading}" '
-                f'from {title}: {sub_text}'
+                f"from {title}: {sub_text}"
             )
-            chunks.append({
-                "content": sub_text,
-                "augmented_content": augmented,
-                "chunk_type": "section",
-                "chunk_name": heading,
-                "source_url": url,
-                "page_title": title,
-            })
+            chunks.append(
+                {
+                    "content": sub_text,
+                    "augmented_content": augmented,
+                    "chunk_type": "section",
+                    "chunk_name": heading,
+                    "source_url": url,
+                    "page_title": title,
+                }
+            )
 
     return chunks
 
 
 # ── Main orchestrator ─────────────────────────────────────────────────────────
+
 
 async def ingest_url_source(
     url: str,
@@ -432,7 +476,9 @@ async def ingest_url_source(
         # ── Step 4: scrape each page ──────────────────────────────────────────
         for idx, page_url in enumerate(pages, start=1):
             try:
-                created = await scrape_and_process_page(page_url, workspace_id, source_id)
+                created = await scrape_and_process_page(
+                    page_url, workspace_id, source_id
+                )
                 total_chunks += created
             except Exception as exc:
                 logger.exception("[url-ingest] Failed page %s: %s", page_url, exc)

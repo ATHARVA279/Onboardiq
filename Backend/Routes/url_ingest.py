@@ -56,18 +56,24 @@ async def connect_url(
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
     if workspace["owner_uid"] != current_user["uid"]:
-        raise HTTPException(status_code=403, detail="Only the workspace owner can connect sources")
+        raise HTTPException(
+            status_code=403, detail="Only the workspace owner can connect sources"
+        )
 
     url_str = str(request.url).rstrip("/")
 
     # URL scheme validation
     parsed = urlparse(url_str)
     if parsed.scheme not in ("http", "https"):
-        raise HTTPException(status_code=422, detail="URL must start with http:// or https://")
+        raise HTTPException(
+            status_code=422, detail="URL must start with http:// or https://"
+        )
 
     # Reachability check
     try:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=5.0, verify=False) as client:
+        async with httpx.AsyncClient(
+            follow_redirects=True, timeout=5.0, verify=False
+        ) as client:
             head = await client.head(url_str)
             if head.status_code >= 500:
                 raise HTTPException(
@@ -92,9 +98,7 @@ async def connect_url(
 
     # Display name fallback = domain
     display_name = (
-        request.display_name.strip()
-        if request.display_name
-        else parsed.netloc
+        request.display_name.strip() if request.display_name else parsed.netloc
     )
 
     now = datetime.now(timezone.utc)
@@ -206,10 +210,14 @@ async def delete_source(
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
     if workspace["owner_uid"] != current_user["uid"]:
-        raise HTTPException(status_code=403, detail="Only the workspace owner can delete sources")
+        raise HTTPException(
+            status_code=403, detail="Only the workspace owner can delete sources"
+        )
 
     # Delete all chunks for this source
-    await db.chunks.delete_many({"workspace_id": workspace_oid, "source_id": source_oid})
+    await db.chunks.delete_many(
+        {"workspace_id": workspace_oid, "source_id": source_oid}
+    )
 
     # Remove source from workspace
     await db.workspaces.update_one(

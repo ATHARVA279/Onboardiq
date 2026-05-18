@@ -16,10 +16,14 @@ async def recalculate_workspace_health_score(workspace_id: str) -> Dict:
     stale_count = await db.chunks.count_documents(
         {"workspace_id": workspace_object_id, "is_stale": True}
     )
-    total_chunks = await db.chunks.count_documents({"workspace_id": workspace_object_id})
+    total_chunks = await db.chunks.count_documents(
+        {"workspace_id": workspace_object_id}
+    )
 
     failed_sources = sum(
-        1 for source in workspace.get("sources", []) if source.get("indexing_status") == "failed"
+        1
+        for source in workspace.get("sources", [])
+        if source.get("indexing_status") == "failed"
     )
     pending_sources = sum(
         1
@@ -27,8 +31,10 @@ async def recalculate_workspace_health_score(workspace_id: str) -> Dict:
         if source.get("indexing_status") in {"pending", "indexing"}
     )
 
-    freshness_score = 100.0 if total_chunks == 0 else max(
-        0.0, 100.0 - ((stale_count / max(total_chunks, 1)) * 100.0)
+    freshness_score = (
+        100.0
+        if total_chunks == 0
+        else max(0.0, 100.0 - ((stale_count / max(total_chunks, 1)) * 100.0))
     )
     source_score = max(0.0, 100.0 - (failed_sources * 20.0) - (pending_sources * 5.0))
     overall_score = round((freshness_score * 0.7) + (source_score * 0.3), 2)

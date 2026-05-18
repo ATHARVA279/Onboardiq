@@ -8,7 +8,7 @@ def get_general_response(question: str) -> str | None:
         "alright": "Is there anything else you'd like to know?",
         "sure": "Go ahead, I'm here to help!",
         "yes": "What would you like to know?",
-        "no": "Okay! Let me know if you need anything."
+        "no": "Okay! Let me know if you need anything.",
     }
-    
+
     return general_responses.get(question.lower().strip())
