@@ -370,7 +370,6 @@ export async function getStalenessSummary(workspaceId) {
   }
 }
 
-
 // ── Auth / user ───────────────────────────────────────────────────────────────
 
 export async function getUserProfile() {

@@ -29,7 +29,8 @@ function initialsFromName(name) {
 }
 
 function WorkspaceSwitcher() {
-  const { workspaces, activeWorkspace, switchWorkspace, addWorkspace } = useWorkspace();
+  const { workspaces, activeWorkspace, switchWorkspace, addWorkspace } =
+    useWorkspace();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -80,7 +81,9 @@ function WorkspaceSwitcher() {
         className="flex w-full items-center justify-between rounded-lg border border-[var(--bg-hover)] bg-[var(--bg-base)] px-4 py-3 text-left transition hover:border-[var(--accent-primary)]/40"
       >
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent-primary)]">Workspace</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent-primary)]">
+            Workspace
+          </p>
           <p className="mt-1 truncate text-sm font-medium text-[var(--text-primary)]">
             {activeWorkspace?.name || "No workspace"}
           </p>
@@ -95,7 +98,8 @@ function WorkspaceSwitcher() {
           <div className="max-h-56 overflow-y-auto p-1">
             {workspaces.map((ws) => {
               const isActive =
-                activeWorkspace?.id === ws.id || activeWorkspace?._id === ws._id;
+                activeWorkspace?.id === ws.id ||
+                activeWorkspace?._id === ws._id;
               return (
                 <button
                   key={ws.id || ws._id}
@@ -199,8 +203,12 @@ export default function Sidebar() {
             O
           </div>
           <div>
-            <p className="text-lg font-bold text-[var(--text-primary)]">Onboardiq</p>
-            <p className="text-xs text-[var(--text-tertiary)]">Developer onboarding intelligence</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">
+              Onboardiq
+            </p>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              Developer onboarding intelligence
+            </p>
           </div>
         </Link>
       </div>
@@ -234,8 +242,12 @@ export default function Sidebar() {
             {displayName.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-[var(--text-primary)]">{displayName}</p>
-            <p className="truncate text-xs text-[var(--text-tertiary)]">{user?.email || "No email"}</p>
+            <p className="truncate text-sm font-medium text-[var(--text-primary)]">
+              {displayName}
+            </p>
+            <p className="truncate text-xs text-[var(--text-tertiary)]">
+              {user?.email || "No email"}
+            </p>
           </div>
           <button
             type="button"

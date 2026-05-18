@@ -63,8 +63,14 @@ const Auth = ({ initialIsLogin = true }) => {
         await signInWithEmailAndPassword(auth, email, password);
         toast.success("Welcome back!");
       } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: fullName.trim() });
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+        await updateProfile(userCredential.user, {
+          displayName: fullName.trim(),
+        });
         await userCredential.user.getIdToken(true);
         toast.success("Account created! Welcome!");
       }

@@ -51,7 +51,9 @@ export default function Navbar() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-orange-400 bg-clip-text text-transparent">
                 Onboardiq
               </h1>
-              <p className="text-xs text-slate-500 -mt-1">Developer Onboarding Intelligence</p>
+              <p className="text-xs text-slate-500 -mt-1">
+                Developer Onboarding Intelligence
+              </p>
             </div>
           </Link>
 
@@ -69,9 +71,10 @@ export default function Navbar() {
                     className={`
                       relative px-4 py-2 rounded-xl font-medium text-sm
                       flex items-center gap-2 transition-all duration-300
-                      ${active
-                        ? 'text-white'
-                        : 'text-slate-400 hover:text-slate-200'
+                      ${
+                        active
+                          ? "text-white"
+                          : "text-slate-400 hover:text-slate-200"
                       }
                     `}
                   >
@@ -79,10 +82,12 @@ export default function Navbar() {
                       <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 to-red-600/20 rounded-xl border border-orange-500/30" />
                     )}
                     <Icon
-                      className={`w-4 h-4 transition-transform ${active ? 'scale-110' : ''}`}
+                      className={`w-4 h-4 transition-transform ${active ? "scale-110" : ""}`}
                       strokeWidth={active ? 2.5 : 2}
                     />
-                    <span className="hidden md:inline relative">{item.label}</span>
+                    <span className="hidden md:inline relative">
+                      {item.label}
+                    </span>
 
                     {active && (
                       <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-gradient-to-r from-orange-500 to-red-500 rounded-full" />

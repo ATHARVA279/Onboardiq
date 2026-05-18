@@ -26,8 +26,8 @@ import WorkspaceSetup from "./pages/WorkspaceSetup";
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } }
+  animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } },
 };
 
 function PageWrapper({ children }) {
@@ -79,14 +79,35 @@ function WorkspaceGuard({ children }) {
 
 function AppRoutes() {
   const location = useLocation();
-  
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
+        <Route
+          path="/"
+          element={
+            <PageWrapper>
+              <Landing />
+            </PageWrapper>
+          }
+        />
         <Route path="/landing" element={<Navigate to="/" replace />} />
-        <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
-        <Route path="/signup" element={<PageWrapper><Signup /></PageWrapper>} />
+        <Route
+          path="/login"
+          element={
+            <PageWrapper>
+              <Login />
+            </PageWrapper>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PageWrapper>
+              <Signup />
+            </PageWrapper>
+          }
+        />
         <Route path="/auth" element={<Navigate to="/login" replace />} />
         <Route path="/app" element={<Navigate to="/dashboard" replace />} />
         <Route
@@ -94,7 +115,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <WorkspaceGuard>
-                <PageWrapper><WorkspaceSetup /></PageWrapper>
+                <PageWrapper>
+                  <WorkspaceSetup />
+                </PageWrapper>
               </WorkspaceGuard>
             </ProtectedRoute>
           }
@@ -104,7 +127,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <WorkspaceGuard>
-                <PageWrapper><Dashboard /></PageWrapper>
+                <PageWrapper>
+                  <Dashboard />
+                </PageWrapper>
               </WorkspaceGuard>
             </ProtectedRoute>
           }
@@ -114,7 +139,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <WorkspaceGuard>
-                <PageWrapper><Ask /></PageWrapper>
+                <PageWrapper>
+                  <Ask />
+                </PageWrapper>
               </WorkspaceGuard>
             </ProtectedRoute>
           }
@@ -124,7 +151,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <WorkspaceGuard>
-                <PageWrapper><Sources /></PageWrapper>
+                <PageWrapper>
+                  <Sources />
+                </PageWrapper>
               </WorkspaceGuard>
             </ProtectedRoute>
           }
@@ -134,7 +163,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <WorkspaceGuard>
-                <PageWrapper><Staleness /></PageWrapper>
+                <PageWrapper>
+                  <Staleness />
+                </PageWrapper>
               </WorkspaceGuard>
             </ProtectedRoute>
           }
@@ -144,7 +175,9 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <WorkspaceGuard>
-                <PageWrapper><Team /></PageWrapper>
+                <PageWrapper>
+                  <Team />
+                </PageWrapper>
               </WorkspaceGuard>
             </ProtectedRoute>
           }
@@ -160,9 +193,9 @@ export default function App() {
     <Router>
       <WorkspaceProvider>
         <AppRoutes />
-        <ToastContainer 
-          position="top-right" 
-          autoClose={3000} 
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
           theme="dark"
           toastClassName="bg-[var(--bg-surface)] border border-[var(--bg-hover)] text-[var(--text-primary)]"
           bodyClassName="text-sm font-medium"

@@ -34,14 +34,17 @@ export default function WorkspaceSetup() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-elevated)] text-xl font-bold text-[var(--accent-primary)]">
             O
           </div>
-          <p className="mt-4 text-2xl font-bold text-[var(--text-primary)]">Onboardiq</p>
+          <p className="mt-4 text-2xl font-bold text-[var(--text-primary)]">
+            Onboardiq
+          </p>
         </div>
 
         <h1 className="mt-10 text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
           Create your team workspace
         </h1>
         <p className="mx-auto mt-4 max-w-lg text-base leading-8 text-[var(--text-secondary)]">
-          Connect your codebase and start answering developer questions instantly.
+          Connect your codebase and start answering developer questions
+          instantly.
         </p>
 
         <form
@@ -49,7 +52,9 @@ export default function WorkspaceSetup() {
           className="mt-10 rounded-3xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-8 text-left shadow-lg"
         >
           <label className="block">
-            <span className="text-sm font-medium text-[var(--text-primary)]">Workspace Name</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              Workspace Name
+            </span>
             <input
               type="text"
               value={name}

@@ -296,7 +296,11 @@ export default function Home() {
               >
                 {loading ? (
                   <>
-                    <PulseLoader color="var(--accent-primary)" size={8} className="mr-2" />
+                    <PulseLoader
+                      color="var(--accent-primary)"
+                      size={8}
+                      className="mr-2"
+                    />
                     Extracting...
                   </>
                 ) : (
@@ -349,7 +353,7 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {concepts.map((concept, i) => (
-                  <div key={i} className="group">
+                <div key={i} className="group">
                   <ConceptCard concept={concept} />
                 </div>
               ))}
@@ -386,7 +390,9 @@ export default function Home() {
                 <h3 className="font-semibold text-[var(--text-secondary)] mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-sm text-[var(--text-tertiary)]">{feature.desc}</p>
+                <p className="text-sm text-[var(--text-tertiary)]">
+                  {feature.desc}
+                </p>
               </div>
             ))}
           </div>

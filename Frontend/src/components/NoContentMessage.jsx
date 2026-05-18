@@ -19,7 +19,8 @@ export default function NoContentMessage({ feature = "this feature" }) {
           </p>
           <div className="space-y-6">
             <p className="text-[var(--text-tertiary)] text-sm py-4">
-              Extract content from any article, documentation, or educational website to unlock all AI-powered learning features.
+              Extract content from any article, documentation, or educational
+              website to unlock all AI-powered learning features.
             </p>
             <Link to="/new">
               <Button variant="gradient" size="lg" className="w-full sm:w-auto">
@@ -32,18 +33,26 @@ export default function NoContentMessage({ feature = "this feature" }) {
         </Card>
 
         <div className="mt-8 text-[var(--text-tertiary)] text-sm">
-              <p className="mb-2 font-medium text-[var(--text-secondary)]">Quick Start:</p>
+          <p className="mb-2 font-medium text-[var(--text-secondary)]">
+            Quick Start:
+          </p>
           <ol className="text-left max-w-xs mx-auto space-y-2">
             <li className="flex items-center gap-3">
-              <span className="w-6 h-6 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">1</span>
+              <span className="w-6 h-6 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">
+                1
+              </span>
               Go to extract page
             </li>
             <li className="flex items-center gap-3">
-              <span className="w-6 h-6 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">2</span>
+              <span className="w-6 h-6 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">
+                2
+              </span>
               Enter any educational URL
             </li>
             <li className="flex items-center gap-3">
-              <span className="w-6 h-6 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">3</span>
+              <span className="w-6 h-6 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-xs font-bold text-[var(--accent-primary)]">
+                3
+              </span>
               Click "Extract & Learn"
             </li>
           </ol>

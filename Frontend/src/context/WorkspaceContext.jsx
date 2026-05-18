@@ -62,7 +62,9 @@ export function WorkspaceProvider({ children }) {
   }, []);
 
   const switchWorkspace = (workspaceId) => {
-    const ws = workspaces.find((w) => w.id === workspaceId || w._id === workspaceId);
+    const ws = workspaces.find(
+      (w) => w.id === workspaceId || w._id === workspaceId,
+    );
     if (ws) {
       setActiveWorkspace(ws);
       setStoredActiveWorkspaceId(ws.id || ws._id);

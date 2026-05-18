@@ -35,18 +35,34 @@ function HealthScoreCard({ score }) {
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(100, score));
   const offset = circumference - (progress / 100) * circumference;
-  
-  const color = progress > 70 ? 'var(--accent-primary)' : progress >= 40 ? 'var(--status-medium)' : 'var(--status-high)';
+
+  const color =
+    progress > 70
+      ? "var(--accent-primary)"
+      : progress >= 40
+        ? "var(--status-medium)"
+        : "var(--status-high)";
 
   return (
     <div className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[var(--text-tertiary)]">Documentation Health</p>
-          <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{progress}%</p>
+          <p className="text-sm font-medium text-[var(--text-tertiary)]">
+            Documentation Health
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+            {progress}%
+          </p>
         </div>
         <svg className="h-28 w-28 -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r={radius} stroke="var(--bg-hover)" strokeWidth="8" fill="none" />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            stroke="var(--bg-hover)"
+            strokeWidth="8"
+            fill="none"
+          />
           <circle
             cx="50"
             cy="50"
@@ -74,46 +90,61 @@ function HealthScoreCard({ score }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, valueColor = "var(--text-primary)", isAlert = false }) {
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  valueColor = "var(--text-primary)",
+  isAlert = false,
+}) {
   return (
-    <div style={{
-      position: 'relative',
-      borderRadius: '12px',
-      background: 'var(--bg-surface)',
-      padding: '24px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)',
-      transition: 'all 0.2s ease'
-    }}>
+    <div
+      style={{
+        position: "relative",
+        borderRadius: "12px",
+        background: "var(--bg-surface)",
+        padding: "24px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)",
+        transition: "all 0.2s ease",
+      }}
+    >
       <div>
-        <p style={{
-          fontSize: '11px',
-          fontWeight: '600',
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--text-tertiary)',
-          marginBottom: '12px'
-        }}>
+        <p
+          style={{
+            fontSize: "11px",
+            fontWeight: "600",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--text-tertiary)",
+            marginBottom: "12px",
+          }}
+        >
           {title}
         </p>
-        <p style={{
-          fontSize: '36px',
-          fontWeight: '700',
-          letterSpacing: '-0.03em',
-          color: valueColor,
-          textShadow: isAlert && value > 0 ? '0 0 20px var(--status-high)' : 'none'
-        }}>
+        <p
+          style={{
+            fontSize: "36px",
+            fontWeight: "700",
+            letterSpacing: "-0.03em",
+            color: valueColor,
+            textShadow:
+              isAlert && value > 0 ? "0 0 20px var(--status-high)" : "none",
+          }}
+        >
           {value}
         </p>
       </div>
-      <Icon style={{
-        position: 'absolute',
-        bottom: '20px',
-        right: '20px',
-        width: '32px',
-        height: '32px',
-        opacity: 0.1,
-        color: valueColor
-      }} />
+      <Icon
+        style={{
+          position: "absolute",
+          bottom: "20px",
+          right: "20px",
+          width: "32px",
+          height: "32px",
+          opacity: 0.1,
+          color: valueColor,
+        }}
+      />
     </div>
   );
 }
@@ -144,7 +175,11 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
     setError("");
     try {
       const trimmedToken = token.trim();
-      const job = await connectGithubRepo(workspaceId, repoUrl.trim(), trimmedToken);
+      const job = await connectGithubRepo(
+        workspaceId,
+        repoUrl.trim(),
+        trimmedToken,
+      );
       if (trimmedToken) saveGithubToken(workspaceId, trimmedToken);
       await onConnected({ type: "github", job });
       onClose();
@@ -162,7 +197,11 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
     setLoading(true);
     setError("");
     try {
-      const job = await connectUrl(workspaceId, docsUrl.trim(), displayName.trim() || undefined);
+      const job = await connectUrl(
+        workspaceId,
+        docsUrl.trim(),
+        displayName.trim() || undefined,
+      );
       await onConnected({ type: "url", job });
       onClose();
       setDocsUrl("");
@@ -179,7 +218,9 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
       <div className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-semibold text-[var(--text-primary)]">Connect New Source</h3>
+            <h3 className="text-2xl font-semibold text-[var(--text-primary)]">
+              Connect New Source
+            </h3>
             <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
               Add a repository or documentation source to your workspace.
             </p>
@@ -209,7 +250,9 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
         {tab === "github" ? (
           <form onSubmit={handleGithubSubmit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-[var(--text-primary)]">Repository URL</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">
+                Repository URL
+              </span>
               <input
                 type="url"
                 value={repoUrl}
@@ -237,7 +280,11 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
                   onClick={() => setShowToken((value) => !value)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
                 >
-                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showToken ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
               <p className="mt-2 text-xs text-[var(--text-tertiary)]">
@@ -247,8 +294,9 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
             </label>
 
             <div className="rounded-lg border border-[var(--accent-muted)] bg-[var(--accent-muted)]/10 px-4 py-3 text-sm leading-7 text-[var(--accent-primary)]">
-              Without a token, GitHub rate limits drop to 60 requests per hour, which
-              can cause larger repositories to fail before indexing completes.
+              Without a token, GitHub rate limits drop to 60 requests per hour,
+              which can cause larger repositories to fail before indexing
+              completes.
             </div>
 
             {error ? (
@@ -278,7 +326,9 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
         ) : (
           <form onSubmit={handleDocsSubmit} className="mt-6 space-y-5">
             <label className="block">
-              <span className="text-sm font-medium text-[var(--text-primary)]">Documentation URL</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">
+                Documentation URL
+              </span>
               <input
                 type="url"
                 value={docsUrl}
@@ -288,14 +338,17 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
                 required
               />
               <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
-                Onboardiq will automatically discover and index linked pages on the same domain up to 20 pages.
+                Onboardiq will automatically discover and index linked pages on
+                the same domain up to 20 pages.
               </p>
             </label>
 
             <label className="block">
               <span className="text-sm font-medium text-[var(--text-primary)]">
                 Display Name
-                <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">(optional)</span>
+                <span className="ml-1 text-xs font-normal text-[var(--text-tertiary)]">
+                  (optional)
+                </span>
               </span>
               <input
                 type="text"
@@ -307,7 +360,8 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
             </label>
 
             <div className="rounded-lg border border-[var(--status-medium)]/30 bg-[var(--status-medium)]/10 px-4 py-3 text-sm leading-6 text-[var(--status-medium)]">
-              ⚠️ Some sites may block automated scraping. If indexing fails, try a different documentation format.
+              ⚠️ Some sites may block automated scraping. If indexing fails, try
+              a different documentation format.
             </div>
 
             {error ? (
@@ -382,12 +436,12 @@ export default function Dashboard() {
     if (!workspace?.id) return;
 
     let mounted = true;
-    
+
     const fetchStaleness = async () => {
       try {
         const [summaryData, alertsData] = await Promise.all([
           getStalenessSummary(workspace.id),
-          getStalenessAlerts(workspace.id, { resolved: false, limit: 2 })
+          getStalenessAlerts(workspace.id, { resolved: false, limit: 2 }),
         ]);
         if (!mounted) return;
         setStalenessSummary(summaryData);
@@ -406,12 +460,16 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const sources = workspace?.sources || [];
-    const files = sources.reduce((sum, source) => sum + (source.file_count || 0), 0);
+    const files = sources.reduce(
+      (sum, source) => sum + (source.file_count || 0),
+      0,
+    );
     return {
       sourcesConnected: sources.length,
       filesIndexed: files,
       alerts: stalenessSummary?.total_alerts || 0,
-      healthScore: stalenessSummary?.health_score ?? (workspace?.health_score || 100),
+      healthScore:
+        stalenessSummary?.health_score ?? (workspace?.health_score || 100),
     };
   }, [stalenessSummary, workspace]);
 
@@ -443,36 +501,43 @@ export default function Dashboard() {
   return (
     <AppShell>
       {/* Top border glow */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: '256px',
-        right: 0,
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent 0%, var(--accent-glow) 40%, var(--accent-muted) 70%, transparent 100%)',
-        zIndex: 100,
-        pointerEvents: 'none'
-      }} />
-      
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: "256px",
+          right: 0,
+          height: "1px",
+          background:
+            "linear-gradient(90deg, transparent 0%, var(--accent-glow) 40%, var(--accent-muted) 70%, transparent 100%)",
+          zIndex: 100,
+          pointerEvents: "none",
+        }}
+      />
+
       <div className="space-y-8">
         {/* Breadcrumb and Header */}
         <div>
-          <p style={{
-            fontSize: '12px',
-            color: 'var(--text-tertiary)',
-            marginBottom: '8px',
-            fontWeight: '600',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }}>
-            {workspace?.name || 'Workspace'} › Dashboard
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--text-tertiary)",
+              marginBottom: "8px",
+              fontWeight: "600",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+            }}
+          >
+            {workspace?.name || "Workspace"} › Dashboard
           </p>
-          <h1 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            letterSpacing: '-0.02em',
-            color: 'var(--text-primary)',
-          }}>
+          <h1
+            style={{
+              fontSize: "24px",
+              fontWeight: "700",
+              letterSpacing: "-0.02em",
+              color: "var(--text-primary)",
+            }}
+          >
             Workspace Dashboard
           </h1>
         </div>
@@ -484,114 +549,149 @@ export default function Dashboard() {
         ) : null}
 
         <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr_320px]">
-          <StatCard title="Sources Connected" value={stats.sourcesConnected} icon={Database} />
-          <StatCard title="Files Indexed" value={stats.filesIndexed} icon={FileCode} />
+          <StatCard
+            title="Sources Connected"
+            value={stats.sourcesConnected}
+            icon={Database}
+          />
+          <StatCard
+            title="Files Indexed"
+            value={stats.filesIndexed}
+            icon={FileCode}
+          />
           <StatCard
             title="Staleness Alerts"
             value={stats.alerts}
             icon={AlertTriangle}
-            valueColor={stats.alerts > 0 ? "var(--status-high)" : "var(--text-primary)"}
+            valueColor={
+              stats.alerts > 0 ? "var(--status-high)" : "var(--text-primary)"
+            }
             isAlert={true}
           />
           <HealthScoreCard score={stats.healthScore} />
         </section>
 
         {stalenessAlerts.length > 0 && (
-          <section style={{
-            borderRadius: '12px',
-            background: 'var(--bg-surface)',
-            padding: '24px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)'
-          }}>
+          <section
+            style={{
+              borderRadius: "12px",
+              background: "var(--bg-surface)",
+              padding: "24px",
+              boxShadow:
+                "0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)",
+            }}
+          >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: '700',
-                  color: 'var(--text-primary)',
-                }}>
+                <h3
+                  style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "var(--text-primary)",
+                  }}
+                >
                   Staleness Preview
                 </h3>
-                <span style={{
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  background: 'var(--status-high-rgb, rgba(239, 68, 68, 0.15))',
-                  border: '1px solid var(--status-high)',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  color: 'var(--status-high)'
-                }}>
+                <span
+                  style={{
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    background:
+                      "var(--status-high-rgb, rgba(239, 68, 68, 0.15))",
+                    border: "1px solid var(--status-high)",
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    color: "var(--status-high)",
+                  }}
+                >
                   {stalenessAlerts.length} Active
                 </span>
               </div>
               <button
                 onClick={() => navigate("/staleness")}
                 style={{
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  color: 'var(--accent-primary)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color: "var(--accent-primary)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
                 }}
-                onMouseEnter={e => e.target.style.color = 'var(--accent-primary-hover)'}
-                onMouseLeave={e => e.target.style.color = 'var(--accent-primary)'}
+                onMouseEnter={(e) =>
+                  (e.target.style.color = "var(--accent-primary-hover)")
+                }
+                onMouseLeave={(e) =>
+                  (e.target.style.color = "var(--accent-primary)")
+                }
               >
                 View All Alerts →
               </button>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {stalenessAlerts.map((alert) => {
-                const colors = alert.severity === 'high' ? 'var(--status-high)' : alert.severity === 'medium' ? 'var(--status-medium)' : 'var(--accent-primary)';
-                
+                const colors =
+                  alert.severity === "high"
+                    ? "var(--status-high)"
+                    : alert.severity === "medium"
+                      ? "var(--status-medium)"
+                      : "var(--accent-primary)";
+
                 return (
                   <div
                     key={alert.id}
                     style={{
-                      borderRadius: '8px',
-                      background: 'var(--bg-base)',
-                      border: '1px solid var(--bg-hover)',
-                      padding: '16px',
-                      transition: 'all 0.15s'
+                      borderRadius: "8px",
+                      background: "var(--bg-base)",
+                      border: "1px solid var(--bg-hover)",
+                      padding: "16px",
+                      transition: "all 0.15s",
                     }}
                   >
                     <div className="flex items-start gap-3">
-                      <span style={{
-                        padding: '2px 6px',
-                        borderRadius: '3px',
-                        background: `${colors}15`,
-                        border: `1px solid ${colors}40`,
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        color: colors,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        flexShrink: 0
-                      }}>
+                      <span
+                        style={{
+                          padding: "2px 6px",
+                          borderRadius: "3px",
+                          background: `${colors}15`,
+                          border: `1px solid ${colors}40`,
+                          fontSize: "10px",
+                          fontWeight: "700",
+                          color: colors,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          flexShrink: 0,
+                        }}
+                      >
                         {alert.severity}
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{
-                          fontSize: '13px',
-                          fontWeight: '600',
-                          color: 'var(--text-primary)',
-                          marginBottom: '4px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                        <p
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: "600",
+                            color: "var(--text-primary)",
+                            marginBottom: "4px",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {alert.description}
                         </p>
-                        <p style={{
-                          fontSize: '11px',
-                          color: 'var(--text-tertiary)',
-                          fontFamily: 'monospace',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {alert.alert_type === "readme_stale" ? "README" : alert.file_path}
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--text-tertiary)",
+                            fontFamily: "monospace",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {alert.alert_type === "readme_stale"
+                            ? "README"
+                            : alert.file_path}
                         </p>
                       </div>
                     </div>
@@ -605,9 +705,12 @@ export default function Dashboard() {
         <section className="space-y-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Connected Sources</h2>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+                Connected Sources
+              </h2>
               <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
-                Monitor indexing status and keep your knowledge graph up to date.
+                Monitor indexing status and keep your knowledge graph up to
+                date.
               </p>
             </div>
             <button
@@ -645,7 +748,9 @@ export default function Dashboard() {
         <section className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">Recent Questions</h2>
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+                Recent Questions
+              </h2>
               <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
                 The latest developer questions asked against this workspace.
               </p>
@@ -660,8 +765,12 @@ export default function Dashboard() {
                   className="flex items-center justify-between gap-4 py-4"
                 >
                   <div>
-                    <p className="font-semibold text-[var(--text-primary)]">{question.question_text}</p>
-                    <p className="mt-1 text-sm text-[var(--text-tertiary)]">{question.asked_by_name}</p>
+                    <p className="font-semibold text-[var(--text-primary)]">
+                      {question.question_text}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                      {question.asked_by_name}
+                    </p>
                   </div>
                   <p className="shrink-0 text-sm text-[var(--text-tertiary)]">
                     {formatRelativeTime(question.created_at)}

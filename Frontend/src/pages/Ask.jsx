@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowUp, ChevronDown, Code2, Database, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
+import {
+  ArrowUp,
+  ChevronDown,
+  Code2,
+  Database,
+  Loader2,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
 import MarkdownRenderer from "../components/chat/MarkdownRenderer";
@@ -18,9 +27,23 @@ import { formatRelativeTime } from "../utils/formatters";
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 function confidenceMeta(score) {
-  if (score > 80) return { label: "High", bg: "var(--accent-muted)", text: "var(--status-success)" };
-  if (score >= 60) return { label: "Medium", bg: "var(--accent-muted)", text: "var(--status-medium)" };
-  return { label: "Low", bg: "var(--accent-muted)", text: "var(--status-high)" };
+  if (score > 80)
+    return {
+      label: "High",
+      bg: "var(--accent-muted)",
+      text: "var(--status-success)",
+    };
+  if (score >= 60)
+    return {
+      label: "Medium",
+      bg: "var(--accent-muted)",
+      text: "var(--status-medium)",
+    };
+  return {
+    label: "Low",
+    bg: "var(--accent-muted)",
+    text: "var(--status-high)",
+  };
 }
 
 function sessionKey(workspaceId) {
@@ -37,7 +60,9 @@ function CitationChips({ citations }) {
     <div className="mt-3 pt-3 border-t border-[var(--bg-hover)]">
       <div className="flex items-center gap-2 mb-2 px-1">
         <Database className="w-3 h-3 text-[var(--accent-primary)]" />
-        <span className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">Sources</span>
+        <span className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+          Sources
+        </span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {displayedCitations.map((src, i) => (
@@ -48,7 +73,7 @@ function CitationChips({ citations }) {
           >
             <Code2 className="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] transition-colors" />
             <span className="text-[12px] font-medium text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)]">
-              {src.file_path?.split('/').pop() || "source"}
+              {src.file_path?.split("/").pop() || "source"}
             </span>
           </div>
         ))}
@@ -81,7 +106,13 @@ function Message({ message }) {
 
   if (isUser) {
     return (
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: "16px",
+        }}
+      >
         <div
           style={{
             maxWidth: "70%",
@@ -102,13 +133,21 @@ function Message({ message }) {
   }
 
   return (
-    <div style={{ display: "flex", gap: "12px", marginBottom: "32px", maxWidth: "90%" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "12px",
+        marginBottom: "32px",
+        maxWidth: "90%",
+      }}
+    >
       <div
         style={{
           width: "32px",
           height: "32px",
           borderRadius: "8px",
-          background: "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)",
+          background:
+            "linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-hover) 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -157,8 +196,14 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
         display: "block",
         width: "100%",
         textAlign: "left",
-        background: isActive ? "var(--bg-hover)" : hovered ? "var(--bg-base)" : "transparent",
-        borderLeft: isActive ? "2px solid var(--accent-primary)" : "2px solid transparent",
+        background: isActive
+          ? "var(--bg-hover)"
+          : hovered
+            ? "var(--bg-base)"
+            : "transparent",
+        borderLeft: isActive
+          ? "2px solid var(--accent-primary)"
+          : "2px solid transparent",
         border: "none",
         padding: "10px 14px",
         borderRadius: "0 8px 8px 0",
@@ -181,7 +226,13 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
       >
         {session.preview || "New Chat"}
       </p>
-      <p style={{ fontSize: "11px", color: "var(--text-tertiary)", margin: "4px 0 0 0" }}>
+      <p
+        style={{
+          fontSize: "11px",
+          color: "var(--text-tertiary)",
+          margin: "4px 0 0 0",
+        }}
+      >
         {formatRelativeTime(session.updated_at)}
       </p>
 
@@ -206,8 +257,12 @@ function SessionItem({ session, isActive, onSelect, onDelete }) {
             display: "flex",
             alignItems: "center",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--status-high)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-tertiary)")}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--status-high)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-tertiary)")
+          }
           aria-label="Delete session"
         >
           <Trash2 size={13} />
@@ -226,7 +281,10 @@ export default function Ask() {
   const [connectModalOpen, setConnectModalOpen] = useState(false);
 
   const completedSources = useMemo(
-    () => (workspace?.sources || []).filter((s) => s.indexing_status === "completed"),
+    () =>
+      (workspace?.sources || []).filter(
+        (s) => s.indexing_status === "completed",
+      ),
     [workspace],
   );
 
@@ -386,7 +444,12 @@ export default function Ask() {
         setTimeout(() => {
           setMessages((cur) => [
             ...cur,
-            { id: crypto.randomUUID(), role: "user", content: pendingQuestion, created_at: new Date().toISOString() },
+            {
+              id: crypto.randomUUID(),
+              role: "user",
+              content: pendingQuestion,
+              created_at: new Date().toISOString(),
+            },
           ]);
           doAsk(pendingQuestion, pendingSessionId);
         }, 100);
@@ -398,7 +461,12 @@ export default function Ask() {
     setSendLoading(true);
     setError("");
     try {
-      const res = await askQuestion(workspaceId, sessionId || undefined, q, selectedSourceIds);
+      const res = await askQuestion(
+        workspaceId,
+        sessionId || undefined,
+        q,
+        selectedSourceIds,
+      );
       if (res.session_id && res.session_id !== activeSessionId) {
         setActiveSessionId(res.session_id);
         localStorage.setItem(sessionKey(workspaceId), res.session_id);
@@ -417,9 +485,14 @@ export default function Ask() {
       await loadSessions();
     } catch (err) {
       const data = err?.response?.data || err?.data;
-      if (data?.error === "ai_unavailable" || (typeof data === "string" && data.includes("ai_unavailable"))) {
+      if (
+        data?.error === "ai_unavailable" ||
+        (typeof data === "string" && data.includes("ai_unavailable"))
+      ) {
         const waitSecs = data?.retry_after_seconds || 30;
-        setError(`Rate limited. Retrying automatically in ${waitSecs} seconds…`);
+        setError(
+          `Rate limited. Retrying automatically in ${waitSecs} seconds…`,
+        );
         startRetryCountdown(waitSecs, q, sessionId);
       } else {
         setError(err.message || String(err));
@@ -438,10 +511,18 @@ export default function Ask() {
     const q = question.trim();
     setMessages((cur) => [
       ...cur,
-      { id: crypto.randomUUID(), role: "user", content: q, created_at: new Date().toISOString() },
+      {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: q,
+        created_at: new Date().toISOString(),
+      },
     ]);
     setQuestion("");
-    if (retryTimerRef.current) { clearInterval(retryTimerRef.current); setRetryCountdown(null); }
+    if (retryTimerRef.current) {
+      clearInterval(retryTimerRef.current);
+      setRetryCountdown(null);
+    }
     await doAsk(q, activeSessionId);
   };
 
@@ -526,20 +607,41 @@ export default function Ask() {
 
             <div style={{ flex: 1, overflowY: "auto", padding: "8px 0" }}>
               {sessionsLoading ? (
-                <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <div
+                  style={{
+                    padding: "16px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
                   <Loader2 className="h-4 w-4 animate-spin text-var(--accent-primary)" />
-                  <span style={{ fontSize: "12px", color: "var(--text-tertiary)" }}>Loading chats…</span>
+                  <span
+                    style={{ fontSize: "12px", color: "var(--text-tertiary)" }}
+                  >
+                    Loading chats…
+                  </span>
                 </div>
               ) : sessions.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "32px 20px" }}>
-                  <p style={{ fontSize: "13px", color: "var(--text-tertiary)", marginBottom: "12px" }}>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "var(--text-tertiary)",
+                      marginBottom: "12px",
+                    }}
+                  >
                     No search history
                   </p>
                   <button
                     type="button"
                     onClick={handleNewChat}
                     className="oi-button oi-button-secondary"
-                    style={{ minHeight: "36px", padding: "0 12px", fontSize: "12px" }}
+                    style={{
+                      minHeight: "36px",
+                      padding: "0 12px",
+                      fontSize: "12px",
+                    }}
                   >
                     Start your first chat
                   </button>
@@ -599,14 +701,21 @@ export default function Ask() {
                     cursor: "pointer",
                     transition: "background 0.2s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-hover)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "var(--bg-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
                 >
                   <input
                     type="checkbox"
                     checked={selectedSourceIds.includes(source.source_id)}
                     onChange={() => toggleSource(source.source_id)}
-                    style={{ accentColor: "var(--accent-primary)", flexShrink: 0 }}
+                    style={{
+                      accentColor: "var(--accent-primary)",
+                      flexShrink: 0,
+                    }}
                   />
                   <span
                     style={{
@@ -644,7 +753,9 @@ export default function Ask() {
               padding: "40px 60px",
             }}
           >
-            {messages.length === 0 && !messagesLoading && !sendLoading &&
+            {messages.length === 0 &&
+              !messagesLoading &&
+              !sendLoading &&
               (completedSources.length ? (
                 <div
                   style={{
@@ -673,19 +784,42 @@ export default function Ask() {
                   >
                     <Sparkles size={32} color="var(--accent-primary)" />
                   </div>
-                  <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--text-primary)", marginBottom: "16px" }}>
+                  <h2
+                    style={{
+                      fontSize: "28px",
+                      fontWeight: "700",
+                      color: "var(--text-primary)",
+                      marginBottom: "16px",
+                    }}
+                  >
                     What can I help you find?
                   </h2>
-                  <p style={{ fontSize: "17px", color: "var(--text-tertiary)", maxWidth: "520px", lineHeight: "1.7" }}>
-                    Search across your repositories and documentation with precision. IQ provides answers with full source citations.
+                  <p
+                    style={{
+                      fontSize: "17px",
+                      color: "var(--text-tertiary)",
+                      maxWidth: "520px",
+                      lineHeight: "1.7",
+                    }}
+                  >
+                    Search across your repositories and documentation with
+                    precision. IQ provides answers with full source citations.
                   </p>
-                  
-                  <div style={{ marginTop: "40px", display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px" }}>
+
+                  <div
+                    style={{
+                      marginTop: "40px",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                      gap: "12px",
+                    }}
+                  >
                     {[
                       "How does authentication work?",
                       "Explain the deployment flow",
-                      "Find database migrations"
-                    ].map(suggestion => (
+                      "Find database migrations",
+                    ].map((suggestion) => (
                       <button
                         key={suggestion}
                         onClick={() => setQuestion(suggestion)}
@@ -700,7 +834,8 @@ export default function Ask() {
                           transition: "all 0.2s",
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = "var(--accent-primary)";
+                          e.currentTarget.style.borderColor =
+                            "var(--accent-primary)";
                           e.currentTarget.style.color = "var(--text-primary)";
                         }}
                         onMouseLeave={(e) => {
@@ -715,16 +850,20 @@ export default function Ask() {
                 </div>
               ) : (
                 <div style={{ textAlign: "center", paddingTop: "100px" }}>
-                  <p style={{ color: "var(--text-secondary)" }}>Connect a source to start searching.</p>
+                  <p style={{ color: "var(--text-secondary)" }}>
+                    Connect a source to start searching.
+                  </p>
                 </div>
               ))}
 
             {messages.map((m) => (
               <Message key={m.id} message={m} />
             ))}
-            
+
             {sendLoading && (
-              <div style={{ display: "flex", gap: "12px", marginBottom: "32px" }}>
+              <div
+                style={{ display: "flex", gap: "12px", marginBottom: "32px" }}
+              >
                 <div
                   style={{
                     width: "32px",
@@ -744,7 +883,7 @@ export default function Ask() {
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -761,16 +900,24 @@ export default function Ask() {
                   marginBottom: "16px",
                   padding: "12px 16px",
                   borderRadius: "10px",
-                  backgroundColor: retryCountdown !== null ? "rgba(212,168,67,0.1)" : "rgba(239,68,68,0.1)",
+                  backgroundColor:
+                    retryCountdown !== null
+                      ? "rgba(212,168,67,0.1)"
+                      : "rgba(239,68,68,0.1)",
                   border: `1px solid ${retryCountdown !== null ? "var(--accent-primary-hover)" : "var(--status-high)"}`,
-                  color: retryCountdown !== null ? "var(--accent-primary)" : "var(--status-high)",
+                  color:
+                    retryCountdown !== null
+                      ? "var(--accent-primary)"
+                      : "var(--status-high)",
                   fontSize: "13px",
                   display: "flex",
                   alignItems: "center",
                   gap: "10px",
                 }}
               >
-                {retryCountdown !== null && <Loader2 className="h-4 w-4 animate-spin" />}
+                {retryCountdown !== null && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 {error}
               </div>
             )}
@@ -788,7 +935,8 @@ export default function Ask() {
               }}
               onFocusCapture={(e) => {
                 e.currentTarget.style.borderColor = "var(--accent-primary)";
-                e.currentTarget.style.boxShadow = "0 8px 32px var(--accent-glow)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 32px var(--accent-glow)";
               }}
               onBlurCapture={(e) => {
                 e.currentTarget.style.borderColor = "var(--bg-hover)";
@@ -810,7 +958,11 @@ export default function Ask() {
                     ? "Ask a question about your sources…"
                     : "Connect a source to start searching…"
                 }
-                disabled={!completedSources.length || sendLoading || retryCountdown !== null}
+                disabled={
+                  !completedSources.length ||
+                  sendLoading ||
+                  retryCountdown !== null
+                }
                 style={{
                   width: "100%",
                   padding: "16px 60px 16px 20px",
@@ -825,11 +977,13 @@ export default function Ask() {
                   fontFamily: "inherit",
                 }}
               />
-              
+
               <button
                 type="button"
                 onClick={handleAsk}
-                disabled={!question.trim() || sendLoading || retryCountdown !== null}
+                disabled={
+                  !question.trim() || sendLoading || retryCountdown !== null
+                }
                 className="ask-send-button"
                 style={{
                   position: "absolute",
@@ -855,8 +1009,15 @@ export default function Ask() {
                 )}
               </button>
             </div>
-            
-            <p style={{ marginTop: "16px", fontSize: "11px", color: "var(--text-tertiary)", textAlign: "center" }}>
+
+            <p
+              style={{
+                marginTop: "16px",
+                fontSize: "11px",
+                color: "var(--text-tertiary)",
+                textAlign: "center",
+              }}
+            >
               Press Enter to send. Use Shift+Enter for new lines.
             </p>
           </div>

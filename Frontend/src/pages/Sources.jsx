@@ -56,7 +56,9 @@ function SourcePagesModal({ open, source, workspaceId, onClose }) {
 
         <div className="mt-6">
           {loading && (
-            <p className="text-sm text-[var(--text-tertiary)]">Loading pages…</p>
+            <p className="text-sm text-[var(--text-tertiary)]">
+              Loading pages…
+            </p>
           )}
           {error && (
             <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
@@ -64,7 +66,9 @@ function SourcePagesModal({ open, source, workspaceId, onClose }) {
             </div>
           )}
           {pages && pages.length === 0 && (
-            <p className="text-sm text-[var(--text-tertiary)]">No pages indexed yet.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">
+              No pages indexed yet.
+            </p>
           )}
           {pages && pages.length > 0 && (
             <div className="max-h-96 overflow-y-auto space-y-2">
@@ -77,7 +81,9 @@ function SourcePagesModal({ open, source, workspaceId, onClose }) {
                     <p className="truncate text-sm font-medium text-[var(--text-primary)]">
                       {page.page_title || page.url}
                     </p>
-                    <p className="truncate text-xs text-[var(--text-tertiary)]">{page.url}</p>
+                    <p className="truncate text-xs text-[var(--text-tertiary)]">
+                      {page.url}
+                    </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-xs font-medium text-[var(--accent-primary)]">
                     {page.chunk_count} chunks
@@ -113,7 +119,11 @@ export default function Sources() {
   }, [query, workspace?.sources]);
 
   const handleDelete = async (source) => {
-    if (!window.confirm(`Delete source "${source.display_name || source.url}"? All indexed chunks will be removed.`)) {
+    if (
+      !window.confirm(
+        `Delete source "${source.display_name || source.url}"? All indexed chunks will be removed.`,
+      )
+    ) {
       return;
     }
     try {
@@ -147,7 +157,8 @@ export default function Sources() {
             Sources
           </h1>
           <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
-            Review connected repositories and documentation sources, then inspect the indexed footprint for each one.
+            Review connected repositories and documentation sources, then
+            inspect the indexed footprint for each one.
           </p>
         </div>
 
@@ -190,7 +201,8 @@ export default function Sources() {
                             Scraped Pages
                           </h2>
                           <p className="text-sm text-[var(--text-tertiary)]">
-                            {source.file_count || 0} pages · {source.chunk_count || 0} chunks
+                            {source.file_count || 0} pages ·{" "}
+                            {source.chunk_count || 0} chunks
                           </p>
                         </div>
                       </div>
@@ -212,9 +224,12 @@ export default function Sources() {
                     <div className="flex items-center gap-3">
                       <FileSearch className="h-5 w-5 text-[var(--accent-primary)]" />
                       <div>
-                        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Indexed Files</h2>
+                        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+                          Indexed Files
+                        </h2>
                         <p className="text-sm text-[var(--text-tertiary)]">
-                          {source.file_count || 0} files · {source.chunk_count || 0} chunks
+                          {source.file_count || 0} files ·{" "}
+                          {source.chunk_count || 0} chunks
                         </p>
                       </div>
                     </div>

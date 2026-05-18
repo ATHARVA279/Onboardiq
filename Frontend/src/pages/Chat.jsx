@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageCircle, Send, Trash2, Bot, User, Sparkles, Code2, Database } from "lucide-react";
-import { toast } from 'react-toastify';
-import { PulseLoader } from 'react-spinners';
+import {
+  MessageCircle,
+  Send,
+  Trash2,
+  Bot,
+  User,
+  Sparkles,
+  Code2,
+  Database,
+} from "lucide-react";
+import { toast } from "react-toastify";
+import { PulseLoader } from "react-spinners";
 import api from "../api/backend";
 import NoContentMessage from "../components/NoContentMessage";
 import PageLayout from "../components/layout/PageLayout";
@@ -19,18 +28,24 @@ function CitationChips({ sources }) {
     <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[var(--bg-hover)] mt-4">
       <div className="flex items-center gap-2 w-full mb-1 px-1">
         <Database className="w-3 h-3 text-[var(--accent-primary)]" />
-        <span className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">Sources</span>
+        <span className="text-[11px] uppercase tracking-wider text-[var(--text-tertiary)] font-bold">
+          Sources
+        </span>
       </div>
       {displayed.map((src, i) => (
-        <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--bg-hover)] hover:border-[var(--accent-primary)]/40 transition-colors cursor-pointer group max-w-[200px]" title={src.file_path}>
+        <div
+          key={i}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-base)] border border-[var(--bg-hover)] hover:border-[var(--accent-primary)]/40 transition-colors cursor-pointer group max-w-[200px]"
+          title={src.file_path}
+        >
           <Code2 className="w-3.5 h-3.5 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] transition-colors" />
           <span className="text-[12px] text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)]">
-            {src.file_path?.split('/').pop() || `Source ${i + 1}`}
+            {src.file_path?.split("/").pop() || `Source ${i + 1}`}
           </span>
         </div>
       ))}
       {!showAll && sources.length > 3 && (
-        <button 
+        <button
           onClick={() => setShowAll(true)}
           className="text-[11px] text-[var(--accent-primary)] font-bold px-1 hover:underline self-center"
         >
@@ -38,7 +53,7 @@ function CitationChips({ sources }) {
         </button>
       )}
       {showAll && sources.length > 3 && (
-        <button 
+        <button
           onClick={() => setShowAll(false)}
           className="text-[11px] text-[var(--text-tertiary)] font-bold px-1 hover:underline self-center"
         >
@@ -61,29 +76,31 @@ export default function Chat() {
 
   useEffect(() => {
     if (!workspaceId) return;
-    
+
     const storageKey = `chat_session_${workspaceId}`;
     let storedSessionId = localStorage.getItem(storageKey);
-    
+
     if (!storedSessionId) {
       storedSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem(storageKey, storedSessionId);
     }
-    
+
     setSessionId(storedSessionId);
   }, [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId || !sessionId) return;
-    
+
     const loadHistory = async () => {
       try {
-        const res = await api.get(`/workspace/${workspaceId}/sessions/${sessionId}`);
+        const res = await api.get(
+          `/workspace/${workspaceId}/sessions/${sessionId}`,
+        );
         if (res.data.messages && res.data.messages.length > 0) {
-          const formattedMessages = res.data.messages.map(msg => ({
+          const formattedMessages = res.data.messages.map((msg) => ({
             role: msg.role === "model" ? "ai" : msg.role,
             text: msg.content,
-            sources: msg.sources || []
+            sources: msg.sources || [],
           }));
           setMessages(formattedMessages);
         }
@@ -110,7 +127,7 @@ export default function Chat() {
     if (!input.trim() || !sessionId) return;
 
     const userMessage = { role: "user", text: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
@@ -119,7 +136,7 @@ export default function Chat() {
         workspace_id: workspaceId,
         question: input,
         session_id: sessionId,
-        source_ids: null
+        source_ids: null,
       });
 
       const aiMessage = {
@@ -127,16 +144,17 @@ export default function Chat() {
         text: res.data.answer,
         sources: res.data.sources_cited || [],
       };
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.error(err);
-      const errorDetail = err.response?.data?.detail || "Failed to get response.";
+      const errorDetail =
+        err.response?.data?.detail || "Failed to get response.";
       toast.error(errorDetail);
       const errorMessage = {
         role: "ai",
-        text: "Sorry, I couldn't process that. Please try again."
+        text: "Sorry, I couldn't process that. Please try again.",
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
@@ -144,16 +162,16 @@ export default function Chat() {
 
   const clearChat = async () => {
     if (!sessionId) return;
-    
+
     try {
       await api.delete(`/workspace/${workspaceId}/sessions/${sessionId}`);
       setMessages([]);
-      
+
       const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const storageKey = `chat_session_${workspaceId}`;
       localStorage.setItem(storageKey, newSessionId);
       setSessionId(newSessionId);
-      
+
       toast.success("Chat cleared!");
     } catch (err) {
       console.error(err);
@@ -171,10 +189,17 @@ export default function Chat() {
               <MessageCircle className="w-8 h-8 text-[var(--accent-primary)]" />
               Chat Assistant
             </h1>
-            <p className="text-base text-[var(--text-tertiary)] mt-2">Ask questions about your workspace with AI context</p>
+            <p className="text-base text-[var(--text-tertiary)] mt-2">
+              Ask questions about your workspace with AI context
+            </p>
           </div>
 
-          <Button variant="ghost" size="md" onClick={clearChat} className="text-[var(--text-tertiary)] hover:text-[var(--status-high)] hover:bg-[var(--status-high)]/10 text-sm font-medium">
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={clearChat}
+            className="text-[var(--text-tertiary)] hover:text-[var(--status-high)] hover:bg-[var(--status-high)]/10 text-sm font-medium"
+          >
             <Trash2 className="w-5 h-5 mr-2" />
             Clear Chat
           </Button>
@@ -189,33 +214,49 @@ export default function Chat() {
                   <div className="absolute inset-0 bg-[var(--accent-primary)] opacity-10 rounded-3xl blur-2xl group-hover:opacity-20 transition-opacity"></div>
                   <Sparkles className="w-12 h-12 text-[var(--accent-primary)] relative z-10" />
                 </div>
-                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">How can I unblock you?</h3>
+                <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-4">
+                  How can I unblock you?
+                </h3>
                 <p className="text-base text-[var(--text-tertiary)] max-w-sm mx-auto leading-relaxed">
-                  I can summarize repositories, explain logic flows, or help you find specific documentation.
+                  I can summarize repositories, explain logic flows, or help you
+                  find specific documentation.
                 </p>
               </div>
             )}
 
             {messages.map((msg, idx) => (
-              <div key={idx} className={`flex gap-5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                <div className={`
+              <div
+                key={idx}
+                className={`flex gap-5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+              >
+                <div
+                  className={`
                   w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg border
-                  ${msg.role === "user" 
-                    ? "bg-[var(--bg-elevated)] border-[var(--bg-hover)]" 
-                    : "bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-hover)] border-transparent"
+                  ${
+                    msg.role === "user"
+                      ? "bg-[var(--bg-elevated)] border-[var(--bg-hover)]"
+                      : "bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-hover)] border-transparent"
                   }
-                `}>
-                  {msg.role === "user" ? <User className="w-6 h-6 text-[var(--text-secondary)]" /> : <Bot className="w-6 h-6 text-[var(--bg-base)]" />}
+                `}
+                >
+                  {msg.role === "user" ? (
+                    <User className="w-6 h-6 text-[var(--text-secondary)]" />
+                  ) : (
+                    <Bot className="w-6 h-6 text-[var(--bg-base)]" />
+                  )}
                 </div>
 
                 <div className="max-w-[85%] space-y-4">
-                  <div className={`
+                  <div
+                    className={`
                     p-6 rounded-2xl text-[15px] leading-relaxed shadow-sm border
-                    ${msg.role === "user"
-                      ? "bg-[var(--accent-muted)] border-[var(--accent-primary)]/20 text-[var(--text-primary)] rounded-tr-none"
-                      : "bg-[var(--bg-elevated)] border-[var(--bg-hover)] text-[var(--text-primary)] rounded-tl-none"
+                    ${
+                      msg.role === "user"
+                        ? "bg-[var(--accent-muted)] border-[var(--accent-primary)]/20 text-[var(--text-primary)] rounded-tr-none"
+                        : "bg-[var(--bg-elevated)] border-[var(--bg-hover)] text-[var(--text-primary)] rounded-tl-none"
                     }
-                  `}>
+                  `}
+                  >
                     <p className="whitespace-pre-wrap">{msg.text}</p>
                   </div>
 
@@ -232,7 +273,11 @@ export default function Chat() {
                   <Bot className="w-6 h-6 text-[var(--bg-base)]" />
                 </div>
                 <div className="bg-[var(--bg-elevated)] border border-[var(--bg-hover)] p-6 rounded-2xl rounded-tl-none shadow-sm">
-                  <PulseLoader color="var(--accent-primary)" size={10} margin={5} />
+                  <PulseLoader
+                    color="var(--accent-primary)"
+                    size={10}
+                    margin={5}
+                  />
                 </div>
               </div>
             )}
@@ -246,7 +291,9 @@ export default function Chat() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+            onKeyPress={(e) =>
+              e.key === "Enter" && !e.shiftKey && sendMessage()
+            }
             placeholder="Ask a question about your code..."
             className="pr-32 py-6 bg-[var(--bg-surface)] border-[var(--bg-hover)] focus:border-[var(--accent-primary)] shadow-2xl text-base text-[var(--text-primary)] relative z-10 rounded-xl"
             disabled={loading}

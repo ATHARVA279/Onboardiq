@@ -35,7 +35,10 @@ export default function SourceCard({
 }) {
   const progressPercent =
     job?.progress_total > 0
-      ? Math.min(100, Math.round((job.progress_current / job.progress_total) * 100))
+      ? Math.min(
+          100,
+          Math.round((job.progress_current / job.progress_total) * 100),
+        )
       : 0;
 
   return (
@@ -48,15 +51,25 @@ export default function SourceCard({
             </h3>
             <StatusBadge status={source.indexing_status} />
           </div>
-          <p className="mt-2 break-all text-sm text-[var(--text-tertiary)]">{source.url}</p>
+          <p className="mt-2 break-all text-sm text-[var(--text-tertiary)]">
+            {source.url}
+          </p>
           <div className="mt-4 flex flex-wrap gap-5 text-sm text-[var(--text-tertiary)]">
             <span>
-              <strong className="text-[var(--text-primary)]">{source.file_count || 0}</strong> files
+              <strong className="text-[var(--text-primary)]">
+                {source.file_count || 0}
+              </strong>{" "}
+              files
             </span>
             <span>
-              <strong className="text-[var(--text-primary)]">{source.chunk_count || 0}</strong> chunks
+              <strong className="text-[var(--text-primary)]">
+                {source.chunk_count || 0}
+              </strong>{" "}
+              chunks
             </span>
-            <span>Last indexed {formatRelativeTime(source.last_indexed_at)}</span>
+            <span>
+              Last indexed {formatRelativeTime(source.last_indexed_at)}
+            </span>
           </div>
         </div>
 

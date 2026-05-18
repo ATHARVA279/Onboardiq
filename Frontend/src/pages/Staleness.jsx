@@ -111,7 +111,8 @@ export default function Staleness() {
   };
 
   const filteredAlerts = alerts.filter((alert) => {
-    if (severityFilter !== "all" && alert.severity !== severityFilter) return false;
+    if (severityFilter !== "all" && alert.severity !== severityFilter)
+      return false;
     return true;
   });
 
@@ -131,7 +132,9 @@ export default function Staleness() {
         {/* Summary Bar */}
         <div className="grid gap-6 md:grid-cols-4">
           <div className="rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm">
-            <p className="text-sm font-medium text-[var(--text-tertiary)]">Health Score</p>
+            <p className="text-sm font-medium text-[var(--text-tertiary)]">
+              Health Score
+            </p>
             <div className="mt-2 flex items-baseline gap-2">
               <span
                 className="text-4xl font-bold"
@@ -146,7 +149,9 @@ export default function Staleness() {
           <div className="rounded-2xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-sm md:col-span-2">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-[var(--text-tertiary)]">Active Issues</p>
+                <p className="text-sm font-medium text-[var(--text-tertiary)]">
+                  Active Issues
+                </p>
                 <div className="mt-2 flex gap-4">
                   <div className="flex items-center gap-1.5">
                     <div className="h-2 w-2 rounded-full bg-[var(--status-high)] shadow-[0_0_8px_var(--status-high)]" />
@@ -171,7 +176,9 @@ export default function Staleness() {
               <div className="text-right">
                 <div className="mb-1 flex items-center justify-end gap-1.5">
                   <span className="inline-flex items-center rounded-full bg-[var(--bg-hover)] px-2.5 py-0.5 text-xs font-medium text-[var(--accent-primary)]">
-                    {summary?.mode === "readme" ? "README Mode" : "Documentation Mode"}
+                    {summary?.mode === "readme"
+                      ? "README Mode"
+                      : "Documentation Mode"}
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-tertiary)]">
@@ -246,14 +253,16 @@ export default function Staleness() {
                           alert.severity === "high"
                             ? "bg-[var(--status-high)]/10 text-[var(--status-high)]"
                             : alert.severity === "medium"
-                            ? "bg-[var(--status-medium)]/10 text-[var(--status-medium)]"
-                            : "bg-[var(--accent-muted)] text-[var(--accent-primary)]"
+                              ? "bg-[var(--status-medium)]/10 text-[var(--status-medium)]"
+                              : "bg-[var(--accent-muted)] text-[var(--accent-primary)]"
                         }`}
                       >
                         {alert.severity}
                       </span>
                       <span className="rounded-full bg-[var(--bg-hover)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-tertiary)]">
-                        {alert.alert_type === "readme_stale" ? "README" : "Documentation"}
+                        {alert.alert_type === "readme_stale"
+                          ? "README"
+                          : "Documentation"}
                       </span>
                       {alert.file_path && (
                         <code className="rounded bg-[var(--bg-hover)] px-1.5 py-0.5 text-xs text-[var(--accent-primary)]">
@@ -286,7 +295,9 @@ export default function Staleness() {
                       </div>
                       {alert.commit_hash && (
                         <div className="flex items-center gap-1">
-                          <code className="text-xs">{alert.commit_hash.slice(0, 7)}</code>
+                          <code className="text-xs">
+                            {alert.commit_hash.slice(0, 7)}
+                          </code>
                         </div>
                       )}
                     </div>
@@ -333,7 +344,11 @@ export default function Staleness() {
               className="flex w-full items-center justify-between rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-4 text-sm font-medium text-[var(--text-primary)] transition hover:bg-[var(--bg-hover)]"
             >
               <span>Resolved Alerts ({resolvedAlerts.length})</span>
-              {showResolvedList ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showResolvedList ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
             </button>
 
             {showResolvedList && (
@@ -351,7 +366,8 @@ export default function Staleness() {
                         </h4>
                       </div>
                       <p className="text-xs text-[var(--text-tertiary)]">
-                        Resolved by {alert.resolved_by_uid || "System"} {formatRelativeTime(alert.resolved_at)}
+                        Resolved by {alert.resolved_by_uid || "System"}{" "}
+                        {formatRelativeTime(alert.resolved_at)}
                       </p>
                     </div>
                   </div>
