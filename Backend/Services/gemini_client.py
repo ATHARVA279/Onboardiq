@@ -1,13 +1,42 @@
-import google.generativeai as genai
-from typing import List
+import asyncio
+import threading
+from typing import AsyncIterator, List, Optional
 
+from Services.secrets_service import get_effective_api_key
 from config import Config
 
-genai.configure(api_key=Config.GEMINI_API_KEY)
-
-# For chat completions fallback only — 1.5-flash is more quota-friendly
-# Embeddings (in embedding_service.py) use Config.EMBEDDING_MODEL independently
 MODEL = "gemini-1.5-flash"
+
+
+async def _get_model(
+    system_prompt: str,
+    temperature: float = 0.2,
+    max_tokens: int = 2048,
+    user_uid: Optional[str] = None,
+):
+    import google.generativeai as genai
+
+    api_key = await get_effective_api_key(
+        user_uid,
+        "gemini_api_key",
+        Config.GEMINI_API_KEY,
+    )
+    if not api_key:
+        raise RuntimeError("Gemini API key is not configured")
+
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel(
+        MODEL,
+        system_instruction=system_prompt,
+        generation_config=genai.GenerationConfig(
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+        ),
+    )
+
+
+def _truncate_text(text: str, limit: int = 50000) -> str:
+    return text if len(text) <= limit else text[:limit]
 
 
 def _call_gemini_direct(model, prompt: str) -> str:
@@ -15,15 +44,50 @@ def _call_gemini_direct(model, prompt: str) -> str:
     return response.text if hasattr(response, "text") else str(response)
 
 
-def _truncate_text(text: str, limit: int = 50000) -> str:
-    return text if len(text) <= limit else text[:limit]
+def _compose_prompt(messages: List[dict], context: str) -> str:
+    history_lines = []
+    for msg in messages[:-1]:
+        role = "User" if msg.get("role") == "user" else "Assistant"
+        history_lines.append(f"{role}: {msg.get('content', '')}")
+
+    latest = messages[-1]["content"] if messages else ""
+    history = "\n".join(history_lines)
+    if history:
+        history = f"Conversation history:\n{history}\n\n"
+
+    return f"{history}{context}\n\nQuestion: {latest}"
 
 
-def ask_question_about_text(
-    question: str, text: str, history: List[dict] = None
-) -> str:
+async def _stream_sync_iterator(iterate_fn) -> AsyncIterator[str]:
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue[tuple[str, object]] = asyncio.Queue()
+
+    def worker():
+        try:
+            for item in iterate_fn():
+                asyncio.run_coroutine_threadsafe(queue.put(("item", item)), loop).result()
+        except Exception as exc:
+            asyncio.run_coroutine_threadsafe(queue.put(("error", exc)), loop).result()
+        finally:
+            asyncio.run_coroutine_threadsafe(queue.put(("done", None)), loop).result()
+
+    threading.Thread(target=worker, daemon=True).start()
+
+    while True:
+        kind, payload = await queue.get()
+        if kind == "item":
+            yield str(payload)
+        elif kind == "error":
+            raise payload
+        else:
+            break
+
+
+def ask_question_about_text(question: str, text: str, history: List[dict] = None) -> str:
+    import google.generativeai as genai
+
     history = history or []
-    ctx = _truncate_text(text, Config.MAX_TEXT_LENGTH_QA)
+    ctx = _truncate_text(text, Config.DEFAULT_CHUNK_SIZE * 125)
     convo_hint = ""
     if history:
         convo_hint += "Conversation history:\n"
@@ -44,68 +108,62 @@ Document context:
 
 INSTRUCTIONS:
 1. If the question is directly answerable from the document context, use that information as your primary source.
-2. If the question is related to the document's topic but asks for comparisons, alternatives, or broader context (e.g., "does Python have hooks?" when document is about React hooks), you can use your general knowledge to provide a helpful comparison or explanation while noting it's not in the original material.
+2. If the question is related to the document's topic but asks for comparisons, alternatives, or broader context, you can use your general knowledge while noting it's not in the original material.
 3. Keep answers concise (50-200 words) but informative.
 4. If asked about something completely unrelated to the document, politely redirect to the document's topic.
-5. IMPORTANT: Do NOT use markdown formatting in your response. Avoid using backticks (`), asterisks (*), or other markdown syntax. Write in plain text only.
+5. Do NOT use markdown formatting in your response.
 
 Question: {question}
 
 Answer:
     """
-
+    genai.configure(api_key=Config.GEMINI_API_KEY)
     model = genai.GenerativeModel(MODEL)
-    try:
-        raw = _call_gemini_direct(model, prompt)
-    except Exception as e:
-        print(f"⚠️ Q&A error: {str(e)}")
-        return f"Unable to answer due to an error. Please try again. Error: {str(e)}"
-
+    raw = _call_gemini_direct(model, prompt)
     return raw.strip()
 
 
 async def chat_completion(
-    system_prompt: str, messages: List[dict], context: str
+    system_prompt: str,
+    messages: List[dict],
+    context: str,
+    temperature: float = 0.2,
+    max_tokens: int = 2048,
+    user_uid: Optional[str] = None,
 ) -> str:
-    """Calls Gemini using system_instruction and proper conversational history."""
-
-    import asyncio
-
-    # In order to properly structure history for the Gemini API:
-    # 1. We instantiate the model with the system_instruction.
-    # 2. We construct a ChatSession with the history.
-    # 3. We send the latest message (with context) as the new message.
-
-    model = genai.GenerativeModel(
-        MODEL,
-        system_instruction=system_prompt,
-        generation_config=genai.GenerationConfig(
-            temperature=0.2,
-            max_output_tokens=2048,
-        ),
+    model = await _get_model(
+        system_prompt,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        user_uid=user_uid,
     )
+    prompt = _compose_prompt(messages, context)
+    response = await asyncio.to_thread(model.generate_content, prompt)
+    return response.text if hasattr(response, "text") else str(response)
 
-    # Separate the latest message from history
-    if not messages:
-        return ""
 
-    latest_message = messages[-1]["content"]
-    history_msgs = []
+async def stream_chat_completion(
+    system_prompt: str,
+    messages: List[dict],
+    context: str,
+    temperature: float = 0.2,
+    max_tokens: int = 2048,
+    user_uid: Optional[str] = None,
+) -> AsyncIterator[str]:
+    model = await _get_model(
+        system_prompt,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        user_uid=user_uid,
+    )
+    prompt = _compose_prompt(messages, context)
 
-    # Gemini ChatSession format requires parts. Let's build it safely.
-    for msg in messages[:-1]:
-        role = "user" if msg.get("role") == "user" else "model"
-        history_msgs.append({"role": role, "parts": [msg.get("content", "")]})
+    def iterate_tokens():
+        stream = model.generate_content(prompt, stream=True)
+        for chunk in stream:
+            text = getattr(chunk, "text", "") or ""
+            if text:
+                yield text
 
-    # Start chat with history
-    chat = model.start_chat(history=history_msgs)
-
-    # The final prompt should include the context
-    final_prompt = f"{context}\n\nQuestion: {latest_message}"
-
-    try:
-        response = await asyncio.to_thread(chat.send_message, final_prompt)
-        return response.text if hasattr(response, "text") else str(response)
-    except Exception as e:
-        print(f"⚠️ chat_completion error: {str(e)}")
-        raise e
+    async for token in _stream_sync_iterator(iterate_tokens):
+        yield token

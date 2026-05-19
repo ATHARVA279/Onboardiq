@@ -3,8 +3,6 @@ import {
   AlertTriangle,
   Database,
   ExternalLink,
-  Eye,
-  EyeOff,
   FileCode,
   Github,
   Globe,
@@ -20,10 +18,9 @@ import {
   connectGithubRepo,
   connectUrl,
   getJobStatus,
-  getGithubToken,
+  getUserProfile,
   getWorkspace,
   reindexSource,
-  saveGithubToken,
   getStalenessSummary,
   getStalenessAlerts,
 } from "../api/backend";
@@ -152,21 +149,35 @@ function StatCard({
 function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
   const [tab, setTab] = useState("github");
   const [repoUrl, setRepoUrl] = useState("");
-  const [token, setToken] = useState("");
   const [docsUrl, setDocsUrl] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [showToken, setShowToken] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hasSavedGithubPat, setHasSavedGithubPat] = useState(null);
 
   useEffect(() => {
     if (!open) {
       setError("");
       setLoading(false);
-    } else {
-      const stored = getGithubToken(workspaceId);
-      if (stored) setToken(stored);
+      return;
     }
+
+    let cancelled = false;
+    getUserProfile()
+      .then((profile) => {
+        if (!cancelled) {
+          setHasSavedGithubPat(Boolean(profile?.secrets?.github_pat));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHasSavedGithubPat(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, workspaceId]);
 
   const handleGithubSubmit = async (event) => {
@@ -174,17 +185,10 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
     setLoading(true);
     setError("");
     try {
-      const trimmedToken = token.trim();
-      const job = await connectGithubRepo(
-        workspaceId,
-        repoUrl.trim(),
-        trimmedToken,
-      );
-      if (trimmedToken) saveGithubToken(workspaceId, trimmedToken);
+      const job = await connectGithubRepo(workspaceId, repoUrl.trim());
       await onConnected({ type: "github", job });
       onClose();
       setRepoUrl("");
-      setToken("");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -265,38 +269,21 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
 
             <label className="block">
               <span className="text-sm font-medium text-[var(--text-primary)]">
-                Personal Access Token
+                Authentication
               </span>
-              <div className="relative mt-2">
-                <input
-                  type={showToken ? "text" : "password"}
-                  value={token}
-                  onChange={(event) => setToken(event.target.value)}
-                  className="oi-input w-full pr-12"
-                  placeholder="ghp_xxxxxxxxxxxx"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowToken((value) => !value)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]"
-                >
-                  {showToken ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+              <div className="mt-2 rounded-lg border border-[var(--accent-muted)] bg-[var(--accent-muted)]/10 px-4 py-3 text-sm leading-7 text-[var(--accent-primary)]">
+                {hasSavedGithubPat === true
+                  ? "GitHub PAT saved in your Profile. It will be used automatically when connecting repositories."
+                  : hasSavedGithubPat === false
+                    ? "No GitHub PAT saved in your Profile yet. Save one in Profile to connect private repositories and avoid low GitHub rate limits."
+                    : "Checking whether you have a saved GitHub PAT in your Profile..."}
               </div>
-              <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-                Optional for public repos. Required for private repos. Needs
-                `repo:read` scope.
-              </p>
             </label>
 
             <div className="rounded-lg border border-[var(--accent-muted)] bg-[var(--accent-muted)]/10 px-4 py-3 text-sm leading-7 text-[var(--accent-primary)]">
-              Without a token, GitHub rate limits drop to 60 requests per hour,
-              which can cause larger repositories to fail before indexing
-              completes.
+              {hasSavedGithubPat === false
+                ? "Without a saved PAT, GitHub falls back to anonymous access with much lower rate limits."
+                : "If you remove the saved PAT later, GitHub will fall back to anonymous access with much lower rate limits."}
             </div>
 
             {error ? (

@@ -74,6 +74,23 @@ class CreateWorkspaceRequest(RequestModel):
     name: str = Field(..., min_length=1, max_length=100)
 
 
+class UpdateUserProfileRequest(RequestModel):
+    full_name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    avatar_url: Optional[str] = Field(default=None, min_length=1, max_length=2000)
+    llm_provider: Optional[str] = Field(default=None)
+    chunk_size: Optional[int] = Field(default=None, ge=200, le=800)
+
+    @field_validator("llm_provider")
+    @classmethod
+    def validate_llm_provider(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return value
+        candidate = value.strip().lower()
+        if candidate not in {"groq", "gemini"}:
+            raise ValueError("llm_provider must be either 'groq' or 'gemini'")
+        return candidate
+
+
 class InviteMemberRequest(RequestModel):
     workspace_id: str = Field(..., description="Workspace ObjectId")
     email: str = Field(..., min_length=3, max_length=320)

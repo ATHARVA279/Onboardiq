@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 from Database.database import get_db
 from Middleware.auth import get_current_user
+from Middleware.rate_limit import limit_extract
 from Services.github_ingestion import connect_and_ingest_repo
 from Services.url_ingestion import ingest_url_source
 from models.requests import ConnectGithubRequest, CreateWorkspaceRequest, ReindexRequest
@@ -175,6 +176,7 @@ async def connect_github_repo(
         workspace_id,
         str(source_id),
         str(job["_id"]),
+        current_user["uid"],
     )
 
     return _job_response_payload(job)
@@ -188,6 +190,7 @@ async def reindex_source(
     source_id: str,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
+    _: None = Depends(limit_extract),
     request: ReindexRequest = ReindexRequest(),
 ):
     db = await get_db()
@@ -258,6 +261,7 @@ async def reindex_source(
             workspace_id,
             str(source_object_id),
             str(job["_id"]),
+            current_user["uid"],
         )
     else:
         background_tasks.add_task(
@@ -266,6 +270,8 @@ async def reindex_source(
             workspace_id,
             str(source_object_id),
             str(job["_id"]),
+            20,
+            current_user["uid"],
         )
 
     return _job_response_payload(job)

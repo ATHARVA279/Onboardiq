@@ -1,8 +1,14 @@
-from groq import Groq
-import os
 import asyncio
 import logging
+import threading
+from typing import AsyncIterator, Optional
+
+from groq import Groq
+
 from Services.gemini_client import chat_completion as gemini_chat_completion
+from Services.gemini_client import stream_chat_completion as gemini_stream_chat_completion
+from Services.secrets_service import get_effective_api_key
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -16,42 +22,28 @@ ROLE_MAPPING = {
     "system_prompt": "system",
 }
 
-# Initialize Groq client
-try:
-    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-except Exception:
-    client = None
+
+async def _get_client(user_uid: Optional[str] = None) -> Groq:
+    api_key = await get_effective_api_key(user_uid, "groq_api_key", Config.GROQ_API_KEY)
+    if not api_key:
+        raise RuntimeError("Groq API key is not configured")
+    return Groq(api_key=api_key)
 
 
 def sanitize_messages(messages: list) -> list:
-    """Normalize role names and strip empty messages."""
     sanitized = []
     for msg in messages:
-        role = msg.get("role", "").lower().strip()
+        role = ROLE_MAPPING.get(msg.get("role", "").lower().strip(), msg.get("role", "").lower().strip())
         content = msg.get("content", "")
-
-        role = ROLE_MAPPING.get(role, role)
-
-        if role not in VALID_ROLES:
-            logger.debug(f"[groq] Skipping message with invalid role '{role}'")
+        if role not in VALID_ROLES or not str(content).strip() or role == "system":
             continue
-
-        if not content or not str(content).strip():
-            continue
-
-        # Skip re-injecting system messages from history — we manage that ourselves
-        if role == "system":
-            continue
-
         sanitized.append({"role": role, "content": str(content)})
     return sanitized
 
 
 def deduplicate_consecutive_roles(messages: list) -> list:
-    """Merge adjacent messages with the same role so Groq never gets consecutive duplicates."""
     if not messages:
         return messages
-
     result = [messages[0].copy()]
     for msg in messages[1:]:
         if msg["role"] == result[-1]["role"]:
@@ -61,22 +53,8 @@ def deduplicate_consecutive_roles(messages: list) -> list:
     return result
 
 
-async def chat_completion(
-    system_prompt: str,
-    messages: list,
-    context: str,
-    temperature: float = 0.2,
-    max_tokens: int = 2048,
-) -> str:
-    if not client:
-        raise Exception("Groq API error: Client not initialized (check GROQ_API_KEY)")
-
-    # --- Build final messages array ---
-    # 1. System prompt (always first, always only one)
+def build_final_messages(system_prompt: str, messages: list, context: str) -> list:
     final_messages = [{"role": "system", "content": system_prompt}]
-
-    # 2. Session history: sanitize + deduplicate, strip the last user msg so we
-    #    can combine it with context below (avoiding two consecutive user messages)
     session_messages = list(messages)
     last_user_content = None
 
@@ -84,28 +62,55 @@ async def chat_completion(
         raw_last = session_messages.pop()
         last_user_content = raw_last.get("content", "")
 
-    # Sanitize history (maps model→assistant, etc.) and drop system-role leftovers
-    cleaned_history = sanitize_messages(session_messages)
-    cleaned_history = deduplicate_consecutive_roles(cleaned_history)
+    cleaned_history = deduplicate_consecutive_roles(sanitize_messages(session_messages))
     final_messages.extend(cleaned_history)
+    final_messages.append(
+        {
+            "role": "user",
+            "content": f"CODEBASE CONTEXT:\n{context}\n\nQUESTION:\n{last_user_content or ''}",
+        }
+    )
+    return final_messages
 
-    # 3. Final user message: question embedded in context
-    question = last_user_content or ""
-    combined_content = f"CODEBASE CONTEXT:\n{context}\n\nQUESTION:\n{question}"
-    final_messages.append({"role": "user", "content": combined_content})
 
-    # Guard: ensure the array ends on a user message (Groq requirement)
-    if final_messages[-1]["role"] != "user":
-        logger.warning(
-            "[groq] Final messages array does not end with user role — this should not happen"
-        )
+async def _stream_sync_iterator(iterate_fn) -> AsyncIterator[str]:
+    loop = asyncio.get_running_loop()
+    queue: asyncio.Queue[tuple[str, object]] = asyncio.Queue()
 
-    # --- Call Groq with exponential backoff on rate limit ---
+    def worker():
+        try:
+            for item in iterate_fn():
+                asyncio.run_coroutine_threadsafe(queue.put(("item", item)), loop).result()
+        except Exception as exc:
+            asyncio.run_coroutine_threadsafe(queue.put(("error", exc)), loop).result()
+        finally:
+            asyncio.run_coroutine_threadsafe(queue.put(("done", None)), loop).result()
+
+    threading.Thread(target=worker, daemon=True).start()
+
+    while True:
+        kind, payload = await queue.get()
+        if kind == "item":
+            yield str(payload)
+        elif kind == "error":
+            raise payload
+        else:
+            break
+
+
+async def chat_completion(
+    system_prompt: str,
+    messages: list,
+    context: str,
+    temperature: float = 0.2,
+    max_tokens: int = 2048,
+    user_uid: Optional[str] = None,
+) -> str:
+    client = await _get_client(user_uid)
+    final_messages = build_final_messages(system_prompt, messages, context)
+
     for attempt in range(3):
         try:
-            logger.debug(
-                f"[groq] Attempt {attempt + 1}, {len(final_messages)} messages"
-            )
             response = await asyncio.to_thread(
                 client.chat.completions.create,
                 model=GROQ_MODEL,
@@ -114,53 +119,43 @@ async def chat_completion(
                 max_tokens=max_tokens,
             )
             return response.choices[0].message.content
-
-        except Exception as e:
-            error_str = str(e).lower()
-            is_rate_limit = (
-                "429" in error_str
-                or "rate" in error_str
-                or "limit" in error_str
-                or "RateLimitError" in str(type(e))
-            )
+        except Exception as exc:
+            error_str = str(exc).lower()
+            is_rate_limit = "429" in error_str or "rate" in error_str or "limit" in error_str
             if is_rate_limit and attempt < 2:
-                wait = 5 * (attempt + 1)
-                logger.warning(
-                    f"[groq] Rate limited on attempt {attempt + 1}, waiting {wait}s..."
-                )
-                await asyncio.sleep(wait)
+                await asyncio.sleep(5 * (attempt + 1))
                 continue
-            raise Exception(f"Groq API error: {str(e)}")
+            raise Exception(f"Groq API error: {exc}")
 
     raise Exception("Groq API error: exhausted all retries")
 
 
-async def _gemini_with_retry(
+async def stream_chat_completion(
     system_prompt: str,
     messages: list,
     context: str,
-    max_retries: int = 3,
-) -> str:
-    """Call Gemini fallback with exponential backoff for rate limits."""
-    for attempt in range(max_retries):
-        try:
-            return await gemini_chat_completion(system_prompt, messages, context)
-        except Exception as e:
-            error_str = str(e)
-            is_rate_limit = (
-                "429" in error_str
-                or "quota" in error_str.lower()
-                or "rate" in error_str.lower()
-            )
-            if is_rate_limit and attempt < max_retries - 1:
-                wait = 3 * (attempt + 1)
-                logger.warning(
-                    f"[gemini-fallback] Rate limited on attempt {attempt + 1}, waiting {wait}s..."
-                )
-                await asyncio.sleep(wait)
-                continue
-            raise
-    raise Exception("Gemini fallback exhausted all retries")
+    temperature: float = 0.2,
+    max_tokens: int = 2048,
+    user_uid: Optional[str] = None,
+) -> AsyncIterator[str]:
+    client = await _get_client(user_uid)
+    final_messages = build_final_messages(system_prompt, messages, context)
+
+    def iterate_tokens():
+        stream = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=final_messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            stream=True,
+        )
+        for chunk in stream:
+            delta = chunk.choices[0].delta.content or ""
+            if delta:
+                yield delta
+
+    async for token in _stream_sync_iterator(iterate_tokens):
+        yield token
 
 
 async def chat_completion_with_fallback(
@@ -169,26 +164,81 @@ async def chat_completion_with_fallback(
     context: str,
     temperature: float = 0.2,
     max_tokens: int = 2048,
+    provider_preference: str = "groq",
+    user_uid: Optional[str] = None,
 ) -> str:
-    groq_error = None
-    try:
-        result = await chat_completion(
-            system_prompt, messages, context, temperature, max_tokens
-        )
-        logger.info(f"Chat completion: provider=groq model={GROQ_MODEL}")
-        return result
-    except Exception as e:
-        groq_error = str(e)
-        logger.warning(f"[groq] Failed: {groq_error} — falling back to Gemini")
+    providers = ["groq", "gemini"] if provider_preference != "gemini" else ["gemini", "groq"]
+    errors = {}
 
-    try:
-        result = await _gemini_with_retry(system_prompt, messages, context)
-        logger.info(
-            f"Chat completion: provider=gemini model=gemini-1.5-flash (groq failed: {groq_error})"
-        )
-        return result
-    except Exception as gemini_e:
-        logger.error(f"[gemini-fallback] Also failed: {gemini_e}")
-        raise Exception(
-            f"Both providers failed. Groq: {groq_error} | Gemini: {gemini_e}"
-        )
+    for provider in providers:
+        try:
+            if provider == "groq":
+                return await chat_completion(
+                    system_prompt,
+                    messages,
+                    context,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    user_uid=user_uid,
+                )
+            return await gemini_chat_completion(
+                system_prompt,
+                messages,
+                context,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                user_uid=user_uid,
+            )
+        except Exception as exc:
+            errors[provider] = str(exc)
+            logger.warning("[%s] Failed: %s", provider, exc)
+
+    raise Exception(
+        f"Both providers failed. Groq: {errors.get('groq')} | Gemini: {errors.get('gemini')}"
+    )
+
+
+async def stream_chat_completion_with_fallback(
+    system_prompt: str,
+    messages: list,
+    context: str,
+    temperature: float = 0.2,
+    max_tokens: int = 2048,
+    provider_preference: str = "groq",
+    user_uid: Optional[str] = None,
+) -> tuple[AsyncIterator[str], str]:
+    providers = ["groq", "gemini"] if provider_preference != "gemini" else ["gemini", "groq"]
+    errors = {}
+
+    for provider in providers:
+        try:
+            if provider == "groq":
+                return (
+                    stream_chat_completion(
+                        system_prompt,
+                        messages,
+                        context,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        user_uid=user_uid,
+                    ),
+                    "groq",
+                )
+            return (
+                gemini_stream_chat_completion(
+                    system_prompt,
+                    messages,
+                    context,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    user_uid=user_uid,
+                ),
+                "gemini",
+            )
+        except Exception as exc:
+            errors[provider] = str(exc)
+            logger.warning("[%s-stream] Failed to initialize: %s", provider, exc)
+
+    raise Exception(
+        f"Both providers failed. Groq: {errors.get('groq')} | Gemini: {errors.get('gemini')}"
+    )

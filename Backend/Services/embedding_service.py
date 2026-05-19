@@ -1,42 +1,17 @@
-import os
 import asyncio
 import logging
-from typing import List, Dict, Union
+from typing import Dict, List, Optional, Union
 
-import voyageai
 import requests
+import voyageai
 
+from Services.secrets_service import get_effective_api_key
 from config import Config
 
 logger = logging.getLogger(__name__)
 
-# Initialize clients
-voyage_client = voyageai.Client(api_key=os.environ.get("VOYAGE_API_KEY"))
-
-NOMIC_API_KEY = os.environ.get("NOMIC_API_KEY")
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
-
-# Semaphore to limit concurrent embedding requests
 embedding_semaphore = asyncio.Semaphore(3)
-
 EMBEDDING_DIMENSION = 1024
-
-_genai = None
-
-
-def _get_genai():
-    global _genai
-    if _genai is None:
-        import os as _os
-
-        _os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
-        try:
-            import google.generativeai as genai
-        except Exception as exc:
-            raise RuntimeError(f"Failed to import google.generativeai: {exc}")
-        genai.configure(api_key=GOOGLE_API_KEY or Config.GOOGLE_API_KEY)
-        _genai = genai
-    return _genai
 
 
 def _augment_text(item: Dict) -> str:
@@ -47,7 +22,6 @@ def _augment_text(item: Dict) -> str:
     mode = item.get("mode")
 
     prefix = "query: " if mode == "query" else "passage: "
-
     augmented = text
     if chunk_type in {"function", "method", "class"}:
         safe_language = language or "code"
@@ -57,50 +31,79 @@ def _augment_text(item: Dict) -> str:
     return f"{prefix}{augmented}"
 
 
-async def get_voyage_embeddings(texts: list[str], input_type: str) -> list[list[float]]:
+async def get_voyage_embeddings(
+    texts: list[str],
+    input_type: str,
+    user_uid: Optional[str] = None,
+) -> list[list[float]]:
     async with embedding_semaphore:
-        loop = asyncio.get_running_loop()
+        api_key = await get_effective_api_key(
+            user_uid,
+            "voyage_api_key",
+            Config.VOYAGE_API_KEY,
+        )
+        if not api_key:
+            raise RuntimeError("Voyage API key is not configured")
 
-        # Voyage client is sync, run in thread pool
+        client = voyageai.Client(api_key=api_key)
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
-            lambda: voyage_client.embed(
-                texts, model="voyage-4-lite", input_type=input_type
-            ),
+            lambda: client.embed(texts, model="voyage-4-lite", input_type=input_type),
         )
         return result.embeddings
 
 
-async def get_nomic_embeddings(texts: list[str], input_type: str) -> list[list[float]]:
+async def get_nomic_embeddings(
+    texts: list[str],
+    input_type: str,
+    user_uid: Optional[str] = None,
+) -> list[list[float]]:
     async with embedding_semaphore:
-        # Nomic produces 768 dimensions, pad to 1024 for compatibility
-        headers = {
-            "Authorization": f"Bearer {NOMIC_API_KEY}",
-            "Content-Type": "application/json",
-        }
+        api_key = await get_effective_api_key(
+            user_uid,
+            "nomic_api_key",
+            Config.NOMIC_API_KEY,
+        )
+        if not api_key:
+            raise RuntimeError("Nomic API key is not configured")
 
         response = await asyncio.to_thread(
             requests.post,
             "https://api-atlas.nomic.ai/v1/embedding/text",
-            headers=headers,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
             json={
                 "texts": texts,
                 "model": "nomic-embed-text-v1.5",
                 "task_type": input_type,
                 "dimensionality": 768,
             },
+            timeout=30,
         )
         response.raise_for_status()
         embeddings = response.json()["embeddings"]
-
-        # Pad from 768 to 1024 with zeros for schema compatibility
-        padded = [emb + [0.0] * 256 for emb in embeddings]
-        return padded
+        return [emb + [0.0] * 256 for emb in embeddings]
 
 
-async def get_gemini_embeddings(items: List[Dict]) -> list[list[float]]:
+async def get_gemini_embeddings(
+    items: List[Dict],
+    user_uid: Optional[str] = None,
+) -> list[list[float]]:
     async with embedding_semaphore:
-        genai = _get_genai()
+        import google.generativeai as genai
+
+        api_key = await get_effective_api_key(
+            user_uid,
+            "gemini_api_key",
+            Config.GEMINI_API_KEY,
+        )
+        if not api_key:
+            raise RuntimeError("Gemini API key is not configured")
+
+        genai.configure(api_key=api_key)
         prepared_texts = [_augment_text(item) for item in items]
 
         result = await asyncio.to_thread(
@@ -113,42 +116,33 @@ async def get_gemini_embeddings(items: List[Dict]) -> list[list[float]]:
         embeddings = []
         if isinstance(result, dict) and "embedding" in result:
             vectors = result["embedding"]
-            if (
-                isinstance(vectors, list)
-                and len(vectors) > 0
-                and isinstance(vectors[0], list)
-            ):
+            if vectors and isinstance(vectors[0], list):
                 embeddings = vectors
             else:
                 embeddings = [vectors]
 
-        # Pad 768 to 1024
         return [emb + [0.0] * 256 for emb in embeddings]
 
 
 async def get_embeddings_batch(
-    items: Union[List[Dict], List[str]], mode: str = "document"
+    items: Union[List[Dict], List[str]],
+    mode: str = "document",
+    user_uid: Optional[str] = None,
 ) -> list[list[float]]:
     if not items:
         return []
 
-    # Normalize inputs to support both list[str] and list[dict]
     if isinstance(items[0], dict):
         texts = [item.get("text", "") for item in items]
-        # determine mode from the first item if not explicitly passed
-        # passage implies document for Voyage/Nomic
         item_mode = items[0].get("mode", mode)
         mode = "document" if item_mode == "passage" else item_mode
     else:
         texts = items
-        # If passed as strings, we need to create dummy items for gemini fallback
         items = [{"text": text, "mode": mode} for text in texts]
 
-    # Map generic mode to provider-specific input types
     voyage_input_type = "document" if mode == "document" else "query"
     nomic_input_type = "search_document" if mode == "document" else "search_query"
 
-    # Process in batches of 128 for Voyage
     all_embeddings = []
     batch_size = 128
 
@@ -156,49 +150,49 @@ async def get_embeddings_batch(
         batch_texts = texts[i : i + batch_size]
         batch_items = items[i : i + batch_size]
 
-        # Try Voyage first
         try:
-            embeddings = await get_voyage_embeddings(batch_texts, voyage_input_type)
-            all_embeddings.extend(embeddings)
-            logger.info(
-                f"Embeddings: voyage-code-2 batch {i//batch_size + 1} success ({len(batch_texts)} texts)"
+            embeddings = await get_voyage_embeddings(
+                batch_texts,
+                voyage_input_type,
+                user_uid=user_uid,
             )
+            all_embeddings.extend(embeddings)
+            logger.info("Embeddings: voyage batch %d success", i // batch_size + 1)
             continue
-        except Exception as e:
-            logger.warning(f"Voyage embedding failed: {e}, trying Nomic")
+        except Exception as exc:
+            logger.warning("Voyage embedding failed: %s, trying Nomic", exc)
 
-        # Try Nomic second
         try:
-            embeddings = await get_nomic_embeddings(batch_texts, nomic_input_type)
-            all_embeddings.extend(embeddings)
-            logger.info(
-                f"Embeddings: nomic-embed fallback batch {i//batch_size + 1} success"
+            embeddings = await get_nomic_embeddings(
+                batch_texts,
+                nomic_input_type,
+                user_uid=user_uid,
             )
+            all_embeddings.extend(embeddings)
+            logger.info("Embeddings: nomic batch %d success", i // batch_size + 1)
             continue
-        except Exception as e:
-            logger.warning(f"Nomic embedding failed: {e}, trying Gemini")
+        except Exception as exc:
+            logger.warning("Nomic embedding failed: %s, trying Gemini", exc)
 
-        # Try Gemini last
         try:
-            embeddings = await get_gemini_embeddings(batch_items)
+            embeddings = await get_gemini_embeddings(batch_items, user_uid=user_uid)
             all_embeddings.extend(embeddings)
-            logger.info(
-                f"Embeddings: gemini fallback batch {i//batch_size + 1} success"
-            )
+            logger.info("Embeddings: gemini batch %d success", i // batch_size + 1)
             continue
-        except Exception as e:
-            logger.error(
-                f"All embedding providers failed for batch {i//batch_size + 1}: {e}"
-            )
-            raise Exception(f"All embedding providers failed: {e}")
+        except Exception as exc:
+            logger.error("All embedding providers failed for batch %d: %s", i // batch_size + 1, exc)
+            raise Exception(f"All embedding providers failed: {exc}")
 
-        # Rate limit protection between batches
         if i + batch_size < len(texts):
             await asyncio.sleep(0.5)
 
     return all_embeddings
 
 
-async def get_embedding(text: str, mode: str = "document") -> list[float]:
-    results = await get_embeddings_batch([text], mode=mode)
+async def get_embedding(
+    text: str,
+    mode: str = "document",
+    user_uid: Optional[str] = None,
+) -> list[float]:
+    results = await get_embeddings_batch([text], mode=mode, user_uid=user_uid)
     return results[0]

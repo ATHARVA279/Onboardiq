@@ -3,6 +3,8 @@ from fastapi import HTTPException, status
 from datetime import datetime
 import uuid
 
+from Services.secrets_service import DEFAULT_PREFERENCES, build_preferences
+
 
 class CreditService:
     DEFAULT_CREDITS = 100
@@ -154,19 +156,31 @@ class CreditService:
     @staticmethod
     async def initialize_user(uid: str, email: str, name: str, picture: str):
         db = await get_db()
+        existing = await db.users.find_one(
+            {"_id": uid},
+            {"full_name": 1, "avatar_url": 1, "preferences": 1},
+        )
+
+        update_fields = {
+            "email": email,
+            "last_login": datetime.utcnow(),
+        }
+
+        if not existing or not existing.get("full_name"):
+            update_fields["full_name"] = name
+        if not existing or not existing.get("avatar_url"):
+            update_fields["avatar_url"] = picture
+
         await db.users.update_one(
             {"_id": uid},
             {
-                "$set": {
-                    "email": email,
-                    "full_name": name,
-                    "avatar_url": picture,
-                    "last_login": datetime.utcnow(),
-                },
+                "$set": update_fields,
                 "$setOnInsert": {
                     "credits": CreditService.DEFAULT_CREDITS,
                     "plan": "free",
                     "created_at": datetime.utcnow(),
+                    "preferences": DEFAULT_PREFERENCES,
+                    "encrypted_secrets": {},
                     "total_usage": {
                         "extract": 0,
                         "github_ingest": 0,
@@ -176,4 +190,8 @@ class CreditService:
                 },
             },
             upsert=True,
+        )
+        await db.users.update_one(
+            {"_id": uid, "preferences": {"$exists": True}},
+            {"$set": {"preferences": build_preferences((existing or {}).get("preferences"))}},
         )

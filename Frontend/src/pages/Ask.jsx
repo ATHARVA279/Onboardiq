@@ -12,15 +12,14 @@ import {
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/layout/AppShell";
 import MarkdownRenderer from "../components/chat/MarkdownRenderer";
-import TypingIndicator from "../components/chat/TypingIndicator";
 import ConnectSourceModal from "../components/sources/ConnectSourceModal";
 import { useWorkspace } from "../context/WorkspaceContext";
 import {
-  askQuestion,
   getChatSessions,
   getChatHistory,
   createNewSession,
   deleteSession,
+  streamAskQuestion,
 } from "../api/backend";
 import { formatRelativeTime } from "../utils/formatters";
 
@@ -460,30 +459,64 @@ export default function Ask() {
   const doAsk = async (q, sessionId) => {
     setSendLoading(true);
     setError("");
+    const assistantId = crypto.randomUUID();
+    setMessages((cur) => [
+      ...cur,
+      {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+        sources: [],
+        confidence_score: 0,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    const updateAssistant = (updater) => {
+      setMessages((cur) =>
+        cur.map((message) =>
+          message.id === assistantId ? { ...message, ...updater(message) } : message,
+        ),
+      );
+    };
+
     try {
-      const res = await askQuestion(
+      await streamAskQuestion(
         workspaceId,
         sessionId || undefined,
         q,
         selectedSourceIds,
-      );
-      if (res.session_id && res.session_id !== activeSessionId) {
-        setActiveSessionId(res.session_id);
-        localStorage.setItem(sessionKey(workspaceId), res.session_id);
-      }
-      setMessages((cur) => [
-        ...cur,
         {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: res.answer,
-          sources: res.sources_cited || [],
-          confidence_score: res.confidence_score || 0,
-          created_at: new Date().toISOString(),
+          onStart: (event) => {
+            if (event.session_id && event.session_id !== activeSessionId) {
+              setActiveSessionId(event.session_id);
+              localStorage.setItem(sessionKey(workspaceId), event.session_id);
+            }
+          },
+          onToken: (token) => {
+            updateAssistant((message) => ({
+              content: `${message.content || ""}${token}`,
+            }));
+          },
+          onComplete: async (event) => {
+            if (event.session_id && event.session_id !== activeSessionId) {
+              setActiveSessionId(event.session_id);
+              localStorage.setItem(sessionKey(workspaceId), event.session_id);
+            }
+            updateAssistant(() => ({
+              content: event.answer || "",
+              sources: event.sources_cited || [],
+              confidence_score: event.confidence_score || 0,
+            }));
+            await loadSessions();
+          },
+          onError: (event) => {
+            throw Object.assign(new Error(event.message), { data: event });
+          },
         },
-      ]);
-      await loadSessions();
+      );
     } catch (err) {
+      setMessages((cur) => cur.filter((message) => message.id !== assistantId));
       const data = err?.response?.data || err?.data;
       if (
         data?.error === "ai_unavailable" ||
@@ -860,30 +893,6 @@ export default function Ask() {
               <Message key={m.id} message={m} />
             ))}
 
-            {sendLoading && (
-              <div
-                style={{ display: "flex", gap: "12px", marginBottom: "32px" }}
-              >
-                <div
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    background: "var(--bg-hover)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Loader2 className="h-4 w-4 animate-spin text-var(--accent-primary)" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <TypingIndicator />
-                </div>
-              </div>
-            )}
-
             <div ref={messagesEndRef} />
           </div>
 
@@ -1025,9 +1034,10 @@ export default function Ask() {
       </div>
 
       <ConnectSourceModal
-        isOpen={connectModalOpen}
+        open={connectModalOpen}
         onClose={() => setConnectModalOpen(false)}
-        onSuccess={handleConnectSuccess}
+        workspaceId={workspaceId}
+        onConnected={handleConnectSuccess}
       />
     </AppShell>
   );

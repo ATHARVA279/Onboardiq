@@ -20,6 +20,7 @@ from bson import ObjectId
 
 from Database.database import get_db
 from Services.embedding_service import get_embeddings_batch
+from Services.secrets_service import build_preferences
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +203,13 @@ def _looks_like_js_required(text: str) -> bool:
 # ── Per-page scraper ──────────────────────────────────────────────────────────
 
 
-async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -> int:
+async def scrape_and_process_page(
+    url: str,
+    workspace_id: str,
+    source_id: str,
+    user_uid: str | None = None,
+    preferences: dict | None = None,
+) -> int:
     """
     Fetch, parse, chunk, embed, and store one documentation page.
     Returns the number of chunks created.
@@ -269,7 +276,13 @@ async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -
         logger.info("[url-ingest] Page %s yielded too little text — skipping", url)
         return 0
 
-    chunks = chunk_documentation_page(text, url, title)
+    preferences = build_preferences(preferences)
+    chunks = chunk_documentation_page(
+        text,
+        url,
+        title,
+        chunk_size=preferences["chunk_size"],
+    )
     if not chunks:
         return 0
 
@@ -288,7 +301,8 @@ async def scrape_and_process_page(url: str, workspace_id: str, source_id: str) -
                     "mode": "passage",
                 }
                 for c in batch
-            ]
+            ],
+            user_uid=user_uid,
         )
         all_embeddings.extend(embeds)
 
@@ -347,7 +361,9 @@ def _is_heading(line: str) -> bool:
 
 
 def _split_long_section(
-    words: list[str], max_words: int = 400, overlap: int = 50
+    words: list[str],
+    max_words: int = 400,
+    overlap: int = 50,
 ) -> list[str]:
     chunks = []
     start = 0
@@ -360,7 +376,12 @@ def _split_long_section(
     return chunks
 
 
-def chunk_documentation_page(text: str, url: str, title: str) -> list[dict]:
+def chunk_documentation_page(
+    text: str,
+    url: str,
+    title: str,
+    chunk_size: int = 400,
+) -> list[dict]:
     """
     Split a documentation page into heading-bounded sections.
     Long sections are sub-chunked with overlap.
@@ -393,7 +414,11 @@ def chunk_documentation_page(text: str, url: str, title: str) -> list[dict]:
         if len(words) < 50:
             continue  # Too short to be useful
 
-        sub_texts = _split_long_section(words) if len(words) > 600 else [body_text]
+        sub_texts = (
+            _split_long_section(words, max_words=chunk_size, overlap=max(20, chunk_size // 8))
+            if len(words) > chunk_size
+            else [body_text]
+        )
 
         for sub_text in sub_texts:
             augmented = (
@@ -423,6 +448,7 @@ async def ingest_url_source(
     source_id: str,
     job_id: str,
     max_pages: int = 20,
+    user_uid: str | None = None,
 ):
     """
     Background-task entry point for URL ingestion.
@@ -434,6 +460,12 @@ async def ingest_url_source(
     job_oid = ObjectId(job_id)
 
     total_chunks = 0
+    user_doc = (
+        await db.users.find_one({"_id": user_uid}, {"preferences": 1})
+        if user_uid
+        else None
+    )
+    preferences = build_preferences((user_doc or {}).get("preferences"))
 
     try:
         # ── Step 1: validate & extract base domain ────────────────────────────
@@ -477,7 +509,11 @@ async def ingest_url_source(
         for idx, page_url in enumerate(pages, start=1):
             try:
                 created = await scrape_and_process_page(
-                    page_url, workspace_id, source_id
+                    page_url,
+                    workspace_id,
+                    source_id,
+                    user_uid=user_uid,
+                    preferences=preferences,
                 )
                 total_chunks += created
             except Exception as exc:

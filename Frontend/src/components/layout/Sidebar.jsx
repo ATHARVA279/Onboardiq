@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Pencil,
   Plus,
+  Settings2,
   Users,
 } from "lucide-react";
 import { signOut } from "firebase/auth";
@@ -183,6 +184,7 @@ export default function Sidebar() {
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/ask", label: "Ask a Question", icon: MessageSquare },
+    { to: "/profile", label: "Profile", icon: Settings2 },
     { to: "/sources", label: "Sources", icon: Database },
     { to: "/staleness", label: "Staleness Alerts", icon: AlertTriangle },
     { to: "/team", label: "Team", icon: Users },

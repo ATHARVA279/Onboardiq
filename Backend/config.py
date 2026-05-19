@@ -7,9 +7,15 @@ load_dotenv()
 class Config:
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     GEMINI_API_KEY = GOOGLE_API_KEY
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    VOYAGE_API_KEY = os.getenv("VOYAGE_API_KEY")
+    NOMIC_API_KEY = os.getenv("NOMIC_API_KEY")
     MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGODB_URL")
     MONGODB_URL = MONGODB_URI
     GITHUB_DEFAULT_TOKEN = os.getenv("GITHUB_DEFAULT_TOKEN")
+    SECRET_ENCRYPTION_KEY = os.getenv("SECRET_ENCRYPTION_KEY")
+    UPSTASH_REDIS_REST_URL = os.getenv("UPSTASH_REDIS_REST_URL")
+    UPSTASH_REDIS_REST_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN")
 
     FIREBASE_KEY_PATH = os.getenv("FIREBASE_KEY_PATH", "serviceAccountKey.json")
     FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "luma-362fc")
@@ -20,9 +26,12 @@ class Config:
     VECTOR_INDEX_NAME = os.getenv("VECTOR_INDEX_NAME", "vector_index")
     DEFAULT_CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "400"))
     DEFAULT_CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
+    DEFAULT_LLM_PROVIDER = os.getenv("DEFAULT_LLM_PROVIDER", "groq")
+    PROFILE_CHUNK_SIZE_MIN = 200
+    PROFILE_CHUNK_SIZE_MAX = 800
 
-    RATE_LIMIT_CHAT = os.getenv("RATE_LIMIT_CHAT", "20/minute")
-    RATE_LIMIT_EXTRACT = os.getenv("RATE_LIMIT_EXTRACT", "10/minute")
+    RATE_LIMIT_CHAT = os.getenv("RATE_LIMIT_CHAT", "50/hour")
+    RATE_LIMIT_EXTRACT = os.getenv("RATE_LIMIT_EXTRACT", "20/hour")
 
     DB_NAME = os.getenv("DB_NAME", "luma_db")
 

@@ -3,6 +3,8 @@ import os
 import re
 from typing import Dict, List, Optional
 
+from config import Config
+
 JS_TS_BOUNDARY = re.compile(
     r"^(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+(\w+)|"
     r"^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(|"
@@ -50,9 +52,15 @@ def detect_language(file_path: str, language: Optional[str] = None) -> str:
 
 
 def chunk_file(
-    content: str, file_path: str, language: Optional[str] = None
+    content: str,
+    file_path: str,
+    language: Optional[str] = None,
+    chunk_size: Optional[int] = None,
+    chunk_overlap: Optional[int] = None,
 ) -> List[Dict]:
     detected_language = detect_language(file_path, language)
+    effective_chunk_size = _normalize_chunk_size(chunk_size)
+    effective_overlap = _normalize_chunk_overlap(chunk_overlap, effective_chunk_size)
 
     if detected_language == "python":
         chunks = _chunk_python(content, detected_language)
@@ -61,11 +69,21 @@ def chunk_file(
     elif detected_language == "java":
         chunks = _chunk_java(content, detected_language)
     elif detected_language == "markdown":
-        chunks = _chunk_markdown(content, detected_language)
+        chunks = _chunk_markdown(
+            content,
+            detected_language,
+            chunk_size=effective_chunk_size,
+            chunk_overlap=effective_overlap,
+        )
     elif detected_language in {"yaml", "json"}:
         chunks = [_single_chunk(content, "config", None, None, None, detected_language)]
     else:
-        chunks = _chunk_plaintext(content, detected_language)
+        chunks = _chunk_plaintext(
+            content,
+            detected_language,
+            max_words=effective_chunk_size,
+            overlap=effective_overlap,
+        )
 
     filtered = []
     for chunk in chunks:
@@ -90,6 +108,24 @@ def _single_chunk(
         "end_line": end_line,
         "language": language,
     }
+
+
+def _normalize_chunk_size(chunk_size: Optional[int]) -> int:
+    try:
+        value = int(chunk_size or Config.DEFAULT_CHUNK_SIZE)
+    except (TypeError, ValueError):
+        value = Config.DEFAULT_CHUNK_SIZE
+    return max(Config.PROFILE_CHUNK_SIZE_MIN, min(Config.PROFILE_CHUNK_SIZE_MAX, value))
+
+
+def _normalize_chunk_overlap(
+    chunk_overlap: Optional[int], chunk_size: int
+) -> int:
+    try:
+        value = int(chunk_overlap) if chunk_overlap is not None else chunk_size // 8
+    except (TypeError, ValueError):
+        value = chunk_size // 8
+    return max(20, min(max(20, chunk_size // 2), value))
 
 
 def _chunk_python(content: str, language: str) -> List[Dict]:
@@ -218,7 +254,12 @@ def _chunk_java(content: str, language: str) -> List[Dict]:
     return chunks
 
 
-def _chunk_markdown(content: str, language: str) -> List[Dict]:
+def _chunk_markdown(
+    content: str,
+    language: str,
+    chunk_size: int,
+    chunk_overlap: int,
+) -> List[Dict]:
     lines = content.splitlines()
     heading_indexes = [
         index for index, line in enumerate(lines) if line.startswith("## ")
@@ -237,26 +278,40 @@ def _chunk_markdown(content: str, language: str) -> List[Dict]:
         section_lines = lines[start_idx:end_idx]
         heading_text = lines[start_idx][3:].strip()
         chunks.append(
-            _single_chunk(
-                "\n".join(section_lines),
-                "section",
-                heading_text or None,
-                start_idx + 1,
-                end_idx,
-                language,
-            )
+            _single_chunk("\n".join(section_lines), "section", heading_text or None, start_idx + 1, end_idx, language)
         )
 
-    return chunks
+    expanded_chunks = []
+    for chunk in chunks:
+        words = chunk["content"].split()
+        if len(words) <= chunk_size:
+            expanded_chunks.append(chunk)
+            continue
+
+        subchunks = _chunk_plaintext(
+            chunk["content"],
+            language,
+            max_words=chunk_size,
+            overlap=chunk_overlap,
+        )
+        for subchunk in subchunks:
+            subchunk["chunk_type"] = "section"
+            subchunk["chunk_name"] = chunk["chunk_name"]
+            expanded_chunks.append(subchunk)
+
+    return expanded_chunks
 
 
-def _chunk_plaintext(content: str, language: str) -> List[Dict]:
+def _chunk_plaintext(
+    content: str,
+    language: str,
+    max_words: int = 400,
+    overlap: int = 50,
+) -> List[Dict]:
     words = content.split()
     if not words:
         return []
 
-    max_words = 400
-    overlap = 50
     chunks = []
     start_word = 0
 

@@ -13,6 +13,7 @@ from Database.database import get_db
 from Services.chunking_service import chunk_file, detect_language
 from Services.embedding_service import get_embeddings_batch
 from Services.health_service import recalculate_workspace_health_score
+from Services.secrets_service import build_preferences, get_effective_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,7 @@ async def connect_and_ingest_repo(
     workspace_id: str,
     source_id: str,
     job_id: str,
+    user_uid: Optional[str] = None,
 ):
     db = await get_db()
     workspace_object_id = ObjectId(workspace_id)
@@ -159,7 +161,18 @@ async def connect_and_ingest_repo(
 
     try:
         owner, repo_name = parse_repo_url(repo_url)
-        github_client = get_github_client(github_token)
+        resolved_token = github_token or await get_effective_api_key(
+            user_uid,
+            "github_pat",
+            Config.GITHUB_DEFAULT_TOKEN,
+        )
+        github_client = get_github_client(resolved_token)
+        user_doc = (
+            await db.users.find_one({"_id": user_uid}, {"preferences": 1})
+            if user_uid
+            else None
+        )
+        preferences = build_preferences((user_doc or {}).get("preferences"))
 
         try:
             repo = github_client.get_repo(f"{owner}/{repo_name}")
@@ -216,6 +229,8 @@ async def connect_and_ingest_repo(
                     workspace_id=workspace_id,
                     source_id=source_id,
                     source_type="github_repo",
+                    user_uid=user_uid,
+                    preferences=preferences,
                 )
                 total_chunks_created += created
             except Exception as exc:
@@ -291,6 +306,8 @@ async def process_single_file(
     workspace_id: str,
     source_id: str,
     source_type: str,
+    user_uid: Optional[str] = None,
+    preferences: Optional[Dict] = None,
 ) -> int:
     db = await get_db()
     file_content = repo.get_contents(github_file_object["path"])
@@ -342,7 +359,13 @@ async def process_single_file(
         chunk_source_type = "github_code"
 
     language = detect_language(github_file_object["path"], None)
-    chunks = chunk_file(raw_content, github_file_object["path"], language)
+    preferences = build_preferences(preferences)
+    chunks = chunk_file(
+        raw_content,
+        github_file_object["path"],
+        language,
+        chunk_size=preferences["chunk_size"],
+    )
     if not chunks:
         return 0
 
@@ -356,7 +379,8 @@ async def process_single_file(
                 "mode": "passage",
             }
             for chunk in chunks
-        ]
+        ],
+        user_uid=user_uid,
     )
 
     documents = []

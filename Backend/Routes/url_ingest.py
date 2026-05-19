@@ -16,6 +16,7 @@ from fastapi.responses import Response
 
 from Database.database import get_db
 from Middleware.auth import get_current_user
+from Middleware.rate_limit import limit_extract
 from models.requests import ConnectUrlRequest
 from models.responses import JobResponse
 from Services.url_ingestion import ingest_url_source
@@ -47,6 +48,7 @@ async def connect_url(
     request: ConnectUrlRequest,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
+    _: None = Depends(limit_extract),
 ):
     db = await get_db()
     workspace_oid = ObjectId(workspace_id)
@@ -142,6 +144,8 @@ async def connect_url(
         workspace_id,
         str(source_id),
         str(job["_id"]),
+        20,
+        current_user["uid"],
     )
 
     return _job_payload(job)

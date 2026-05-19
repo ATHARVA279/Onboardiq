@@ -5,6 +5,9 @@ Python versions. This lets the protobuf autodetection fall through
 to the pure-Python implementation.
 """
 
-# Intentionally empty; presence of this package ensures local import
-# resolution for google._upb._message can be controlled by the
-# stub in google/_upb/_message.py
+from pkgutil import extend_path
+
+# Extend the `google` namespace instead of replacing it outright so
+# installed packages like `google.auth` remain importable while our
+# local `_upb` shim is still available on the namespace path.
+__path__ = extend_path(__path__, __name__)

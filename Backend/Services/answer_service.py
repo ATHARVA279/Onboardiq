@@ -150,7 +150,11 @@ def build_context_prompt(question: str, chunks: List[Dict]) -> str:
 
 
 async def generate_answer(
-    question: str, chunks: List[Dict], session_messages: List[Dict]
+    question: str,
+    chunks: List[Dict],
+    session_messages: List[Dict],
+    provider_preference: str = "groq",
+    user_uid: str | None = None,
 ) -> str:
     """Calls the LLM with context, question, and session history to get the raw answer."""
     context_str = build_context_prompt(question, chunks)
@@ -159,7 +163,11 @@ async def generate_answer(
     messages.append({"role": "user", "content": question})
 
     raw_answer = await chat_completion_with_fallback(
-        SYSTEM_PROMPT, messages, context_str
+        SYSTEM_PROMPT,
+        messages,
+        context_str,
+        provider_preference=provider_preference,
+        user_uid=user_uid,
     )
     return raw_answer
 

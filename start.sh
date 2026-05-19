@@ -85,7 +85,18 @@ fi
 echo -e "${CYAN}[Backend]${NC} Starting FastAPI server on port 8000..."
 export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 export GRPC_DNS_RESOLVER=native
-$VENV_PYTHON -m uvicorn app:app --reload --port 8000 &
+export WATCHFILES_IGNORE_PERMISSION_DENIED=true
+$VENV_PYTHON -m uvicorn app:app \
+    --reload \
+    --reload-dir Routes \
+    --reload-dir Services \
+    --reload-dir models \
+    --reload-dir Middleware \
+    --reload-dir Database \
+    --reload-exclude "venv/*" \
+    --reload-exclude "__pycache__/*" \
+    --reload-exclude "*.pyc" \
+    --port 8000 &
 BACKEND_PID=$!
 echo -e "${GREEN}[Backend]${NC} Started with PID $BACKEND_PID"
 

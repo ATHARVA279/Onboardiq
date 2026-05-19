@@ -6,6 +6,7 @@ from bson.objectid import ObjectId
 
 from Database.database import get_db
 from Services.embedding_service import get_embedding
+from Services.secrets_service import get_effective_api_key
 from Services.gemini_client import _call_gemini_direct
 import google.generativeai as genai
 from config import Config
@@ -13,9 +14,9 @@ from config import Config
 logger = logging.getLogger(__name__)
 
 
-async def embed_query(question: str) -> List[float]:
+async def embed_query(question: str, user_uid: Optional[str] = None) -> List[float]:
     """Embeds the query text with the query prefix (mode='query')."""
-    return await get_embedding(question, mode="query")
+    return await get_embedding(question, mode="query", user_uid=user_uid)
 
 
 async def vector_search(
@@ -163,7 +164,11 @@ async def parallel_retrieval(
     return filtered_results[:12]
 
 
-async def rerank(question: str, chunks: List[Dict]) -> List[Dict]:
+async def rerank(
+    question: str,
+    chunks: List[Dict],
+    user_uid: Optional[str] = None,
+) -> List[Dict]:
     """Reranks the top 12 chunks using a Gemini call."""
     if not chunks:
         return []
@@ -179,6 +184,14 @@ Passages:
     for i, chunk in enumerate(chunks):
         content_preview = chunk.get("content", "")[:200]
         prompt += f"Index {i}: {content_preview}\n"
+
+    api_key = await get_effective_api_key(
+        user_uid,
+        "gemini_api_key",
+        Config.GEMINI_API_KEY,
+    )
+    if api_key:
+        genai.configure(api_key=api_key)
 
     model = genai.GenerativeModel(Config.GEMINI_MODEL)
     try:

@@ -1,24 +1,32 @@
+import asyncio
 import uuid
 import logging
+import json
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from bson.objectid import ObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from Database.database import get_db
 from Middleware.auth import get_current_user
+from Middleware.rate_limit import limit_chat
 from models.requests import ChatRequest
 from models.responses import ChatResponse
 from Services.retrieval_service import embed_query, parallel_retrieval, rerank
 from Services.answer_service import (
+    SYSTEM_PROMPT,
+    build_context_prompt,
     generate_answer,
     parse_citations,
     calculate_confidence,
     clean_llm_response,
 )
 from Services.github_ingestion import connect_and_ingest_repo
+from Services.groq_client import stream_chat_completion_with_fallback
+from Services.secrets_service import build_preferences
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,16 +46,13 @@ class ReindexRequest(BaseModel):
     pass  # no body needed; workspace_id comes from path
 
 
-@router.post("/workspace/{workspace_id}/ask", response_model=ChatResponse)
-async def ask_question(
-    workspace_id: str,
+async def _load_workspace_context(
     request: ChatRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict,
 ):
     user_uid = current_user.get("uid")
     db = await get_db()
 
-    # Validate workspace
     workspace = await db.workspaces.find_one({"_id": ObjectId(request.workspace_id)})
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
@@ -59,8 +64,6 @@ async def ask_question(
         raise HTTPException(status_code=403, detail="Not a member of this workspace")
 
     session_id = request.session_id or str(uuid.uuid4())
-
-    # Load last 6 messages for conversational context
     session_doc = await db.sessions.find_one(
         {"session_id": session_id, "workspace_id": request.workspace_id}
     )
@@ -69,11 +72,11 @@ async def ask_question(
     if session_doc and "messages" in session_doc:
         session_messages = session_doc["messages"][-6:]
 
-    try:
-        # Get query embedding
-        query_embedding = await embed_query(request.question)
+    user_doc = await db.users.find_one({"_id": user_uid}, {"preferences": 1})
+    preferences = build_preferences((user_doc or {}).get("preferences"))
 
-        # Parallel vector searches
+    try:
+        query_embedding = await embed_query(request.question, user_uid=user_uid)
         retrieved_chunks = await parallel_retrieval(
             query_embedding=query_embedding,
             workspace_id=request.workspace_id,
@@ -111,8 +114,11 @@ async def ask_question(
                 session_id=session_id,
             )
 
-        # Rerank
-        reranked_chunks = await rerank(request.question, retrieved_chunks)
+        reranked_chunks = await rerank(
+            request.question,
+            retrieved_chunks,
+            user_uid=user_uid,
+        )
 
     except HTTPException:
         raise
@@ -139,64 +145,50 @@ async def ask_question(
                 status_code=503, detail=f"Vector search failed: {type(e).__name__}"
             )
 
-    try:
-        # Generate Answer
-        raw_answer = await generate_answer(
-            request.question, reranked_chunks, session_messages
-        )
-    except Exception as e:
-        logger.error(f"[chat] Both AI providers failed: {e}")
-        from fastapi.responses import JSONResponse
+    return {
+        "db": db,
+        "user_uid": user_uid,
+        "session_id": session_id,
+        "session_doc": session_doc,
+        "session_messages": session_messages,
+        "query_embedding": query_embedding,
+        "reranked_chunks": reranked_chunks,
+        "preferences": preferences,
+    }
 
-        return JSONResponse(
-            status_code=503,
-            content={
-                "error": "ai_unavailable",
-                "message": "Both AI providers are temporarily unavailable. This is usually due to rate limits. Please wait 30 seconds and try again.",
-                "retry_after_seconds": 30,
-            },
-        )
 
-    logger.debug(f"RAW LLM RESPONSE:\n{raw_answer}")
-
-    # Clean LLM formatting issues (single-word fenced blocks, orphaned punctuation)
-    cleaned_answer = clean_llm_response(raw_answer)
-
-    logger.debug(f"AFTER CLEAN + PARSE CITATIONS:\n{cleaned_answer}")
-
-    # Parse Citations
-    parsed_results = parse_citations(cleaned_answer, reranked_chunks)
-
-    # Calculate Confidence
-    confidence = calculate_confidence(
-        parsed_results["answer_text_clean"],
-        reranked_chunks,
-        parsed_results["sources_cited"],
+async def _persist_chat_exchange(
+    db,
+    session_doc,
+    request: ChatRequest,
+    session_id: str,
+    user_uid: str,
+    query_embedding: list[float],
+    parsed_results: dict,
+    confidence: float,
+):
+    now = datetime.now(timezone.utc)
+    await db.questions.insert_one(
+        {
+            "workspace_id": request.workspace_id,
+            "session_id": session_id,
+            "asked_by_uid": user_uid,
+            "question_text": request.question,
+            "question_embedding": query_embedding,
+            "answer": parsed_results["answer_text_clean"],
+            "sources_cited": parsed_results["sources_cited"],
+            "confidence_score": confidence,
+            "created_at": now,
+        }
     )
 
-    now = datetime.now(timezone.utc)
-
-    # Save to questions collection
-    question_doc = {
-        "workspace_id": request.workspace_id,
-        "session_id": session_id,
-        "asked_by_uid": user_uid,
-        "question_text": request.question,
-        "question_embedding": query_embedding,
-        "answer": parsed_results["answer_text_clean"],
-        "sources_cited": parsed_results["sources_cited"],
-        "confidence_score": confidence,
-        "created_at": now,
-    }
-    await db.questions.insert_one(question_doc)
-
-    # Update sessions collection
     new_messages = [
         {"role": "user", "content": request.question, "created_at": now},
         {
             "role": "model",
             "content": parsed_results["answer_text_clean"],
             "sources": parsed_results["sources_cited"],
+            "confidence_score": confidence,
             "created_at": now,
         },
     ]
@@ -204,10 +196,7 @@ async def ask_question(
     if session_doc:
         await db.sessions.update_one(
             {"_id": session_doc["_id"]},
-            {
-                "$push": {"messages": {"$each": new_messages}},
-                "$set": {"updated_at": now},
-            },
+            {"$push": {"messages": {"$each": new_messages}}, "$set": {"updated_at": now}},
         )
     else:
         await db.sessions.insert_one(
@@ -221,12 +210,166 @@ async def ask_question(
             }
         )
 
+
+@router.post("/workspace/{workspace_id}/ask", response_model=ChatResponse)
+async def ask_question(
+    workspace_id: str,
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user),
+    _: None = Depends(limit_chat),
+):
+    context = await _load_workspace_context(request, current_user)
+    if isinstance(context, ChatResponse):
+        return context
+
+    try:
+        raw_answer = await generate_answer(
+            request.question,
+            context["reranked_chunks"],
+            context["session_messages"],
+            provider_preference=context["preferences"]["llm_provider"],
+            user_uid=context["user_uid"],
+        )
+    except Exception as e:
+        logger.error(f"[chat] Both AI providers failed: {e}")
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "ai_unavailable",
+                "message": "Both AI providers are temporarily unavailable. This is usually due to rate limits. Please wait 30 seconds and try again.",
+                "retry_after_seconds": 30,
+            },
+        )
+
+    logger.debug(f"RAW LLM RESPONSE:\n{raw_answer}")
+    cleaned_answer = clean_llm_response(raw_answer)
+    parsed_results = parse_citations(cleaned_answer, context["reranked_chunks"])
+    confidence = calculate_confidence(
+        parsed_results["answer_text_clean"],
+        context["reranked_chunks"],
+        parsed_results["sources_cited"],
+    )
+    await _persist_chat_exchange(
+        context["db"],
+        context["session_doc"],
+        request,
+        context["session_id"],
+        context["user_uid"],
+        context["query_embedding"],
+        parsed_results,
+        confidence,
+    )
+
     return ChatResponse(
         answer=parsed_results["answer_text_clean"],
         sources_cited=parsed_results["sources_cited"],
         all_retrieved_chunks=parsed_results["all_retrieved_chunks"],
         confidence_score=confidence,
-        session_id=session_id,
+        session_id=context["session_id"],
+    )
+
+
+@router.post("/workspace/{workspace_id}/ask/stream")
+async def ask_question_stream(
+    workspace_id: str,
+    request: ChatRequest,
+    current_user: dict = Depends(get_current_user),
+    _: None = Depends(limit_chat),
+):
+    context = await _load_workspace_context(request, current_user)
+    if isinstance(context, ChatResponse):
+        response_payload = context.model_dump(by_alias=True)
+        payload = {
+            "type": "complete",
+            "session_id": response_payload["session_id"],
+            "answer": response_payload["answer"],
+            "sources_cited": response_payload["sources_cited"],
+            "all_retrieved_chunks": response_payload["all_retrieved_chunks"],
+            "confidence_score": response_payload["confidence_score"],
+        }
+
+        async def immediate():
+            yield json.dumps(payload) + "\n"
+
+        return StreamingResponse(
+            immediate(),
+            media_type="application/x-ndjson",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    async def event_stream():
+        raw_chunks = []
+        try:
+            llm_stream, provider = await stream_chat_completion_with_fallback(
+                SYSTEM_PROMPT,
+                context["session_messages"] + [{"role": "user", "content": request.question}],
+                build_context_prompt(request.question, context["reranked_chunks"]),
+                provider_preference=context["preferences"]["llm_provider"],
+                user_uid=context["user_uid"],
+            )
+            yield json.dumps(
+                {
+                    "type": "start",
+                    "session_id": context["session_id"],
+                    "provider": provider,
+                }
+            ) + "\n"
+
+            async for token in llm_stream:
+                raw_chunks.append(token)
+                yield json.dumps({"type": "token", "content": token}) + "\n"
+                await asyncio.sleep(0)
+
+            cleaned_answer = clean_llm_response("".join(raw_chunks))
+            parsed_results = parse_citations(cleaned_answer, context["reranked_chunks"])
+            confidence = calculate_confidence(
+                parsed_results["answer_text_clean"],
+                context["reranked_chunks"],
+                parsed_results["sources_cited"],
+            )
+            await _persist_chat_exchange(
+                context["db"],
+                context["session_doc"],
+                request,
+                context["session_id"],
+                context["user_uid"],
+                context["query_embedding"],
+                parsed_results,
+                confidence,
+            )
+            yield json.dumps(
+                {
+                    "type": "complete",
+                    "session_id": context["session_id"],
+                    "answer": parsed_results["answer_text_clean"],
+                    "sources_cited": parsed_results["sources_cited"],
+                    "all_retrieved_chunks": parsed_results["all_retrieved_chunks"],
+                    "confidence_score": confidence,
+                }
+            ) + "\n"
+        except Exception as exc:
+            logger.error("[chat-stream] Provider failure: %s", exc, exc_info=True)
+            yield json.dumps(
+                {
+                    "type": "error",
+                    "error": "ai_unavailable",
+                    "message": "Both AI providers are temporarily unavailable. Please try again shortly.",
+                    "retry_after_seconds": 30,
+                }
+            ) + "\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -555,6 +698,7 @@ async def reindex_workspace(
             workspace_id,
             str(source["source_id"]),
             str(job["_id"]),
+            user_uid,
         )
         queued.append(str(source["source_id"]))
 

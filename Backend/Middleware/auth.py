@@ -1,6 +1,6 @@
 import firebase_admin
 from firebase_admin import credentials, auth
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 from dotenv import load_dotenv
@@ -48,6 +48,7 @@ from Database.database import get_db
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ):
     token = credentials.credentials
@@ -61,7 +62,7 @@ async def get_current_user(
         from Services.credit_service import CreditService
 
         await CreditService.initialize_user(uid, email, name, picture)
-
+        request.state.user = decoded_token
         return decoded_token
     except Exception as e:
         print(f"❌ Auth Error: {str(e)}")

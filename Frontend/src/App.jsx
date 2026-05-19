@@ -18,6 +18,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Sources from "./pages/Sources";
 import Staleness from "./pages/Staleness";
@@ -143,6 +144,16 @@ function AppRoutes() {
                   <Ask />
                 </PageWrapper>
               </WorkspaceGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <PageWrapper>
+                <Profile />
+              </PageWrapper>
             </ProtectedRoute>
           }
         />
