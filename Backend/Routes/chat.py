@@ -461,7 +461,8 @@ async def get_recent_questions(
                 "asked_by_uid": 1,
                 "confidence_score": 1,
                 "created_at": 1,
-                "_id": 0,
+                "session_id": 1,
+                "_id": 1,
             },
         )
         .sort("created_at", -1)
@@ -469,7 +470,37 @@ async def get_recent_questions(
     )
 
     questions = await cursor.to_list(length=20)
-    return {"questions": questions}
+
+    # Resolve user names for all unique asked_by_uids
+    uids = list(set(q.get("asked_by_uid") for q in questions if q.get("asked_by_uid")))
+    user_map = {}
+    if uids:
+        users_cursor = db.users.find({"_id": {"$in": uids}}, {"full_name": 1, "email": 1})
+        users_list = await users_cursor.to_list(length=len(uids))
+        user_map = {
+            u["_id"]: u.get("full_name") or u.get("email") or "Unknown User"
+            for u in users_list
+        }
+
+    formatted_questions = []
+    for q in questions:
+        asked_by_uid = q.get("asked_by_uid")
+        default_name = "Unknown User"
+        if asked_by_uid == user_uid:
+            default_name = current_user.get("name") or current_user.get("email") or "You"
+
+        formatted_questions.append({
+            "id": str(q["_id"]),
+            "question_text": q["question_text"],
+            "asked_by_uid": asked_by_uid,
+            "asked_by_name": user_map.get(asked_by_uid) or default_name,
+            "confidence_score": q.get("confidence_score"),
+            "session_id": q.get("session_id"),
+            "created_at": q["created_at"].isoformat() if isinstance(q["created_at"], datetime) else q["created_at"],
+        })
+
+    return {"questions": formatted_questions}
+
 
 
 # ---------------------------------------------------------------------------

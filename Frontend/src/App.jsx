@@ -65,7 +65,9 @@ function WorkspaceGuard({ children }) {
   const location = useLocation();
   const { workspace, loading } = useWorkspace();
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return children;
+  }
 
   if (!workspace && location.pathname !== "/workspace/setup") {
     return <Navigate to="/workspace/setup" replace />;

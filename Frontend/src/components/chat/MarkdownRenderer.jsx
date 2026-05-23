@@ -23,14 +23,13 @@ export default function MarkdownRenderer({ content }) {
             return (
               <code
                 style={{
-                  backgroundColor: "var(--accent-muted)",
+                  backgroundColor: "rgba(200, 169, 107, 0.04)",
                   color: "var(--accent-primary)",
-                  padding: "2px 5px",
+                  padding: "3px 6px",
                   borderRadius: "4px",
-                  fontSize: "0.85em",
-                  fontFamily:
-                    '"Fira Code", "Cascadia Code", Consolas, monospace',
-                  border: "1px solid var(--accent-glow)",
+                  fontSize: "13px",
+                  fontFamily: '"Geist Mono", "JetBrains Mono", monospace',
+                  border: "1px solid rgba(255, 255, 255, 0.04)",
                   whiteSpace: "nowrap",
                   lineHeight: "inherit",
                 }}
@@ -44,38 +43,39 @@ export default function MarkdownRenderer({ content }) {
             <div
               style={{
                 position: "relative",
-                margin: "20px 0",
-                borderRadius: "12px",
+                margin: "24px 0",
+                borderRadius: "8px",
                 overflow: "hidden",
-                border: "1px solid var(--bg-hover)",
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.3)",
               }}
             >
               <div
                 style={{
-                  backgroundColor: "var(--bg-surface)",
+                  backgroundColor: "var(--bg-elevated)",
                   color: "var(--text-tertiary)",
                   fontSize: "11px",
                   padding: "8px 16px",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  borderBottom: "1px solid var(--bg-hover)",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
                 }}
               >
-                <span style={{ fontFamily: "monospace", fontWeight: "500" }}>
+                <span style={{ fontFamily: '"Geist Mono", "JetBrains Mono", monospace', fontWeight: "500", letterSpacing: "0.02em" }}>
                   {match ? match[1] : "code"}
                 </span>
                 <button
                   onClick={() => navigator.clipboard.writeText(codeContent)}
                   style={{
                     background: "none",
-                    border: "1px solid var(--bg-hover)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
                     color: "var(--text-secondary)",
                     cursor: "pointer",
                     fontSize: "11px",
                     padding: "3px 10px",
                     borderRadius: "6px",
-                    transition: "all 0.2s",
+                    transition: "all 0.15s ease",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = "var(--text-primary)";
@@ -96,9 +96,10 @@ export default function MarkdownRenderer({ content }) {
                 customStyle={{
                   margin: 0,
                   padding: "20px",
-                  backgroundColor: "var(--bg-base)",
+                  backgroundColor: "var(--bg-surface)",
                   fontSize: "14px",
                   lineHeight: "1.7",
+                  fontFamily: '"Geist Mono", "JetBrains Mono", monospace',
                   borderRadius: 0,
                 }}
               >
@@ -114,9 +115,10 @@ export default function MarkdownRenderer({ content }) {
               style={{
                 marginTop: 0,
                 marginBottom: "16px",
-                lineHeight: "1.8",
-                color: "var(--text-secondary)",
-                fontSize: "15px",
+                lineHeight: "1.75",
+                color: "var(--text-primary)",
+                opacity: 0.9,
+                fontSize: "15.5px",
                 wordBreak: "break-word",
               }}
             >
@@ -130,10 +132,12 @@ export default function MarkdownRenderer({ content }) {
             <ul
               style={{
                 paddingLeft: "24px",
-                marginBottom: "12px",
-                lineHeight: "1.8",
+                marginBottom: "16px",
+                lineHeight: "1.75",
                 listStyleType: "disc",
-                color: "var(--text-secondary)",
+                color: "var(--text-primary)",
+                opacity: 0.9,
+                fontSize: "15.5px",
               }}
             >
               {children}
@@ -146,10 +150,12 @@ export default function MarkdownRenderer({ content }) {
             <ol
               style={{
                 paddingLeft: "24px",
-                marginBottom: "12px",
-                lineHeight: "1.8",
+                marginBottom: "16px",
+                lineHeight: "1.75",
                 listStyleType: "decimal",
-                color: "var(--text-secondary)",
+                color: "var(--text-primary)",
+                opacity: 0.9,
+                fontSize: "15.5px",
               }}
             >
               {children}
@@ -161,9 +167,10 @@ export default function MarkdownRenderer({ content }) {
           return (
             <li
               style={{
-                marginBottom: "6px",
-                color: "var(--text-secondary)",
-                fontSize: "15px",
+                marginBottom: "8px",
+                color: "var(--text-primary)",
+                opacity: 0.9,
+                fontSize: "15.5px",
                 display: "list-item",
               }}
             >
@@ -176,12 +183,13 @@ export default function MarkdownRenderer({ content }) {
           return (
             <h1
               style={{
-                fontSize: "22px",
-                fontWeight: "700",
-                marginBottom: "12px",
-                marginTop: "24px",
+                fontSize: "24px",
+                fontWeight: "620",
+                letterSpacing: "-0.03em",
+                marginBottom: "14px",
+                marginTop: "28px",
                 color: "var(--text-primary)",
-                borderBottom: "1px solid var(--bg-hover)",
+                borderBottom: "1px solid var(--border-default)",
                 paddingBottom: "8px",
               }}
             >
@@ -194,10 +202,11 @@ export default function MarkdownRenderer({ content }) {
           return (
             <h2
               style={{
-                fontSize: "19px",
-                fontWeight: "600",
-                marginBottom: "10px",
-                marginTop: "20px",
+                fontSize: "20px",
+                fontWeight: "620",
+                letterSpacing: "-0.03em",
+                marginBottom: "12px",
+                marginTop: "24px",
                 color: "var(--text-primary)",
               }}
             >
@@ -210,10 +219,11 @@ export default function MarkdownRenderer({ content }) {
           return (
             <h3
               style={{
-                fontSize: "16px",
-                fontWeight: "600",
-                marginBottom: "8px",
-                marginTop: "16px",
+                fontSize: "17px",
+                fontWeight: "620",
+                letterSpacing: "-0.02em",
+                marginBottom: "10px",
+                marginTop: "20px",
                 color: "var(--accent-primary)",
               }}
             >

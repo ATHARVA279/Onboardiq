@@ -1,27 +1,27 @@
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg-base: #0c0c0e;
-  --bg-surface: #1a1a1f;
-  --bg-elevated: #1a1a1f;
-  --bg-hover: #24242a;
-  --accent-primary: #d4a843;
-  --accent-primary-hover: #a07830;
-  --accent-muted: rgba(212, 168, 67, 0.12);
-  --accent-glow: rgba(212, 168, 67, 0.15);
-  --text-primary: #f0f0f6;
-  --text-secondary: #a1a1ae;
-  --text-tertiary: #6b6b78;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --status-high: #ef4444;
-  --status-medium: #f59e0b;
-  --status-low: #d4a843;
-  --status-success: #10b981;
+  --bg-base: #0C0C0E;
+  --bg-surface: #131316;
+  --bg-elevated: #18191D;
+  --bg-hover: rgba(255, 255, 255, 0.04);
+  --accent-primary: #C8A96B;
+  --accent-primary-hover: #B8924E;
+  --accent-muted: rgba(200, 169, 107, 0.12);
+  --accent-glow: rgba(200, 169, 107, 0.15);
+  --text-primary: #F5F5F7;
+  --text-secondary: #C5C5C9;
+  --text-tertiary: #8E8E93;
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.06);
+  --status-high: #EF4444;
+  --status-medium: #F59E0B;
+  --status-low: #C8A96B;
+  --status-success: #10B981;
 
   --container-width: 1200px;
   color-scheme: dark;
@@ -42,22 +42,22 @@
     background-image:
       radial-gradient(
         ellipse 80% 50% at 20% -10%,
-        rgba(212, 168, 67, 0.08) 0%,
+        rgba(200, 169, 107, 0.05) 0%,
         transparent 60%
       ),
       radial-gradient(
         ellipse 60% 40% at 80% 110%,
-        rgba(212, 168, 67, 0.05) 0%,
+        rgba(200, 169, 107, 0.03) 0%,
         transparent 50%
       ),
       radial-gradient(
         ellipse 40% 30% at 60% 20%,
-        rgba(212, 168, 67, 0.03) 0%,
+        rgba(200, 169, 107, 0.01) 0%,
         transparent 40%
       );
     color: var(--text-primary);
-    font-family: "IBM Plex Sans", sans-serif;
-    line-height: 1.7;
+    font-family: "Geist Sans", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     position: relative;
@@ -67,7 +67,9 @@
   h2,
   h3,
   h4 {
-    font-family: "Syne", sans-serif;
+    font-family: "Geist Sans", "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
   }
 
@@ -91,8 +93,8 @@
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -121,56 +123,58 @@
 
 @layer components {
   .oi-button {
-    min-height: 44px;
+    min-height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid transparent;
-    padding: 0 20px;
-    font-size: 14px;
+    padding: 0 16px;
+    font-size: 13px;
     font-weight: 500;
-    font-family: "IBM Plex Sans", sans-serif;
-    transition: all 200ms ease;
+    font-family: "Geist Sans", "Geist", sans-serif;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
   }
 
   .oi-button-primary {
     background: var(--accent-primary);
-    color: #000;
+    color: #0C0C0E;
     font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .oi-button-primary:hover {
     background: var(--accent-primary-hover);
-    transform: translateY(-1px);
+    transform: translateY(-0.5px);
     box-shadow: 0 4px 12px var(--accent-glow);
   }
 
   .oi-button-secondary {
-    background: transparent;
+    background: var(--bg-surface);
     border-color: var(--border-default);
     color: var(--text-primary);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .oi-button-secondary:hover {
     background: var(--bg-hover);
-    border-color: var(--accent-primary);
+    border-color: var(--text-secondary);
   }
 
   .oi-input {
-    height: 44px;
-    border-radius: 8px;
+    height: 38px;
+    border-radius: 6px;
     border: 1px solid var(--border-default);
     background: var(--bg-surface);
-    padding: 0 16px;
+    padding: 0 12px;
     color: var(--text-primary);
-    font-family: "IBM Plex Sans", sans-serif;
-    font-size: 14px;
+    font-family: "Geist Sans", "Geist", sans-serif;
+    font-size: 13px;
     transition:
-      border-color 200ms ease,
-      box-shadow 200ms ease;
+      border-color 150ms ease,
+      box-shadow 150ms ease;
   }
 
   .oi-input::placeholder {
@@ -187,9 +191,67 @@
 /* Ask page send button */
 .ask-send-button:not(:disabled) {
   background-color: var(--accent-primary) !important;
-  color: #000 !important;
+  color: #0C0C0E !important;
 }
 
 .ask-send-button:not(:disabled):hover {
   background-color: var(--accent-primary-hover) !important;
 }
+
+/* Skeleton Loading Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.oi-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 37%,
+    rgba(255, 255, 255, 0.03) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 4px;
+}
+
+/* Chat Input Container */
+.oi-chat-input-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.oi-chat-input-container:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.oi-chat-input-container:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow:
+    0 8px 32px rgba(200, 169, 107, 0.04),
+    0 0 12px rgba(200, 169, 107, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+/* Send Button Disabled State */
+.ask-send-button {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: var(--text-tertiary);
+}
+
+.ask-send-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+

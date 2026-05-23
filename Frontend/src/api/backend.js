@@ -292,6 +292,19 @@ export async function getChatHistory(workspaceId, sessionId) {
   }
 }
 
+export async function getRecentQuestions(workspaceId) {
+  try {
+    const { data } = await authedRequest({
+      method: "get",
+      url: `/api/workspace/${workspaceId}/questions`,
+    });
+    return data.questions || [];
+  } catch (error) {
+    throw new Error(extractError(error));
+  }
+}
+
+
 export async function getChatSessions(workspaceId) {
   try {
     const { data } = await authedRequest({

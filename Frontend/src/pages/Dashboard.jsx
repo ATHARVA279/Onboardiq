@@ -23,65 +23,142 @@ import {
   reindexSource,
   getStalenessSummary,
   getStalenessAlerts,
+  getRecentQuestions,
 } from "../api/backend";
 import { useWorkspace } from "../context/WorkspaceContext";
 import { formatRelativeTime, scoreColor } from "../utils/formatters";
 
-function HealthScoreCard({ score }) {
+function HealthScoreCard({ score, loading = false }) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(100, score));
   const offset = circumference - (progress / 100) * circumference;
 
-  const color =
+  if (loading) {
+    return (
+      <div
+        style={{
+          borderRadius: "8px",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015))",
+          padding: "14px 16px",
+          border: "1px solid rgba(255,255,255,0.05)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 16px rgba(0,0,0,0.3)",
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="oi-skeleton h-2.5 w-20 rounded mb-2.5" />
+            <div className="oi-skeleton h-8 w-16 rounded" />
+          </div>
+          <div className="oi-skeleton h-[52px] w-[52px] rounded-full shrink-0" />
+        </div>
+      </div>
+    );
+  }
+
+  const gradientId =
     progress > 70
-      ? "var(--accent-primary)"
+      ? "healthGradLow" // good (low staleness)
       : progress >= 40
-        ? "var(--status-medium)"
-        : "var(--status-high)";
+        ? "healthGradMedium"
+        : "healthGradHigh";
+
+  const glowColor =
+    progress > 70
+      ? "rgba(200, 169, 107, 0.1)"
+      : progress >= 40
+        ? "rgba(245, 158, 11, 0.06)"
+        : "rgba(239, 68, 68, 0.06)";
 
   return (
-    <div className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl">
+    <div
+      style={{
+        borderRadius: "8px",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015))",
+        padding: "14px 16px",
+        border: "1px solid rgba(255,255,255,0.05)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 16px rgba(0,0,0,0.3)",
+      }}
+    >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-[var(--text-tertiary)]">
-            Documentation Health
+          <p
+            style={{
+              fontSize: "11px",
+              fontWeight: "500",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--text-tertiary)",
+              marginBottom: "4px",
+            }}
+          >
+            Health Score
           </p>
-          <p className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+          <p
+            style={{
+              fontSize: "42px",
+              fontWeight: "650",
+              letterSpacing: "-0.04em",
+              color: "var(--text-primary)",
+              margin: 0,
+              lineHeight: "1.1",
+            }}
+          >
             {progress}%
           </p>
         </div>
-        <svg className="h-28 w-28 -rotate-90" viewBox="0 0 100 100">
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            stroke="var(--bg-hover)"
-            strokeWidth="8"
-            fill="none"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            stroke={color}
-            strokeWidth="8"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-1000 ease-out"
-          />
-          <text
-            x="50"
-            y="55"
-            textAnchor="middle"
-            transform="rotate(90 50 50)"
-            className="fill-[var(--text-primary)] text-[18px] font-semibold"
+        <div className="relative flex items-center justify-center">
+          <svg className="h-[52px] w-[52px] -rotate-90" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="healthGradLow" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#C8A96B" />
+                <stop offset="100%" stopColor="#F5E6CC" />
+              </linearGradient>
+              <linearGradient id="healthGradMedium" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#F59E0B" />
+                <stop offset="100%" stopColor="#FCD34D" />
+              </linearGradient>
+              <linearGradient id="healthGradHigh" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#EF4444" />
+                <stop offset="100%" stopColor="#FCA5A5" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="50"
+              cy="50"
+              r={radius}
+              stroke="rgba(255, 255, 255, 0.03)"
+              strokeWidth="2.2"
+              fill="none"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r={radius}
+              stroke={`url(#${gradientId})`}
+              strokeWidth="2.2"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              style={{
+                filter: `drop-shadow(0 0 2px ${glowColor})`,
+                transition: "stroke-dashoffset 1000ms ease-out",
+              }}
+            />
+          </svg>
+          <span
+            style={{
+              position: "absolute",
+              fontSize: "10px",
+              fontWeight: "600",
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-mono, monospace)",
+            }}
           >
             {progress}
-          </text>
-        </svg>
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -93,55 +170,91 @@ function StatCard({
   icon: Icon,
   valueColor = "var(--text-primary)",
   isAlert = false,
+  loading = false,
 }) {
+  if (loading) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          borderRadius: "8px",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
+          padding: "14px 16px",
+          border: "1px solid rgba(255,255,255,0.04)",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.015) inset, 0 4px 12px rgba(0,0,0,0.25)",
+        }}
+      >
+        <div className="flex items-start justify-between">
+          <div className="w-full">
+            <div className="oi-skeleton h-2.5 w-24 rounded mb-2.5" />
+            <div className="oi-skeleton h-8 w-12 rounded" />
+          </div>
+          <Icon
+            style={{
+              width: "14px",
+              height: "14px",
+              opacity: 0.3,
+              color: "var(--text-tertiary)",
+              marginTop: "2px",
+            }}
+            strokeWidth={1.5}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         position: "relative",
-        borderRadius: "12px",
-        background: "var(--bg-surface)",
-        padding: "24px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)",
-        transition: "all 0.2s ease",
+        borderRadius: "8px",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
+        padding: "14px 16px",
+        border: "1px solid rgba(255,255,255,0.04)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.015) inset, 0 4px 12px rgba(0,0,0,0.25)",
+        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
+      className="hover:border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.02)] hover:translate-y-[-0.5px]"
     >
-      <div>
-        <p
+      <div className="flex items-start justify-between">
+        <div>
+          <p
+            style={{
+              fontSize: "11px",
+              fontWeight: "500",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--text-tertiary)",
+              marginBottom: "4px",
+            }}
+          >
+            {title}
+          </p>
+          <p
+            style={{
+              fontSize: "42px",
+              fontWeight: "650",
+              letterSpacing: "-0.04em",
+              color: valueColor,
+              margin: 0,
+              lineHeight: "1.1",
+            }}
+          >
+            {value}
+          </p>
+        </div>
+        <Icon
           style={{
-            fontSize: "11px",
-            fontWeight: "600",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
+            width: "14px",
+            height: "14px",
+            opacity: 0.5,
             color: "var(--text-tertiary)",
-            marginBottom: "12px",
+            marginTop: "2px",
           }}
-        >
-          {title}
-        </p>
-        <p
-          style={{
-            fontSize: "36px",
-            fontWeight: "700",
-            letterSpacing: "-0.03em",
-            color: valueColor,
-            textShadow:
-              isAlert && value > 0 ? "0 0 20px var(--status-high)" : "none",
-          }}
-        >
-          {value}
-        </p>
+          strokeWidth={1.5}
+        />
       </div>
-      <Icon
-        style={{
-          position: "absolute",
-          bottom: "20px",
-          right: "20px",
-          width: "32px",
-          height: "32px",
-          opacity: 0.1,
-          color: valueColor,
-        }}
-      />
     </div>
   );
 }
@@ -383,12 +496,13 @@ function ConnectSourceModal({ open, onClose, workspaceId, onConnected }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { workspace, refreshWorkspace } = useWorkspace();
+  const { workspace, refreshWorkspace, loading: workspaceLoading } = useWorkspace();
   const [modalOpen, setModalOpen] = useState(false);
   const [jobMap, setJobMap] = useState({});
   const [stalenessAlerts, setStalenessAlerts] = useState([]);
   const [error, setError] = useState("");
-  const [recentQuestions] = useState([]);
+  const [recentQuestions, setRecentQuestions] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (!workspace?.id) return undefined;
@@ -423,22 +537,27 @@ export default function Dashboard() {
     if (!workspace?.id) return;
 
     let mounted = true;
+    setDataLoading(true);
 
-    const fetchStaleness = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const [summaryData, alertsData] = await Promise.all([
+        const [summaryData, alertsData, questionsData] = await Promise.all([
           getStalenessSummary(workspace.id),
           getStalenessAlerts(workspace.id, { resolved: false, limit: 2 }),
+          getRecentQuestions(workspace.id),
         ]);
         if (!mounted) return;
         setStalenessSummary(summaryData);
         setStalenessAlerts(alertsData);
+        setRecentQuestions(questionsData);
       } catch (err) {
         if (mounted) setError(err.message);
+      } finally {
+        if (mounted) setDataLoading(false);
       }
     };
 
-    fetchStaleness();
+    fetchDashboardData();
 
     return () => {
       mounted = false;
@@ -485,6 +604,8 @@ export default function Dashboard() {
     }
   };
 
+  const isLoading = workspaceLoading || (workspace?.id ? dataLoading : false);
+
   return (
     <AppShell>
       {/* Top border glow */}
@@ -507,44 +628,47 @@ export default function Dashboard() {
         <div>
           <p
             style={{
-              fontSize: "12px",
+              fontSize: "11px",
               color: "var(--text-tertiary)",
-              marginBottom: "8px",
-              fontWeight: "600",
+              marginBottom: "6px",
+              fontWeight: "500",
               textTransform: "uppercase",
-              letterSpacing: "0.05em",
+              letterSpacing: "0.14em",
             }}
           >
-            {workspace?.name || "Workspace"} › Dashboard
+            {workspace?.name || "Workspace"} › Overview
           </p>
           <h1
             style={{
-              fontSize: "24px",
-              fontWeight: "700",
-              letterSpacing: "-0.02em",
+              fontSize: "42px",
+              fontWeight: "620",
+              letterSpacing: "-0.04em",
               color: "var(--text-primary)",
+              lineHeight: "1.1",
             }}
           >
-            Workspace Dashboard
+            Knowledge Overview
           </h1>
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-sm text-[var(--status-high)]">
+          <div className="rounded-md border border-[var(--status-high)]/30 bg-[var(--status-high)]/10 px-4 py-3 text-xs text-[var(--status-high)]">
             {error}
           </div>
         ) : null}
 
-        <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr_320px]">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Sources Connected"
             value={stats.sourcesConnected}
             icon={Database}
+            loading={isLoading}
           />
           <StatCard
             title="Files Indexed"
             value={stats.filesIndexed}
             icon={FileCode}
+            loading={isLoading}
           />
           <StatCard
             title="Staleness Alerts"
@@ -554,126 +678,158 @@ export default function Dashboard() {
               stats.alerts > 0 ? "var(--status-high)" : "var(--text-primary)"
             }
             isAlert={true}
+            loading={isLoading}
           />
-          <HealthScoreCard score={stats.healthScore} />
+          <HealthScoreCard score={stats.healthScore} loading={isLoading} />
         </section>
 
-        {stalenessAlerts.length > 0 && (
+        {(isLoading || stalenessAlerts.length > 0) && (
           <section
             style={{
-              borderRadius: "12px",
-              background: "var(--bg-surface)",
-              padding: "24px",
-              boxShadow:
-                "0 4px 12px rgba(0,0,0,0.4), 0 0 0 1px var(--bg-hover)",
+              borderRadius: "8px",
+              background: "linear-gradient(180deg, rgba(200, 169, 107, 0.03), rgba(255, 255, 255, 0.005))",
+              padding: "20px",
+              border: "1px solid rgba(200, 169, 107, 0.15)",
+              boxShadow: "0 1px 0 rgba(200, 169, 107, 0.08) inset, 0 12px 32px rgba(0,0,0,0.4), 0 0 40px rgba(200, 169, 107, 0.03)",
             }}
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <h3
                   style={{
-                    fontSize: "16px",
-                    fontWeight: "700",
+                    fontSize: "26px",
+                    fontWeight: "620",
+                    letterSpacing: "-0.03em",
                     color: "var(--text-primary)",
                   }}
                 >
                   Staleness Preview
                 </h3>
-                <span
-                  style={{
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    background:
-                      "var(--status-high-rgb, rgba(239, 68, 68, 0.15))",
-                    border: "1px solid var(--status-high)",
-                    fontSize: "11px",
-                    fontWeight: "700",
-                    color: "var(--status-high)",
-                  }}
-                >
-                  {stalenessAlerts.length} Active
-                </span>
-              </div>
-              <button
-                onClick={() => navigate("/staleness")}
-                style={{
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  color: "var(--accent-primary)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) =>
-                  (e.target.style.color = "var(--accent-primary-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.color = "var(--accent-primary)")
-                }
-              >
-                View All Alerts →
-              </button>
-            </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              {stalenessAlerts.map((alert) => {
-                const colors =
-                  alert.severity === "high"
-                    ? "var(--status-high)"
-                    : alert.severity === "medium"
-                      ? "var(--status-medium)"
-                      : "var(--accent-primary)";
-
-                return (
-                  <div
-                    key={alert.id}
+                {isLoading ? (
+                  <div className="oi-skeleton h-4 w-12 rounded" />
+                ) : (
+                  <span
                     style={{
-                      borderRadius: "8px",
-                      background: "var(--bg-base)",
-                      border: "1px solid var(--bg-hover)",
-                      padding: "16px",
-                      transition: "all 0.15s",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      border: "1px solid rgba(239, 68, 68, 0.2)",
+                      fontSize: "10px",
+                      fontWeight: "600",
+                      color: "var(--status-high)",
                     }}
                   >
-                    <div className="flex items-start gap-3">
-                      <span
-                        style={{
-                          padding: "2px 6px",
-                          borderRadius: "3px",
-                          background: `${colors}15`,
-                          border: `1px solid ${colors}40`,
-                          fontSize: "10px",
-                          fontWeight: "700",
-                          color: colors,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {alert.severity}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                    {stalenessAlerts.length} Active
+                  </span>
+                )}
+              </div>
+              {!isLoading && (
+                <button
+                  onClick={() => navigate("/staleness")}
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    color: "var(--accent-primary)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.target.style.color = "var(--accent-primary-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.target.style.color = "var(--accent-primary)")
+                  }
+                >
+                  View All Alerts →
+                </button>
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {[...Array(2)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      borderRadius: "6px",
+                      background: "rgba(255, 255, 255, 0.015)",
+                      border: "1px solid rgba(255, 255, 255, 0.03)",
+                      borderLeft: "3px solid rgba(255, 255, 255, 0.05)",
+                      padding: "12px 14px",
+                    }}
+                  >
+                    <div className="flex flex-col gap-2" style={{ minWidth: 0 }}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="oi-skeleton h-3 w-40 rounded" />
+                        <div className="oi-skeleton h-2.5 w-8 rounded shrink-0" />
+                      </div>
+                      <div className="oi-skeleton h-2.5 w-24 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {stalenessAlerts.map((alert) => {
+                  const colors =
+                    alert.severity === "high"
+                      ? "var(--status-high)"
+                      : alert.severity === "medium"
+                        ? "var(--status-medium)"
+                        : "var(--accent-primary)";
+
+                  return (
+                    <div
+                      key={alert.id}
+                      style={{
+                        borderRadius: "6px",
+                        background: "rgba(255, 255, 255, 0.015)",
+                        border: "1px solid rgba(255, 255, 255, 0.03)",
+                        borderLeft: `3px solid ${colors}`,
+                        padding: "12px 14px",
+                        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                      }}
+                      className="hover:bg-[rgba(255,255,255,0.03)] hover:translate-y-[-0.5px]"
+                    >
+                      <div className="flex flex-col gap-1" style={{ minWidth: 0 }}>
+                        <div className="flex items-center justify-between gap-3">
+                          <p
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: "500",
+                              color: "var(--text-primary)",
+                              margin: 0,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {alert.description}
+                          </p>
+                          <span
+                            style={{
+                              fontSize: "9px",
+                              fontWeight: "600",
+                              color: colors,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.08em",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {alert.severity}
+                          </span>
+                        </div>
                         <p
                           style={{
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            color: "var(--text-primary)",
-                            marginBottom: "4px",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {alert.description}
-                        </p>
-                        <p
-                          style={{
-                            fontSize: "11px",
+                            fontSize: "10px",
                             color: "var(--text-tertiary)",
-                            fontFamily: "monospace",
+                            fontFamily: "var(--font-mono, monospace)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
+                            margin: 0,
                           }}
                         >
                           {alert.alert_type === "readme_stale"
@@ -682,36 +838,52 @@ export default function Dashboard() {
                         </p>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
         )}
 
-        <section className="space-y-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <section className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+              <h2
+                style={{
+                  fontSize: "26px",
+                  fontWeight: "620",
+                  letterSpacing: "-0.03em",
+                  color: "var(--text-primary)",
+                }}
+              >
                 Connected Sources
               </h2>
-              <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
+              <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
                 Monitor indexing status and keep your knowledge graph up to
                 date.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="oi-button oi-button-primary"
-            >
-              <Plus className="h-4 w-4" />
-              Connect New Source
-            </button>
+            {!isLoading && (
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="oi-button oi-button-primary"
+                style={{ minHeight: "36px", padding: "0 14px", borderRadius: "6px", fontSize: "12px" }}
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Connect New Source
+              </button>
+            )}
           </div>
 
-          {workspace?.sources?.length ? (
-            <div className="space-y-4">
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(2)].map((_, i) => (
+                <SourceCard key={i} loading={true} />
+              ))}
+            </div>
+          ) : workspace?.sources?.length ? (
+            <div className="space-y-3">
               {workspace.sources.map((source) => (
                 <SourceCard
                   key={source.source_id}
@@ -732,41 +904,78 @@ export default function Dashboard() {
           )}
         </section>
 
-        <section className="rounded-xl border border-[var(--bg-hover)] bg-[var(--bg-surface)] p-6 shadow-2xl">
+        <section
+          style={{
+            borderRadius: "8px",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015))",
+            padding: "20px",
+            border: "1px solid rgba(255,255,255,0.04)",
+            boxShadow: "0 1px 0 rgba(255,255,255,0.015) inset, 0 8px 24px rgba(0,0,0,0.25)",
+          }}
+        >
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
+              <h2
+                style={{
+                  fontSize: "26px",
+                  fontWeight: "620",
+                  letterSpacing: "-0.03em",
+                  color: "var(--text-primary)",
+                }}
+              >
                 Recent Questions
               </h2>
-              <p className="mt-2 text-sm leading-7 text-[var(--text-tertiary)]">
+              <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
                 The latest developer questions asked against this workspace.
               </p>
             </div>
           </div>
 
-          {recentQuestions.length ? (
-            <div className="mt-5 divide-y divide-[var(--bg-hover)]">
+          {isLoading ? (
+            <div className="mt-4 divide-y divide-[var(--border-default)]">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-4 py-3 px-3.5"
+                >
+                  <div className="space-y-2 w-full">
+                    <div className="oi-skeleton h-3.5 w-3/4 rounded" />
+                    <div className="oi-skeleton h-2.5 w-24 rounded" />
+                  </div>
+                  <div className="oi-skeleton h-3 w-16 rounded shrink-0" />
+                </div>
+              ))}
+            </div>
+          ) : recentQuestions.length ? (
+            <div className="mt-4 divide-y divide-[var(--border-default)]">
               {recentQuestions.slice(0, 5).map((question) => (
                 <div
                   key={question.id}
-                  className="flex items-center justify-between gap-4 py-4"
+                  onClick={() =>
+                    navigate(
+                      question.session_id
+                        ? `/ask?session_id=${question.session_id}&q=${encodeURIComponent(question.question_text)}`
+                        : "/ask"
+                    )
+                  }
+                  className="flex items-center justify-between gap-4 py-3 cursor-pointer hover:bg-[var(--bg-hover)]/30 px-3.5 rounded-lg transition-all duration-150"
                 >
                   <div>
-                    <p className="font-semibold text-[var(--text-primary)]">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
                       {question.question_text}
                     </p>
-                    <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                    <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
                       {question.asked_by_name}
                     </p>
                   </div>
-                  <p className="shrink-0 text-sm text-[var(--text-tertiary)]">
+                  <p className="shrink-0 text-xs text-[var(--text-tertiary)]">
                     {formatRelativeTime(question.created_at)}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="mt-5">
+            <div className="mt-4">
               <EmptyState
                 icon={ExternalLink}
                 title="No questions yet"
