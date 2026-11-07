@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import re
@@ -275,6 +276,13 @@ async def connect_and_ingest_repo(
         )
 
         await recalculate_workspace_health_score(workspace_id)
+
+        # Automatically run initial staleness check upon repo onboarding
+        try:
+            from Services.staleness_service import run_staleness_check
+            asyncio.create_task(run_staleness_check(workspace_id))
+        except Exception as exc:
+            logger.warning("Failed to start initial staleness check: %s", exc)
     except Exception as exc:
         now = datetime.now(timezone.utc)
         await db.jobs.update_one(

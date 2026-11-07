@@ -19,48 +19,9 @@ from config import Config
 logger = logging.getLogger(__name__)
 
 
-async def _scheduled_staleness_checks():
-    """Run staleness checks for all workspaces every 24 hours."""
-    from Database.database import get_db
-    from Services.staleness_service import run_staleness_check
-
-    # Wait 5 minutes after startup before first run
-    await asyncio.sleep(300)
-
-    while True:
-        try:
-            db = await get_db()
-            workspaces = await db.workspaces.find(
-                {"sources.indexing_status": "completed"}
-            ).to_list(length=None)
-
-            logger.info(
-                "[scheduler] Running staleness checks for %d workspaces",
-                len(workspaces),
-            )
-
-            for workspace in workspaces:
-                try:
-                    await run_staleness_check(str(workspace["_id"]))
-                except Exception as exc:
-                    logger.error(
-                        "[scheduler] Staleness check failed for %s: %s",
-                        workspace["_id"],
-                        exc,
-                    )
-                await asyncio.sleep(2)  # Avoid hammering APIs
-
-        except Exception as exc:
-            logger.error("[scheduler] Scheduled staleness check failed: %s", exc)
-
-        await asyncio.sleep(86400)  # 24 hours
-
-
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    # Startup
-    asyncio.create_task(_scheduled_staleness_checks())
-    logger.info("[app] Staleness scheduler started")
+    # Scheduled 24h background checks disabled for now
     yield
     # Shutdown (nothing to clean up)
 

@@ -562,6 +562,14 @@ async def ingest_url_source(
             len(pages),
         )
 
+        try:
+            from Services.health_service import recalculate_workspace_health_score
+            from Services.staleness_service import run_staleness_check
+            await recalculate_workspace_health_score(workspace_id)
+            asyncio.create_task(run_staleness_check(workspace_id))
+        except Exception as exc:
+            logger.warning("[url-ingest] Failed to run post-ingest checks: %s", exc)
+
     except Exception as exc:
         now = datetime.now(timezone.utc)
         logger.exception("[url-ingest] Fatal error: %s", exc)
