@@ -58,7 +58,10 @@ function CitationChips({ citations }) {
   return (
     <div className="mt-4 pt-4 border-t border-[var(--border-subtle)]">
       <div className="flex items-center gap-1.5 mb-2.5 px-0.5">
-        <Database className="w-3 h-3 text-[var(--accent-primary)] opacity-80" strokeWidth={1.5} />
+        <Database
+          className="w-3 h-3 text-[var(--accent-primary)] opacity-80"
+          strokeWidth={1.5}
+        />
         <span className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-tertiary)] font-medium">
           Sources Cited
         </span>
@@ -70,7 +73,10 @@ function CitationChips({ citations }) {
             className="flex items-center gap-2 px-2.5 py-1 rounded bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[rgba(200,169,107,0.25)] hover:bg-[var(--bg-hover)] transition-all duration-150 cursor-pointer group max-w-[200px]"
             title={src.file_path}
           >
-            <Code2 className="w-3 h-3 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] transition-colors" strokeWidth={1.5} />
+            <Code2
+              className="w-3 h-3 text-[var(--text-tertiary)] group-hover:text-[var(--accent-primary)] transition-colors"
+              strokeWidth={1.5}
+            />
             <span className="text-[11px] font-medium text-[var(--text-secondary)] truncate group-hover:text-[var(--text-primary)]">
               {src.file_path?.split("/").pop() || "source"}
             </span>
@@ -114,7 +120,10 @@ function MessagesSkeleton() {
       </div>
       {/* Assistant message skeleton */}
       <div className="flex gap-4 mb-8 w-full">
-        <div className="oi-skeleton h-8 w-8 rounded-md shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.04)" }} />
+        <div
+          className="oi-skeleton h-8 w-8 rounded-md shrink-0"
+          style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+        />
         <div className="flex-1 space-y-3 pt-2">
           <div className="oi-skeleton h-3.5 w-5/6 rounded" />
           <div className="oi-skeleton h-3.5 w-2/3 rounded" />
@@ -133,7 +142,10 @@ function MessagesSkeleton() {
       </div>
       {/* Another Assistant message skeleton */}
       <div className="flex gap-4 mb-8 w-full">
-        <div className="oi-skeleton h-8 w-8 rounded-md shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.04)" }} />
+        <div
+          className="oi-skeleton h-8 w-8 rounded-md shrink-0"
+          style={{ backgroundColor: "rgba(255,255,255,0.04)" }}
+        />
         <div className="flex-1 space-y-3 pt-2">
           <div className="oi-skeleton h-3.5 w-11/12 rounded" />
           <div className="oi-skeleton h-3.5 w-4/5 rounded" />
@@ -422,13 +434,16 @@ export default function Ask() {
     (async () => {
       // Load user's sessions for the sidebar list
       const list = await loadSessions();
-      
+
       // Determine what session to target:
       // 1. URL parameter (highest priority, allows loading shared/direct sessions)
       // 2. localStorage saved active session
       // 3. Fallback to the first session in the sidebar list
-      const targetSessionId = querySessionId || localStorage.getItem(sessionKey(workspaceId)) || (list && list[0]?.session_id);
-      
+      const targetSessionId =
+        querySessionId ||
+        localStorage.getItem(sessionKey(workspaceId)) ||
+        (list && list[0]?.session_id);
+
       if (!targetSessionId) {
         return;
       }
@@ -441,14 +456,21 @@ export default function Ask() {
         await loadSessionMessages(targetSessionId);
       }
     })();
-  }, [workspaceId, loadSessions, loadSessionMessages, querySessionId, navigate]);
+  }, [
+    workspaceId,
+    loadSessions,
+    loadSessionMessages,
+    querySessionId,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (messages.length > 0 && queryQuestionText) {
       const match = messages.find(
         (m) =>
           m.role === "user" &&
-          m.content.trim().toLowerCase() === queryQuestionText.trim().toLowerCase()
+          m.content.trim().toLowerCase() ===
+            queryQuestionText.trim().toLowerCase(),
       );
       if (match) {
         const timer = setTimeout(() => {
@@ -570,7 +592,9 @@ export default function Ask() {
     const updateAssistant = (updater) => {
       setMessages((cur) =>
         cur.map((message) =>
-          message.id === assistantId ? { ...message, ...updater(message) } : message,
+          message.id === assistantId
+            ? { ...message, ...updater(message) }
+            : message,
         ),
       );
     };
@@ -908,7 +932,8 @@ export default function Ask() {
                           alignItems: "center",
                           justifyContent: "center",
                           marginBottom: "24px",
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.2), 0 0 20px rgba(200, 169, 107, 0.05)",
+                          boxShadow:
+                            "0 8px 24px rgba(0,0,0,0.2), 0 0 20px rgba(200, 169, 107, 0.05)",
                         }}
                       >
                         <Sparkles size={26} color="var(--accent-primary)" />
@@ -935,7 +960,8 @@ export default function Ask() {
                         }}
                       >
                         Search across your repositories and documentation with
-                        precision. IQ provides answers with full source citations.
+                        precision. IQ provides answers with full source
+                        citations.
                       </p>
 
                       <div
@@ -964,18 +990,25 @@ export default function Ask() {
                               fontSize: "14px",
                               fontWeight: "500",
                               cursor: "pointer",
-                              transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                              transition:
+                                "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
                               boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = "rgba(200, 169, 107, 0.35)";
-                              e.currentTarget.style.backgroundColor = "var(--bg-hover)";
-                              e.currentTarget.style.color = "var(--text-primary)";
+                              e.currentTarget.style.borderColor =
+                                "rgba(200, 169, 107, 0.35)";
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bg-hover)";
+                              e.currentTarget.style.color =
+                                "var(--text-primary)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = "var(--border-default)";
-                              e.currentTarget.style.backgroundColor = "var(--bg-elevated)";
-                              e.currentTarget.style.color = "var(--text-secondary)";
+                              e.currentTarget.style.borderColor =
+                                "var(--border-default)";
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bg-elevated)";
+                              e.currentTarget.style.color =
+                                "var(--text-secondary)";
                             }}
                           >
                             {suggestion}

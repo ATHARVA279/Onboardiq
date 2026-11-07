@@ -126,7 +126,10 @@ def build_context_prompt(question: str, chunks: List[Dict]) -> str:
             meta = f"path: {path} | lang: {lang}"
             if start_line is not None and end_line is not None:
                 meta += f" | lines: {start_line}-{end_line}"
-            context += f"[SOURCE_{idx} | {meta}]\n{chunk.get('content', '')}\n\n"
+            content = chunk.get('content', '')
+            if len(content) > 1500:
+                content = content[:1500] + "\n...[truncated]"
+            context += f"[SOURCE_{idx} | {meta}]\n{content}\n\n"
 
     if doc_chunks:
         context += "=== DOCUMENTATION ===\n"
@@ -135,7 +138,10 @@ def build_context_prompt(question: str, chunks: List[Dict]) -> str:
             meta = f"path: {path}"
             if chunk.get("chunk_name"):
                 meta += f" | section: {chunk.get('chunk_name')}"
-            context += f"[SOURCE_{idx} | {meta}]\n{chunk.get('content', '')}\n\n"
+            content = chunk.get('content', '')
+            if len(content) > 1500:
+                content = content[:1500] + "\n...[truncated]"
+            context += f"[SOURCE_{idx} | {meta}]\n{content}\n\n"
 
     if config_chunks:
         context += "=== CONFIGURATION ===\n"

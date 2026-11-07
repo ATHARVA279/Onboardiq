@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from typing import Callable
 
@@ -6,6 +7,8 @@ import httpx
 from fastapi import HTTPException, Request
 
 from config import Config
+
+logger = logging.getLogger(__name__)
 
 _local_counters: dict[str, tuple[int, int]] = {}
 _local_lock = asyncio.Lock()
@@ -22,7 +25,16 @@ class RedisRateLimiter:
 
     async def acquire(self, subject: str) -> None:
         if self.enabled:
-            await self._acquire_remote(subject)
+            try:
+                await self._acquire_remote(subject)
+            except HTTPException:
+                raise
+            except Exception as exc:
+                logger.warning(
+                    "Remote Redis rate limiter unreachable (%s). Falling back to in-memory rate limiting.",
+                    exc,
+                )
+                await self._acquire_local(subject)
         else:
             await self._acquire_local(subject)
 

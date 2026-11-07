@@ -12,7 +12,7 @@ from config import Config
 
 logger = logging.getLogger(__name__)
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = getattr(Config, "GROQ_MODEL", "qwen/qwen3.8-27b")
 VALID_ROLES = {"user", "assistant", "system"}
 ROLE_MAPPING = {
     "human": "user",
@@ -213,31 +213,40 @@ async def stream_chat_completion_with_fallback(
     for provider in providers:
         try:
             if provider == "groq":
-                return (
-                    stream_chat_completion(
-                        system_prompt,
-                        messages,
-                        context,
-                        temperature=temperature,
-                        max_tokens=max_tokens,
-                        user_uid=user_uid,
-                    ),
-                    "groq",
-                )
-            return (
-                gemini_stream_chat_completion(
+                stream = stream_chat_completion(
                     system_prompt,
                     messages,
                     context,
                     temperature=temperature,
                     max_tokens=max_tokens,
                     user_uid=user_uid,
-                ),
-                "gemini",
-            )
+                )
+            else:
+                stream = gemini_stream_chat_completion(
+                    system_prompt,
+                    messages,
+                    context,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    user_uid=user_uid,
+                )
+
+            # Eagerly probe first token so failures trigger fallback before streaming starts
+            try:
+                first_token = await stream.__anext__()
+            except StopAsyncIteration:
+                first_token = ""
+
+            async def chained(first: str, rest_stream: AsyncIterator[str]) -> AsyncIterator[str]:
+                if first:
+                    yield first
+                async for item in rest_stream:
+                    yield item
+
+            return chained(first_token, stream), provider
         except Exception as exc:
             errors[provider] = str(exc)
-            logger.warning("[%s-stream] Failed to initialize: %s", provider, exc)
+            logger.warning("[%s-stream] Failed: %s. Trying fallback provider if available.", provider, exc)
 
     raise Exception(
         f"Both providers failed. Groq: {errors.get('groq')} | Gemini: {errors.get('gemini')}"

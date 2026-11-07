@@ -5,7 +5,7 @@ from typing import AsyncIterator, List, Optional
 from Services.secrets_service import get_effective_api_key
 from config import Config
 
-MODEL = "gemini-1.5-flash"
+MODEL = Config.GEMINI_MODEL
 
 
 async def _get_model(

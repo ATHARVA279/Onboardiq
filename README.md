@@ -55,7 +55,7 @@ cp .env.example .env
 # - Firebase credentials
 
 # Start server
-uvicorn app:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Backend will be available at: `http://127.0.0.1:8000`

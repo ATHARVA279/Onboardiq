@@ -221,8 +221,8 @@ Passages:
             chunk["combined_score"] = combined_score
 
         chunks.sort(key=lambda x: x.get("combined_score", 0), reverse=True)
-        return chunks[:8]
+        return chunks[:4]
 
     except Exception as e:
         print(f"Reranking failed: {e}")
-        return chunks[:8]  # Skip reranking and return original order
+        return chunks[:4]  # Skip reranking and return top 4 directly

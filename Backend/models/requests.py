@@ -11,7 +11,9 @@ def _validate_object_id_string(value: str, field_name: str) -> str:
     try:
         int(candidate, 16)
     except ValueError as exc:
-        raise ValueError(f"{field_name} must be a valid MongoDB ObjectId string") from exc
+        raise ValueError(
+            f"{field_name} must be a valid MongoDB ObjectId string"
+        ) from exc
     return candidate
 
 

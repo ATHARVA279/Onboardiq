@@ -18,6 +18,7 @@ from groq import Groq
 
 from Database.database import get_db
 from Services.retrieval_service import vector_search
+from config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ try:
 except Exception:
     _groq = None
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = getattr(Config, "GROQ_MODEL", "qwen/qwen3.8-27b")
 
 
 async def _groq_call(prompt: str, max_tokens: int = 2048) -> str:
